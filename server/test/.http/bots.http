@@ -69,7 +69,7 @@ DELETE {{baseUrl}}/bots/{{botId}}
 Origin: {{origin}}
 
 ### Upload a logo (PNG, JPG or WebP, up to 1 MB) — 200 with avatarUrl
-# Needs the "avatars" bucket from supabase/migrations/*_avatars.sql.
+# Needs the "avatars" bucket from the init migration (make db-reset if it is missing).
 POST {{baseUrl}}/bots/{{botId}}/avatar
 Origin: {{origin}}
 Content-Type: multipart/form-data; boundary=hovr
