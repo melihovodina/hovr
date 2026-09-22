@@ -21,8 +21,9 @@ server:
 build:
 	cd server && go build -o bin/hovr ./cmd
 
+# Unit tests plus database tests against local Supabase (make db-start first).
 test:
-	cd server && go test ./...
+	cd server && TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres go test ./...
 
 vet:
 	cd server && go vet ./...

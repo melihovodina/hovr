@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/melihovodina/hovr/server/internal/auth"
+	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/internal/config"
 )
 
@@ -35,6 +36,7 @@ func New(d Deps) *gin.Engine {
 
 	user := api.Group("", d.Auth.RequireUser())
 	user.GET("/me", me(d.DB))
+	bots.NewHandler(bots.NewStore(d.DB)).Routes(user.Group("/bots"))
 
 	if d.Config.StaticDir != "" {
 		serveClient(r, d.Config.StaticDir)

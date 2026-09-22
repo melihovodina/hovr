@@ -94,9 +94,15 @@ func (s *Service) SameOrigin() gin.HandlerFunc {
 }
 
 func (s *Service) setUser(c *gin.Context, claims *Claims, accessToken string) {
-	c.Set(userIDKey, claims.Subject)
-	c.Set(userEmailKey, claims.Email)
+	SetUser(c, claims.Subject, claims.Email)
 	c.Set(accessTokenKey, accessToken)
+}
+
+// SetUser marks the request as coming from the given user. RequireUser calls it;
+// tests of other packages use it to simulate a signed-in request.
+func SetUser(c *gin.Context, userID, email string) {
+	c.Set(userIDKey, userID)
+	c.Set(userEmailKey, email)
 }
 
 // UserID returns the signed-in user's id; only valid behind RequireUser.

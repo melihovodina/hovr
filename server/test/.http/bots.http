@@ -1,0 +1,69 @@
+# Bot requests for local testing (VS Code REST Client or JetBrains HTTP Client).
+#
+# Sign in first with auth.http (request 4) in the same client, so the session
+# cookies are there. Every non-GET request needs an Origin equal to APP_URL.
+
+@baseUrl = http://localhost:8080/api
+@origin = http://localhost:3000
+# Paste the id returned by "Create a bot" here.
+@botId = PASTE_BOT_ID_HERE
+
+### Create a bot — 201 with id and publicKey
+POST {{baseUrl}}/bots
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "name": "Northwind Coffee"
+}
+
+### Create a second bot — on Free: 402 upgrade_required
+POST {{baseUrl}}/bots
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "name": "Second bot"
+}
+
+### List my bots
+GET {{baseUrl}}/bots
+
+### Get one bot
+GET {{baseUrl}}/bots/{{botId}}
+
+### Update widget settings — any subset of fields
+PATCH {{baseUrl}}/bots/{{botId}}
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "name": "Northwind Assistant",
+  "color": "#2F6B4F",
+  "position": "right",
+  "greeting": "Ask me about orders, shipping or our coffee.",
+  "suggestedQuestions": ["Do you ship to Canada?", "How should I store my beans?"],
+  "allowedDomains": ["northwind.example", "https://shop.northwind.example/"]
+}
+
+### Invalid color — 400 with a readable message
+PATCH {{baseUrl}}/bots/{{botId}}
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "color": "green"
+}
+
+### Hide "Powered by hovr" — on Free: 402 upgrade_required
+PATCH {{baseUrl}}/bots/{{botId}}
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "showBadge": false
+}
+
+### Delete the bot — 204 (its sources, chunks and chats go with it)
+DELETE {{baseUrl}}/bots/{{botId}}
+Origin: {{origin}}
