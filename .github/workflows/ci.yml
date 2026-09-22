@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # Postgres only (migrations applied): the schema needs auth.users,
+      # storage.buckets and the extensions schema, so plain Postgres won't do.
+      - run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+        working-directory: server
+      - run: go vet ./...
+        working-directory: server
+      - run: go test ./... -race -cover -coverpkg=./...
+        working-directory: server
+
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: client/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm build
+        env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:8080
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t hovr:ci .

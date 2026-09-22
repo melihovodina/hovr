@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+client/out
+server/bin
+.git
+.github
+supabase/.temp
+**/.env
+**/*.log

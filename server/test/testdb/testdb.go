@@ -14,12 +14,15 @@ import (
 	"github.com/melihovodina/hovr/server/internal/plans"
 )
 
-// Connect opens a pool on TEST_DATABASE_URL, or skips the test when it is not set.
-// `make test` sets it to the local Supabase database.
+// Connect opens a pool on TEST_DATABASE_URL (set by `make test`). Without it tests
+// skip locally but fail in CI, where a silently green run would hide them.
 func Connect(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	url := os.Getenv("TEST_DATABASE_URL")
 	if url == "" {
+		if os.Getenv("CI") != "" {
+			t.Fatal("TEST_DATABASE_URL not set")
+		}
 		t.Skip("TEST_DATABASE_URL not set")
 	}
 	pool, err := db.Connect(context.Background(), url)

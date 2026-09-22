@@ -1,0 +1,19 @@
+# Runs hovr the way it is deployed: one container serving the API and the client.
+# The database, auth and storage come from the local Supabase stack (make db-start),
+# so this needs server/.env and Supabase running on the host.
+services:
+  hovr:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: http://localhost:8080
+    ports:
+      - "8080:8080"
+    env_file:
+      - server/.env
+    environment:
+      APP_URL: http://localhost:8080
+      DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:54322/postgres
+      SUPABASE_URL: http://host.docker.internal:54321
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
