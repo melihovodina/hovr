@@ -40,7 +40,7 @@ flowchart TB
 | `internal/storage` | Supabase Storage REST client |
 | `internal/ai` | Gemini embeddings and chat models behind interfaces |
 | `internal/rag` | retrieval, relevance threshold, prompt, streamed answers |
-| `internal/chat` | conversations, messages, SSE responses, usage, inbox rows |
+| `internal/chat` | conversations, messages, SSE responses, inbox rows |
 | `internal/widget` | public widget API, domain check, rate limits |
 | `internal/inbox` | unanswered questions, "Teach your bot", leads |
 | `internal/overview` | dashboard numbers |
@@ -96,7 +96,8 @@ rest.
 
 - Chat models fall back to the next model when one fails or sends nothing within 12
   seconds, which the free tier often does.
-- A failed answer refunds the counted message.
+- A counted message is refunded when the visitor never gets an answer, whether the model
+  failed or the conversation could not be saved.
 - An answer is saved even if the visitor closes the page mid-stream.
 - Stores don't check before writing: `apperr.Map` translates database errors (missing row,
   duplicate, bad value) into readable messages.

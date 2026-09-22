@@ -59,7 +59,7 @@ month's `messages`.
 - **Cascades.** Deleting an auth user removes the account and everything under it. Files in
   Storage are not covered by cascades, so the bot and source handlers delete them
   explicitly.
-- **The message limit is one statement.** The insert has
+- **The message limit is one statement**, in `internal/usage`. The insert has
   `on conflict do update ... where messages < limit` and returns nothing when the limit is
   reached, so two parallel requests can't both slip past it.
 - **Plan limits for bots and sources** are checked inside a transaction that locks the
