@@ -11,9 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/config"
 	"github.com/melihovodina/hovr/server/internal/db"
 	"github.com/melihovodina/hovr/server/internal/router"
+	"github.com/melihovodina/hovr/server/internal/supabase"
 )
 
 func main() {
@@ -38,9 +40,15 @@ func run() error {
 	}
 	defer pool.Close()
 
+	authService := auth.NewService(
+		auth.NewVerifier(ctx, cfg.SupabaseURL, cfg.SupabaseJWTSecret),
+		supabase.NewAuth(cfg.SupabaseURL, cfg.SupabasePublishableKey),
+		cfg.AppURL,
+	)
+
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           router.New(router.Deps{Config: cfg, DB: pool}),
+		Handler:           router.New(router.Deps{Config: cfg, DB: pool, Auth: authService}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

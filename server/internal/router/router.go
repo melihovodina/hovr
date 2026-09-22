@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/config"
 )
 
@@ -19,6 +20,7 @@ import (
 type Deps struct {
 	Config config.Config
 	DB     *pgxpool.Pool
+	Auth   *auth.Service
 }
 
 // New builds the Gin engine: API under /api, the exported client for everything else.
@@ -27,6 +29,12 @@ func New(d Deps) *gin.Engine {
 	r.Use(gin.Recovery(), gin.Logger())
 
 	r.GET("/healthz", health(d.DB))
+
+	api := r.Group("/api", d.Auth.SameOrigin())
+	d.Auth.Routes(api.Group("/auth"))
+
+	user := api.Group("", d.Auth.RequireUser())
+	user.GET("/me", me(d.DB))
 
 	if d.Config.StaticDir != "" {
 		serveClient(r, d.Config.StaticDir)
@@ -43,6 +51,19 @@ func health(db *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "db": "up"})
+	}
+}
+
+func me(db *pgxpool.Pool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var plan string
+		err := db.QueryRow(c.Request.Context(),
+			`select plan from accounts where id = $1`, auth.UserID(c)).Scan(&plan)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Account not found."})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"id": auth.UserID(c), "email": auth.UserEmail(c), "plan": plan})
 	}
 }
 

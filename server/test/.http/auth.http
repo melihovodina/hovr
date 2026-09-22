@@ -1,0 +1,93 @@
+@baseUrl = http://localhost:8080/api
+@origin = http://localhost:3000
+@email = test@hovr.test
+@password = test-pass-123
+
+### Health check (no auth)
+GET http://localhost:8080/healthz
+
+### 1. Sign up — sends a confirmation email to Mailpit
+POST {{baseUrl}}/auth/signup
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 2. Sign in before confirming — expect 403 "Confirm your email first"
+POST {{baseUrl}}/auth/signin
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 3. Confirm the email
+# Open the email in Mailpit and copy the link. It goes to Supabase, which redirects
+# to APP_URL/api/auth/callback?code=... . Without the frontend running, change the
+# host in that redirect from localhost:3000 to localhost:8080 and paste the code here.
+# Must run in the same client as step 1 (it needs the hovr_pkce cookie).
+GET {{baseUrl}}/auth/callback?code=PASTE_CODE_HERE&next=/onboarding
+
+### 4. Sign in — sets the session cookies
+POST {{baseUrl}}/auth/signin
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 5. Who am I — expect 200 with id, email, plan
+GET {{baseUrl}}/me
+
+### 6. Wrong password — expect 401 "Wrong email or password."
+POST {{baseUrl}}/auth/signin
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "wrong-password"
+}
+
+### 7. Request from another site — expect 403
+POST {{baseUrl}}/auth/signin
+Origin: https://evil.example
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### 8. Change password (needs a session) — expect 204
+POST {{baseUrl}}/auth/password
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "password": "new-pass-456"
+}
+
+### 9. Forgot password — always 200; the reset email goes to Mailpit.
+# Its link ends in the same callback as step 3, with next=/reset-password.
+POST {{baseUrl}}/auth/recover
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
+
+### 10. Sign out — expect 204, cookies cleared
+POST {{baseUrl}}/auth/signout
+Origin: {{origin}}
+
+### 11. Who am I after sign-out — expect 401
+GET {{baseUrl}}/me
