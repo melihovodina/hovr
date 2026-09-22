@@ -27,10 +27,8 @@ Content-Type: application/json
 }
 
 ### 3. Confirm the email
-# Open the email in Mailpit and copy the link. It goes to Supabase, which redirects
-# to APP_URL/api/auth/callback?code=... . Without the frontend running, change the
-# host in that redirect from localhost:3000 to localhost:8080 and paste the code here.
-# Must run in the same client as step 1 (it needs the hovr_pkce cookie).
+# Copy the code from the Mailpit link (change its host to :8080 without the frontend).
+# Same client as step 1, which holds the hovr_pkce cookie.
 GET {{baseUrl}}/auth/callback?code=PASTE_CODE_HERE&next=/onboarding
 
 ### 4. Sign in — sets the session cookies

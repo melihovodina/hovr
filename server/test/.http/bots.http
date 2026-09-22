@@ -1,7 +1,5 @@
-# Bot requests for local testing (VS Code REST Client or JetBrains HTTP Client).
-#
-# Sign in first with auth.http (request 4) in the same client, so the session
-# cookies are there. Every non-GET request needs an Origin equal to APP_URL.
+# Bot requests for local testing (REST Client). Sign in first with auth.http (request 4)
+# in the same client. Every non-GET request needs an Origin equal to APP_URL.
 
 @baseUrl = http://localhost:8080/api
 @origin = http://localhost:3000

@@ -1,6 +1,5 @@
-# Public widget requests (no sign-in). The widget iframe runs on our origin, so
-# POSTs carry Origin = APP_URL. "host" is the customer's site the widget is shown on.
-# Take the bot's publicKey from bots.http; set allowedDomains to limit where it works.
+# Public widget requests (no sign-in); POSTs still carry Origin = APP_URL from the iframe.
+# "host" is the customer's site; take publicKey from bots.http, limit it with allowedDomains.
 
 @baseUrl = http://localhost:8080/api/widget
 @origin = http://localhost:3000

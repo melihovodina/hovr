@@ -1,9 +1,5 @@
-# Chat requests for local testing (VS Code REST Client or JetBrains HTTP Client).
-#
-# Sign in first with auth.http (request 4), create a bot with bots.http and add
-# knowledge with sources.http, in the same client. Every non-GET request needs an
-# Origin equal to APP_URL. Answers stream as server-sent events:
-# conversation {id} → text {text}... → done {message} (or error {error}).
+# Chat requests (REST Client). Sign in, create a bot and add knowledge first, same client.
+# Answers stream as events: conversation {id} → text {text}... → done {message} or error.
 
 @baseUrl = http://localhost:8080/api
 @origin = http://localhost:3000

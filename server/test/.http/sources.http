@@ -1,9 +1,5 @@
-# Knowledge source requests for local testing (VS Code REST Client or JetBrains HTTP Client).
-#
-# Sign in first with auth.http (request 4) and create a bot with bots.http, in the
-# same client. Every non-GET request needs an Origin equal to APP_URL.
-# Sources are processed in the background: list them again after a moment to see
-# queued → processing → ready (or failed with a reason).
+# Knowledge sources (REST Client). Sign in and create a bot first, in the same client.
+# Processing runs in the background: list again to see queued → processing → ready | failed.
 
 @baseUrl = http://localhost:8080/api
 @origin = http://localhost:3000

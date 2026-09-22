@@ -1,5 +1,4 @@
-# Billing (signed in; see auth.http). Needs the Stripe test keys in server/.env and
-# a running: stripe listen --forward-to localhost:8080/api/billing/webhook
+# Billing (signed in). Needs the Stripe test keys and: stripe listen --forward-to localhost:8080/api/billing/webhook
 # Test card in Checkout: 4242 4242 4242 4242, any future date and CVC.
 
 @baseUrl = http://localhost:8080/api
