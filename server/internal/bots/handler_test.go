@@ -17,6 +17,7 @@ import (
 	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/plans"
 	"github.com/melihovodina/hovr/server/pkg/apperr"
+	"github.com/melihovodina/hovr/server/test/fakestorage"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
@@ -26,9 +27,10 @@ import (
 func init() { gin.SetMode(gin.TestMode) }
 
 type testEnv struct {
-	t    *testing.T
-	pool *pgxpool.Pool
-	r    *gin.Engine
+	t     *testing.T
+	pool  *pgxpool.Pool
+	r     *gin.Engine
+	files *fakestorage.Files
 }
 
 func newTestEnv(t *testing.T) *testEnv {
@@ -40,8 +42,9 @@ func newTestEnv(t *testing.T) *testEnv {
 		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
 		c.Next()
 	})
-	NewHandler(NewStore(pool), accounts.NewStore(pool)).Routes(g)
-	return &testEnv{t: t, pool: pool, r: r}
+	files := fakestorage.New()
+	NewHandler(NewStore(pool), accounts.NewStore(pool), files).Routes(g)
+	return &testEnv{t: t, pool: pool, r: r, files: files}
 }
 
 func (e *testEnv) newUser(plan plans.Plan) string {
@@ -175,5 +178,42 @@ func TestDatabaseErrorsAreTranslated(t *testing.T) {
 	bob := e.newUser(plans.Free)
 	if _, err := store.Get(ctx, bob, first.ID); err != errBotNotFound {
 		t.Errorf("other account's bot: %v, want errBotNotFound", err)
+	}
+}
+
+func TestDeleteBotRemovesItsFiles(t *testing.T) {
+	e := newTestEnv(t)
+	ctx := context.Background()
+	anna, bob := e.newUser(plans.Free), e.newUser(plans.Free)
+
+	_, bot := e.do(anna, http.MethodPost, "/api/bots", `{"name":"Northwind"}`)
+	id := bot["id"].(string)
+	paths := []string{id + "/a/faq.pdf", id + "/b/text.txt"}
+	for _, p := range paths {
+		if err := e.files.Upload(ctx, p, "text/plain", []byte("x")); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := e.pool.Exec(ctx,
+			`insert into sources (bot_id, type, title, storage_path, status) values ($1, 'file', 'f', $2, 'ready')`, id, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	unrelated := "other-bot/c/keep.pdf"
+	_ = e.files.Upload(ctx, unrelated, "text/plain", []byte("x"))
+
+	// Someone else can't delete it, and nothing is removed.
+	if w, _ := e.do(bob, http.MethodDelete, "/api/bots/"+id, ""); w.Code != http.StatusNotFound || e.files.Count() != 3 {
+		t.Fatalf("bob deleting anna's bot: %d, files left %d", w.Code, e.files.Count())
+	}
+	if w, _ := e.do(anna, http.MethodDelete, "/api/bots/"+id, ""); w.Code != http.StatusNoContent {
+		t.Fatalf("delete: %d", w.Code)
+	}
+	for _, p := range paths {
+		if e.files.Has(p) {
+			t.Errorf("%s still stored after the bot was deleted", p)
+		}
+	}
+	if !e.files.Has(unrelated) {
+		t.Error("another bot's file was deleted")
 	}
 }

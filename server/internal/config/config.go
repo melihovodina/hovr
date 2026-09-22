@@ -53,6 +53,9 @@ func Load() (Config, error) {
 	if cfg.SupabasePublishableKey == "" {
 		missing = append(missing, "SUPABASE_PUBLISHABLE_KEY")
 	}
+	if cfg.SupabaseSecretKey == "" {
+		missing = append(missing, "SUPABASE_SECRET_KEY")
+	}
 	if len(missing) > 0 {
 		return Config{}, fmt.Errorf("missing required env: %s", strings.Join(missing, ", "))
 	}

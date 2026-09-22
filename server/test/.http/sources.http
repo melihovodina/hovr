@@ -1,0 +1,56 @@
+# Knowledge source requests for local testing (VS Code REST Client or JetBrains HTTP Client).
+#
+# Sign in first with auth.http (request 4) and create a bot with bots.http, in the
+# same client. Every non-GET request needs an Origin equal to APP_URL.
+# Sources are processed in the background: list them again after a moment to see
+# queued → processing → ready (or failed with a reason).
+
+@baseUrl = http://localhost:8080/api
+@origin = http://localhost:3000
+@botId = PASTE_BOT_ID_HERE
+@sourceId = PASTE_SOURCE_ID_HERE
+
+### Upload a file (PDF, DOCX, MD or TXT, up to 10 MB) — 201, status "queued"
+POST {{baseUrl}}/bots/{{botId}}/sources/file
+Origin: {{origin}}
+Content-Type: multipart/form-data; boundary=hovr
+
+--hovr
+Content-Disposition: form-data; name="file"; filename="faq.md"
+Content-Type: text/markdown
+
+# FAQ
+
+## Do you ship to Canada?
+
+Yes. Orders to Canada arrive in 5 to 8 business days, and duties are paid at checkout.
+--hovr--
+
+### Add pasted text — 201, status "queued"
+POST {{baseUrl}}/bots/{{botId}}/sources/text
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "title": "Payment methods",
+  "text": "We accept Visa, Mastercard, Amex, PayPal and Apple Pay. We don't accept crypto."
+}
+
+### List the bot's sources with status, chunks and failure reasons
+GET {{baseUrl}}/bots/{{botId}}/sources
+
+### Wrong file type — 400
+POST {{baseUrl}}/bots/{{botId}}/sources/file
+Origin: {{origin}}
+Content-Type: multipart/form-data; boundary=hovr
+
+--hovr
+Content-Disposition: form-data; name="file"; filename="setup.exe"
+Content-Type: application/octet-stream
+
+nope
+--hovr--
+
+### Delete a source — 204 (its chunks and stored file go too)
+DELETE {{baseUrl}}/bots/{{botId}}/sources/{{sourceId}}
+Origin: {{origin}}

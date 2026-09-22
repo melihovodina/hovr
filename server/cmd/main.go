@@ -11,10 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/melihovodina/hovr/server/internal/ai"
 	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/config"
 	"github.com/melihovodina/hovr/server/internal/db"
 	"github.com/melihovodina/hovr/server/internal/router"
+	"github.com/melihovodina/hovr/server/internal/sources"
+	"github.com/melihovodina/hovr/server/internal/storage"
 	"github.com/melihovodina/hovr/server/internal/supabase"
 )
 
@@ -46,9 +49,27 @@ func run() error {
 		cfg.AppURL,
 	)
 
+	embedder, err := ai.NewEmbedder(ctx, cfg.GeminiAPIKey)
+	if err != nil {
+		return err
+	}
+	if cfg.GeminiAPIKey == "" {
+		slog.Warn("GEMINI_API_KEY not set: using the offline mock embedder")
+	}
+	files := storage.New(cfg.SupabaseURL, cfg.SupabaseSecretKey, "sources")
+	sourceStore := sources.NewStore(pool)
+	worker := sources.NewWorker(sourceStore, files, embedder)
+	go worker.Run(ctx)
+
 	srv := &http.Server{
-		Addr:              ":" + cfg.Port,
-		Handler:           router.New(router.Deps{Config: cfg, DB: pool, Auth: authService}),
+		Addr: ":" + cfg.Port,
+		Handler: router.New(router.Deps{
+			Config:  cfg,
+			DB:      pool,
+			Auth:    authService,
+			Files:   files,
+			Sources: sources.NewHandler(sourceStore, files, worker),
+		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

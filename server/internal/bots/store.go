@@ -111,16 +111,26 @@ func (s *Store) Save(ctx context.Context, accountID string, b *Bot) (*Bot, error
 		b.Greeting, b.SuggestedQuestions, b.ShowBadge))
 }
 
-// Delete removes a bot and, through cascades, its sources, chunks and chats.
-func (s *Store) Delete(ctx context.Context, accountID, id string) error {
-	tag, err := s.db.Exec(ctx, `delete from bots where id = $1 and account_id = $2`, id, accountID)
+// Delete removes a bot and, through cascades, its sources, chunks and chats. It
+// returns the storage paths of the bot's files so the caller can remove them too.
+// Both parts run in one statement: the sub-select still sees the sources as they
+// were before the cascade.
+func (s *Store) Delete(ctx context.Context, accountID, id string) ([]string, error) {
+	var deleted bool
+	var paths []string
+	err := s.db.QueryRow(ctx, `
+		with gone as (delete from bots where id = $1 and account_id = $2 returning id)
+		select exists (select 1 from gone),
+			coalesce((select array_agg(storage_path) from sources
+				where bot_id = $1 and storage_path is not null), '{}')`,
+		id, accountID).Scan(&deleted, &paths)
 	if err != nil {
-		return mapErr(err)
+		return nil, mapErr(err)
 	}
-	if tag.RowsAffected() == 0 {
-		return errBotNotFound
+	if !deleted {
+		return nil, errBotNotFound
 	}
-	return nil
+	return paths, nil
 }
 
 func botCount(n int) string {

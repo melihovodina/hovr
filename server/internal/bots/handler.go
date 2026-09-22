@@ -1,6 +1,8 @@
 package bots
 
 import (
+	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,14 +16,20 @@ import (
 
 const notFoundMsg = "Bot not found."
 
+// FileRemover deletes stored files (the bot's uploaded knowledge).
+type FileRemover interface {
+	Delete(ctx context.Context, paths ...string) error
+}
+
 // Handler serves /api/bots. It must be mounted behind auth.RequireUser.
 type Handler struct {
 	store    *Store
 	accounts *accounts.Store
+	files    FileRemover
 }
 
-func NewHandler(store *Store, accounts *accounts.Store) *Handler {
-	return &Handler{store: store, accounts: accounts}
+func NewHandler(store *Store, accounts *accounts.Store, files FileRemover) *Handler {
+	return &Handler{store: store, accounts: accounts, files: files}
 }
 
 // Routes registers the bot endpoints on g.
@@ -117,9 +125,16 @@ func (h *Handler) delete(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if err := h.store.Delete(c.Request.Context(), auth.UserID(c), id); err != nil {
+	paths, err := h.store.Delete(c.Request.Context(), auth.UserID(c), id)
+	if err != nil {
 		httpx.Write(c, err)
 		return
+	}
+	if len(paths) > 0 {
+		// The bot is already gone; leftover files are logged, not shown.
+		if err := h.files.Delete(context.WithoutCancel(c.Request.Context()), paths...); err != nil {
+			slog.Warn("delete bot files", "bot", id, "files", len(paths), "err", err)
+		}
 	}
 	c.Status(http.StatusNoContent)
 }

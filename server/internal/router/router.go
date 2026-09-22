@@ -16,14 +16,17 @@ import (
 	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/internal/config"
+	"github.com/melihovodina/hovr/server/internal/sources"
 	"github.com/melihovodina/hovr/server/pkg/httpx"
 )
 
 // Deps are the shared services handlers need.
 type Deps struct {
-	Config config.Config
-	DB     *pgxpool.Pool
-	Auth   *auth.Service
+	Config  config.Config
+	DB      *pgxpool.Pool
+	Auth    *auth.Service
+	Files   bots.FileRemover
+	Sources *sources.Handler
 }
 
 // New builds the Gin engine: API under /api, the exported client for everything else.
@@ -39,7 +42,8 @@ func New(d Deps) *gin.Engine {
 	accountStore := accounts.NewStore(d.DB)
 	user := api.Group("", d.Auth.RequireUser())
 	accounts.Routes(user, accountStore)
-	bots.NewHandler(bots.NewStore(d.DB), accountStore).Routes(user.Group("/bots"))
+	bots.NewHandler(bots.NewStore(d.DB), accountStore, d.Files).Routes(user.Group("/bots"))
+	d.Sources.Routes(user.Group("/bots/:id/sources"))
 
 	if d.Config.StaticDir != "" {
 		serveClient(r, d.Config.StaticDir)
