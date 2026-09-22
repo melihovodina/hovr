@@ -1,0 +1,226 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --breakpoint-wide: 85rem;
+}
+
+@theme inline {
+  /* hovr tokens */
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-lime: #c8f547;
+  --color-on-lime: #0d0e11;
+  --color-lime-ink: var(--lime-ink);
+  --color-lime-soft: var(--lime-soft);
+  --color-skel: var(--skel);
+  --color-dot: var(--dot);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-idle: var(--idle);
+  --color-idle-soft: var(--idle-soft);
+  --color-online: #22a55b;
+
+  /* shadcn names mapped onto hovr tokens */
+  --color-background: var(--page);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--ink);
+  --color-primary-foreground: var(--page);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--subtle);
+  --color-accent: var(--surface-2);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--bad);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--ink);
+
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-heading: var(--font-manrope), system-ui, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 28px;
+  --radius-4xl: 36px;
+}
+
+:root {
+  --page: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #edece6;
+  --ink: #141417;
+  --subtle: #5b5b63;
+  --line: #e1dfd7;
+  --lime-ink: #3f5c00;
+  --lime-soft: #e6f5bd;
+  --skel: #edece6;
+  --dot: #d6d4cc;
+  --ok: #146b40;
+  --ok-soft: #e2f3e8;
+  --info: #1d55b0;
+  --info-soft: #e3ecfb;
+  --bad: #a6261b;
+  --bad-soft: #fbe6e3;
+  --idle: #55555d;
+  --idle-soft: #e9e8e3;
+  --nav-bg: rgba(255, 255, 255, 0.85);
+  --nav-shadow: rgba(20, 20, 23, 0.18);
+  --grid-dot: rgba(20, 20, 23, 0.08);
+  --radius: 16px;
+  color-scheme: light;
+}
+
+.dark {
+  --page: #0d0e11;
+  --surface: #17191e;
+  --surface-2: #1f2127;
+  --ink: #f3f2ee;
+  --subtle: #a3a3ac;
+  --line: #2a2d34;
+  --lime-ink: #c8f547;
+  --lime-soft: #2b3514;
+  --skel: #23262d;
+  --dot: #3a3d45;
+  --ok: #7be3a6;
+  --ok-soft: #10291c;
+  --info: #93b8ff;
+  --info-soft: #14233a;
+  --bad: #ff9b91;
+  --bad-soft: #3a1714;
+  --idle: #b4b4bc;
+  --idle-soft: #23252b;
+  --nav-bg: rgba(23, 25, 30, 0.85);
+  --nav-shadow: rgba(0, 0, 0, 0.6);
+  --grid-dot: rgba(255, 255, 255, 0.07);
+  color-scheme: dark;
+}
+
+/* The app, auth and onboarding sit on a slightly deeper background. */
+.app-tone {
+  --page: #f1f0eb;
+  --surface-2: #e6e5df;
+}
+.dark .app-tone,
+.dark.app-tone {
+  --page: #0d0e11;
+  --surface-2: #23262d;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-page text-ink;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  ::selection {
+    background: #c8f547;
+    color: #0d0e11;
+  }
+}
+
+@layer utilities {
+  .dot-grid {
+    background-color: var(--page);
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.typing-caret {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -2px;
+  border-radius: 2px;
+  background: currentColor;
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes dot-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.thinking-dots span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: dot-pulse 1.2s infinite ease-in-out;
+}
+.thinking-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Widget panel palette: light by default, follows the site theme with .wp-auto. */
+.wp {
+  --w-bg: #ffffff;
+  --w-soft: #f3f3f1;
+  --w-ink: #17171b;
+  --w-muted: #66666e;
+  --w-border: #e6e6e2;
+  --w-ring: rgba(10, 12, 16, 0.08);
+  --w-shadow: rgba(10, 12, 16, 0.16);
+}
+.dark .wp-auto {
+  --w-bg: #17191e;
+  --w-soft: #23262d;
+  --w-ink: #f3f2ee;
+  --w-muted: #a3a3ac;
+  --w-border: #2e3138;
+  --w-ring: rgba(255, 255, 255, 0.08);
+  --w-shadow: rgba(0, 0, 0, 0.5);
+}
