@@ -18,6 +18,7 @@ import (
 	"github.com/melihovodina/hovr/server/internal/chat"
 	"github.com/melihovodina/hovr/server/internal/config"
 	"github.com/melihovodina/hovr/server/internal/sources"
+	"github.com/melihovodina/hovr/server/internal/widget"
 	"github.com/melihovodina/hovr/server/pkg/httpx"
 )
 
@@ -29,6 +30,7 @@ type Deps struct {
 	Files   bots.FileRemover
 	Sources *sources.Handler
 	Chat    *chat.Handler
+	Widget  *widget.Handler
 }
 
 // New builds the Gin engine: API under /api, the exported client for everything else.
@@ -40,6 +42,7 @@ func New(d Deps) *gin.Engine {
 
 	api := r.Group("/api", d.Auth.SameOrigin())
 	d.Auth.Routes(api.Group("/auth"))
+	d.Widget.Routes(api.Group("/widget/:key"))
 
 	accountStore := accounts.NewStore(d.DB)
 	user := api.Group("", d.Auth.RequireUser())

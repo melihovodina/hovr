@@ -71,19 +71,16 @@ func period() string {
 	return time.Now().UTC().Format("2006-01")
 }
 
-func (s *Store) startConversation(ctx context.Context, botID, channel, title string) (string, error) {
+func (s *Store) startConversation(ctx context.Context, botID, channel, visitorID, title string) (string, error) {
 	var id string
 	err := s.db.QueryRow(ctx, `
-		insert into conversations (bot_id, channel, title) values ($1, $2, $3) returning id`,
-		botID, channel, title).Scan(&id)
+		insert into conversations (bot_id, channel, visitor_id, title) values ($1, $2, nullif($3, ''), $4) returning id`,
+		botID, channel, visitorID, title).Scan(&id)
 	return id, apperr.Map(err)
 }
 
 // history returns the last n messages of the conversation, oldest first.
-func (s *Store) history(ctx context.Context, accountID, botID, conversationID string, n int) ([]ai.Turn, error) {
-	if _, err := s.conversation(ctx, accountID, botID, conversationID); err != nil {
-		return nil, err
-	}
+func (s *Store) history(ctx context.Context, conversationID string, n int) ([]ai.Turn, error) {
 	rows, err := s.db.Query(ctx, `
 		select role, content from messages where conversation_id = $1 order by id desc limit $2`,
 		conversationID, n)
@@ -167,17 +164,7 @@ func (s *Store) Messages(ctx context.Context, accountID, botID, id string) (*Con
 	if err != nil {
 		return nil, nil, err
 	}
-	rows, err := s.db.Query(ctx, `
-		select id, role, content, citations, answered, created_at from messages
-		where conversation_id = $1 order by id`, id)
-	if err != nil {
-		return nil, nil, err
-	}
-	messages, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (Message, error) {
-		var m Message
-		err := row.Scan(&m.ID, &m.Role, &m.Content, &m.Citations, &m.Answered, &m.CreatedAt)
-		return m, err
-	})
+	messages, err := s.messages(ctx, id)
 	return c, messages, err
 }
 
@@ -185,6 +172,54 @@ func (s *Store) Delete(ctx context.Context, accountID, botID, id string) error {
 	tag, err := s.db.Exec(ctx, `
 		delete from conversations c using bots b
 		where c.id = $1 and c.bot_id = $2 and b.id = c.bot_id and b.account_id = $3`, id, botID, accountID)
+	if err != nil {
+		return apperr.Map(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return errConversationNotFound
+	}
+	return nil
+}
+
+// visitorConversation returns a widget conversation of this visitor.
+func (s *Store) visitorConversation(ctx context.Context, botID, visitorID, id string) (*Conversation, error) {
+	return scanConversation(s.db.QueryRow(ctx, `
+		select `+conversationColumns+` from conversations c
+		where c.id = $1 and c.bot_id = $2 and c.channel = 'widget' and c.visitor_id = $3`, id, botID, visitorID))
+}
+
+func (s *Store) messages(ctx context.Context, conversationID string) ([]Message, error) {
+	rows, err := s.db.Query(ctx, `
+		select id, role, content, citations, answered, created_at from messages
+		where conversation_id = $1 order by id`, conversationID)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Message, error) {
+		var m Message
+		err := row.Scan(&m.ID, &m.Role, &m.Content, &m.Citations, &m.Answered, &m.CreatedAt)
+		return m, err
+	})
+}
+
+// recordUnanswered adds the question to the inbox, grouping repeats of the same text.
+func (s *Store) recordUnanswered(ctx context.Context, botID, conversationID, question string) error {
+	_, err := s.db.Exec(ctx, `
+		insert into inbox_items (bot_id, question, normalized, last_conversation_id) values ($1, $2, $3, $4)
+		on conflict (bot_id, normalized) do update set
+			question = excluded.question,
+			times_asked = inbox_items.times_asked + 1,
+			last_conversation_id = excluded.last_conversation_id,
+			last_asked_at = now(),
+			status = 'open'`, botID, question, normalizeQuestion(question), conversationID)
+	return err
+}
+
+// setVisitorEmail stores the email a visitor left in their conversation.
+func (s *Store) setVisitorEmail(ctx context.Context, botID, visitorID, id, email string) error {
+	tag, err := s.db.Exec(ctx, `
+		update conversations set visitor_email = $4
+		where id = $1 and bot_id = $2 and channel = 'widget' and visitor_id = $3`, id, botID, visitorID, email)
 	if err != nil {
 		return apperr.Map(err)
 	}

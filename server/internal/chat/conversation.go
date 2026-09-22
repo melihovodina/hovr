@@ -3,16 +3,17 @@
 package chat
 
 import (
+	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/melihovodina/hovr/server/internal/rag"
 )
 
 const (
-	channelPlayground = "playground"
-	roleUser          = "user"
-	roleAssistant     = "assistant"
+	roleUser      = "user"
+	roleAssistant = "assistant"
 
 	maxMessageLength = 2000
 	// historyTurns is how many earlier messages the model sees.
@@ -48,4 +49,11 @@ func titleFrom(message string) string {
 	}
 	r := []rune(message)
 	return string(r[:maxTitle-1]) + "…"
+}
+
+// normalizeQuestion groups the same question asked in different ways of typing:
+// case, extra spaces and trailing punctuation don't matter.
+func normalizeQuestion(q string) string {
+	q = strings.Join(strings.Fields(strings.ToLower(q)), " ")
+	return strings.TrimRightFunc(q, func(r rune) bool { return unicode.IsPunct(r) || unicode.IsSpace(r) })
 }

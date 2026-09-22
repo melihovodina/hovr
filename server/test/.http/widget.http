@@ -1,0 +1,53 @@
+# Public widget requests (no sign-in). The widget iframe runs on our origin, so
+# POSTs carry Origin = APP_URL. "host" is the customer's site the widget is shown on.
+# Take the bot's publicKey from bots.http; set allowedDomains to limit where it works.
+
+@baseUrl = http://localhost:8080/api/widget
+@origin = http://localhost:3000
+@key = PASTE_PUBLIC_KEY_HERE
+@visitorId = visitor-local-1
+@conversationId = PASTE_CONVERSATION_ID_HERE
+
+### Widget config — also records "last seen on" for the host
+GET {{baseUrl}}/{{key}}/config?host=https://shop.example.com/pricing
+
+### Ask as a visitor (SSE, same events as the playground; counts toward the monthly limit)
+POST {{baseUrl}}/{{key}}/chat
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "message": "Do you ship to Canada?",
+  "visitorId": "{{visitorId}}",
+  "host": "shop.example.com"
+}
+
+### Follow-up in the same conversation
+POST {{baseUrl}}/{{key}}/chat
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "message": "And how long does it take?",
+  "conversationId": "{{conversationId}}",
+  "visitorId": "{{visitorId}}",
+  "host": "shop.example.com"
+}
+
+### Restore the conversation after a page reload
+GET {{baseUrl}}/{{key}}/conversations/{{conversationId}}?visitorId={{visitorId}}&host=shop.example.com
+
+### Leave an email when the bot couldn't help — 204
+POST {{baseUrl}}/{{key}}/lead
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "conversationId": "{{conversationId}}",
+  "visitorId": "{{visitorId}}",
+  "email": "visitor@example.com",
+  "host": "shop.example.com"
+}
+
+### Site not in allowedDomains — 403 domain_not_allowed
+GET {{baseUrl}}/{{key}}/config?host=https://someone-else.io

@@ -21,6 +21,7 @@ import (
 	"github.com/melihovodina/hovr/server/internal/sources"
 	"github.com/melihovodina/hovr/server/internal/storage"
 	"github.com/melihovodina/hovr/server/internal/supabase"
+	"github.com/melihovodina/hovr/server/internal/widget"
 )
 
 func main() {
@@ -63,6 +64,8 @@ func run() error {
 	sourceStore := sources.NewStore(pool)
 	worker := sources.NewWorker(sourceStore, files, embedder)
 	go worker.Run(ctx)
+	chatStore := chat.NewStore(pool)
+	chatService := chat.NewService(chatStore, rag.NewAnswerer(rag.New(pool, embedder), chatModel))
 
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
@@ -72,7 +75,8 @@ func run() error {
 			Auth:    authService,
 			Files:   files,
 			Sources: sources.NewHandler(sourceStore, files, worker),
-			Chat:    chat.NewHandler(chat.NewStore(pool), rag.NewAnswerer(rag.New(pool, embedder), chatModel)),
+			Chat:    chat.NewHandler(chatStore, chatService),
+			Widget:  widget.NewHandler(widget.NewStore(pool), chatService, cfg.AppURL),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
