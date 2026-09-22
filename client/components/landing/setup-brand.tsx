@@ -126,10 +126,10 @@ export function SetupBrand() {
       </div>
 
       <div className="flex min-w-0 grow flex-col items-end gap-3" aria-label="Preview" role="img">
-        <div className="flex w-67.5 max-w-full flex-col gap-2.5 rounded-[22px_22px_6px_22px] bg-white p-4 text-[#17171B] shadow-[0_16px_40px_-16px_rgba(0,0,0,0.3)]">
+        <div className="flex w-67.5 max-w-full flex-col gap-2.5 rounded-[22px_22px_6px_22px] wp-light bg-(--w-bg) p-4 text-(--w-ink) shadow-[0_16px_40px_-16px_rgba(0,0,0,0.3)]">
           <span className="text-sm leading-normal wrap-break-word">{greeting}</span>
           {questions.map((q, i) => (
-            <span key={`${q}-${i}`} className="flex min-h-7.5 items-center self-start rounded-full bg-[#F3F3F1] px-3 py-1 text-xs font-bold wrap-break-word">
+            <span key={`${q}-${i}`} className="flex min-h-7.5 items-center self-start rounded-full bg-(--w-soft) px-3 py-1 text-xs font-bold wrap-break-word">
               {q}
             </span>
           ))}

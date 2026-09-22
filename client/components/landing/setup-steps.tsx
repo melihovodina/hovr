@@ -3,6 +3,7 @@
 import { ChevronDown } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
+import { headerHeight, prefersReducedMotion } from "@/lib/scroll";
 
 type Step = { title: string; body: string };
 
@@ -12,8 +13,8 @@ const ROW_START = ["lg:row-start-2", "lg:row-start-3", "lg:row-start-4"];
 // Tailwind's lg breakpoint, where the steps become tabs with one panel on the right.
 const DESKTOP = "(min-width: 64rem)";
 
-// Room left above an opened step, clearing the sticky header.
-const HEADER_GAP = 92;
+// Room left between the sticky header and an opened step.
+const STEP_GAP = 12;
 // Matches the panel's grow/shrink, so the page and the panel move together.
 const SCROLL_MS = 340;
 
@@ -22,24 +23,24 @@ const easeOut = (t: number) => 1 - (1 - t) ** 3;
 // Eases a step up to the top of the page. Re-measuring on every frame keeps it on track
 // while the panel above it shrinks and its own panel grows.
 function scrollStepIntoPlace(el: HTMLElement) {
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    window.scrollBy(0, el.getBoundingClientRect().top - HEADER_GAP);
+  const target = headerHeight() + STEP_GAP;
+  if (prefersReducedMotion()) {
+    window.scrollBy(0, el.getBoundingClientRect().top - target);
     return;
   }
   const from = el.getBoundingClientRect().top;
   const start = performance.now();
   const frame = (now: number) => {
     const t = Math.min(1, (now - start) / SCROLL_MS);
-    const want = from + (HEADER_GAP - from) * easeOut(t);
+    const want = from + (target - from) * easeOut(t);
     window.scrollBy(0, el.getBoundingClientRect().top - want);
     if (t < 1) requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 }
 
-// One step open at a time. On small screens the panel follows its step in the DOM, and tapping
-// the open step closes it; from lg up one step always stays open and the grid places its panel
-// in the right column, all inside one card as in the design.
+// One step open at a time. Small screens: the panel sits under its step, and tapping the open step closes it.
+// From lg one step always stays open and the grid puts its panel in the right column, inside one card.
 export function SetupSteps({ steps, panels }: { steps: Step[]; panels: ReactNode[] }) {
   const [open, setOpen] = useState<number | null>(0);
   // The tapped step: held in place while the layout changes, then eased up to the top.

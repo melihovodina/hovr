@@ -4,9 +4,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Windows tall enough for the hero's filler cards to clear its copy: the copy ends 501px into the mock
-   (below its 50px bar), the cards need 24px after it plus their 76px and 32px under them, so the mock
-   needs 683px, and the window that plus the 112px header and 24px margin. Re-measure if the hero copy changes. */
+/* Windows where the hero's filler cards clear its copy: a 683px mock (copy ends at 501px, cards need
+   24 + 76 + 32px) plus the 112px header and 24px margin. Re-measure if the hero copy changes. */
 @custom-variant tall (@media (min-height: 51.25rem));
 
 @theme {
@@ -30,11 +29,16 @@
   --color-ok-soft: var(--ok-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
-  --color-bad: var(--bad);
-  --color-bad-soft: var(--bad-soft);
   --color-idle: var(--idle);
   --color-idle-soft: var(--idle-soft);
   --color-online: #22a55b;
+  /* Always-dark panels (the stats card, code) and the light text on them, in both themes. */
+  --color-paper: #f3f2ee;
+  --color-night: #111215;
+  --color-night-raised: #1a1c21;
+  --color-night-line: #2a2d34;
+  --color-night-subtle: #b9b9c0;
+  --color-code-ink: #e9e8e3;
 
   /* The names shadcn's base styles use. */
   --color-border: var(--line);
@@ -47,7 +51,6 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
-  --radius-2xl: 24px;
   --radius-3xl: 28px;
   --radius-4xl: 36px;
 }
@@ -66,12 +69,17 @@
   --ok-soft: #e2f3e8;
   --info: #1d55b0;
   --info-soft: #e3ecfb;
-  --bad: #a6261b;
-  --bad-soft: #fbe6e3;
   --idle: #55555d;
   --idle-soft: #e9e8e3;
   --nav-shadow: rgba(20, 20, 23, 0.18);
+  /* Height of the landing header; sections scroll to just below it. */
+  --header-h: 5rem;
   color-scheme: light;
+}
+@media (min-width: 64rem) {
+  :root {
+    --header-h: 7rem;
+  }
 }
 
 .dark {
@@ -88,20 +96,14 @@
   --ok-soft: #10291c;
   --info: #93b8ff;
   --info-soft: #14233a;
-  --bad: #ff9b91;
-  --bad-soft: #3a1714;
   --idle: #b4b4bc;
   --idle-soft: #23252b;
   --nav-shadow: rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
 
-/* Landing header pill. --header-p (0 at the top, 1 after the first 340px, eased in header.tsx) drives
-   the width, background and shadow, so they never disagree about how far along the ramp we are.
-   From lg the pill narrows to 75% of its full width, but never below --header-min: the row's
-   measured content (logo, links, theme, Sign in, Get started, padding and border) is 780px, plus
-   24px either side of the links, so nothing crowds or overflows the rounded edge. Re-measure it if
-   the row changes. Phones and reduced motion keep the full width. */
+/* Header pill: --header-p (0 → 1 over the first 340px, set in header.tsx) drives width, background and shadow.
+   From lg it narrows to 75%, never below the measured 780px row + 24px per side (re-measure if the row changes). */
 .landing-pill {
   --header-p: 0;
   --header-full: min(100%, 1080px);
@@ -148,8 +150,9 @@
   }
 }
 
-/* Landing widget panel palette, following the site theme. */
-.wp {
+/* Widget palette: .wp follows the site theme, .wp-light stays light. */
+.wp,
+.wp-light {
   --w-bg: #ffffff;
   --w-soft: #f3f3f1;
   --w-ink: #17171b;

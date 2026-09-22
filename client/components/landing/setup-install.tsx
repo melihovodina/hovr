@@ -4,9 +4,8 @@ import { useState } from "react";
 import { cn } from "cn";
 import { INSTALL_GUIDES } from "@/lib/landing";
 
-// A sample of the embed code, plus where to paste it on each site builder.
-// The code is only an illustration: it can't be copied, because the real line
-// carries the key of a bot you own.
+// A sample of the embed code, plus where to paste it on each site builder. It can't be copied:
+// the real line carries the key of a bot you own.
 export function SetupInstall({ siteUrl }: { siteUrl: string }) {
   const [platform, setPlatform] = useState(INSTALL_GUIDES[0].id);
   const guide = INSTALL_GUIDES.find((g) => g.id === platform) ?? INSTALL_GUIDES[0];
@@ -19,7 +18,7 @@ export function SetupInstall({ siteUrl }: { siteUrl: string }) {
         </span>
         <pre
           aria-hidden="true"
-          className="pointer-events-none rounded-[18px] bg-[#111215] p-4 font-mono text-[13px] leading-[1.7] break-all whitespace-pre-wrap text-[#E9E8E3] select-none sm:px-6 sm:py-5.5 sm:text-[15px]"
+          className="pointer-events-none rounded-[18px] bg-night p-4 font-mono text-[13px] leading-[1.7] break-all whitespace-pre-wrap text-code-ink select-none sm:px-6 sm:py-5.5 sm:text-[15px]"
         >
           {`<script src="${siteUrl}/widget.js"\n  data-bot="`}
           <span className="text-lime">pub_7fK2qLx9</span>

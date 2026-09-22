@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { cn } from "cn";
-import { ArrowBadge, Logo } from "@/components/brand";
+import { Logo } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NAV_LINKS } from "@/lib/landing";
-import { prefersReducedMotion, smoothstep } from "@/lib/scroll";
+import { headerHeight, prefersReducedMotion, smoothstep } from "@/lib/scroll";
+import { ArrowLink } from "./arrow-link";
 import { MobileMenu } from "./mobile-menu";
 
 // The pill settles over the first SHRINK_DISTANCE px of the page.
@@ -15,15 +16,13 @@ const SHRINK_DISTANCE = 340;
 const TAU = 0.09;
 // Below this the remaining move is under a pixel: done, and worth stopping the loop for.
 const SETTLED = 0.0005;
-// A section counts as current while this line (just under the header) is inside it.
-const ACTIVE_LINE = 140;
+// A section counts as current while the line this far under the header is inside it.
+const ACTIVE_OFFSET = 28;
 
-const SECTION_IDS = NAV_LINKS.map((l) => l.href.slice(1));
+const SECTION_IDS = NAV_LINKS.map((l) => l.id);
 
-// Writes the scroll progress (0 at the top, 1 once settled) to --header-p on the pill; the CSS in
-// globals.css derives the width, background and shadow from it. The applied value eases towards the
-// target instead of following scrollY, so a 100px wheel notch glides rather than jumps. Under reduced
-// motion it snaps, and the CSS keeps the pill full width.
+// Writes scroll progress (0 at the top, 1 once settled) to --header-p on the pill, easing towards it so a wheel
+// notch glides instead of jumping. Under reduced motion it snaps, and the CSS keeps the pill full width.
 function useHeaderProgress(ref: RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     let applied = 0;
@@ -78,9 +77,10 @@ function useActiveSection(): string | null {
     let frame = 0;
     const update = () => {
       frame = 0;
+      const line = headerHeight() + ACTIVE_OFFSET;
       const current = SECTION_IDS.find((id) => {
         const rect = document.getElementById(id)?.getBoundingClientRect();
-        return rect && rect.top <= ACTIVE_LINE && rect.bottom > ACTIVE_LINE;
+        return rect && rect.top <= line && rect.bottom > line;
       });
       setActive(current ?? null);
     };
@@ -105,7 +105,7 @@ export function LandingHeader() {
   const active = useActiveSection();
 
   return (
-    <header className="sticky top-0 z-40 flex h-20 items-center justify-center px-3 sm:px-8 lg:h-28 lg:px-16">
+    <header className="sticky top-0 z-40 flex h-(--header-h) items-center justify-center px-3 sm:px-8 lg:px-16">
       <div
         ref={pill}
         className="landing-pill flex h-14 items-center gap-1.5 rounded-full border border-line pr-1.5 pl-4 backdrop-blur-md lg:h-16 lg:pr-2 lg:pl-5"
@@ -113,11 +113,11 @@ export function LandingHeader() {
         <Logo href="#top" />
         <nav className="hidden grow justify-center gap-0.5 lg:flex" aria-label="Main">
           {NAV_LINKS.map((l) => {
-            const isActive = active === l.href.slice(1);
+            const isActive = active === l.id;
             return (
               <a
-                key={l.href}
-                href={l.href}
+                key={l.id}
+                href={`#${l.id}`}
                 aria-current={isActive ? "location" : undefined}
                 className={cn(
                   "flex h-10 items-center rounded-full px-3.5 text-[15px] font-semibold whitespace-nowrap transition-colors hover:bg-surface-2 hover:text-ink",
@@ -145,13 +145,9 @@ export function LandingHeader() {
         <Link href="/signin" className="hidden h-11 items-center px-3.5 text-[15px] font-bold whitespace-nowrap text-ink hover:opacity-75 lg:flex">
           Sign in
         </Link>
-        <Link
-          href="/signup"
-          className="hidden h-12 items-center gap-3 rounded-full bg-ink pr-1.5 pl-5 text-[15px] font-extrabold whitespace-nowrap text-page transition-opacity hover:opacity-90 lg:flex"
-        >
+        <ArrowLink href="/signup" className="hidden lg:flex">
           Get started
-          <ArrowBadge />
-        </Link>
+        </ArrowLink>
         <div className="lg:hidden">
           <MobileMenu active={active} />
         </div>

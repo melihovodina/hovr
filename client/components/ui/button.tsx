@@ -1,29 +1,21 @@
-import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
-import { Slot } from "radix-ui"
 
+// Pill button styles, applied to links (every call to action on the landing is a link).
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-full font-bold whitespace-nowrap transition-[background-color,color,box-shadow,opacity,transform] outline-none select-none focus-visible:ring-3 focus-visible:ring-ink/25 active:not-disabled:translate-y-px disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-3 rounded-full font-extrabold whitespace-nowrap transition-opacity outline-none select-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ink/25 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        lime: "bg-lime font-extrabold text-on-lime hover:bg-[#bde83a]",
-        strong: "bg-ink font-extrabold text-page hover:opacity-90",
-        secondary: "bg-surface text-ink shadow-[0_0_0_1px_var(--line)] hover:bg-surface-2",
-        soft: "bg-page text-ink hover:bg-surface-2",
-        ghost: "bg-transparent text-subtle hover:bg-surface-2 hover:text-ink",
-        danger: "bg-bad-soft font-extrabold text-bad hover:opacity-90",
-        link: "h-auto rounded-none px-0 text-ink underline underline-offset-4",
+        strong: "bg-ink text-page",
+        outline: "border border-line text-ink",
+        raised: "bg-surface text-ink shadow-[0_0_0_1px_var(--line)]",
+        // Dark in both themes, for use on the lime block.
+        night: "bg-on-lime text-paper",
       },
       size: {
-        xs: "h-8 px-3 text-[13px]",
-        sm: "h-9.5 px-3.5 text-[13px]",
-        md: "h-10.5 px-4.5 text-sm",
-        lg: "h-11.5 px-5 text-sm",
-        xl: "h-13.5 px-6 text-base",
-        icon: "size-9",
-        "icon-lg": "size-11",
+        md: "h-11.5 px-5 text-[15px]",
+        lg: "h-13.5 px-6 text-base",
+        xl: "h-15 px-8 text-[17px]",
       },
     },
     defaultVariants: {
@@ -33,25 +25,6 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot.Root : "button"
+type ButtonVariants = VariantProps<typeof buttonVariants>
 
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
-}
-
-export { Button, buttonVariants }
+export { buttonVariants, type ButtonVariants }

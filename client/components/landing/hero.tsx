@@ -1,7 +1,8 @@
-import Link from "next/link";
+import { cn } from "cn";
 import { Lock } from "lucide-react";
-import { ArrowBadge } from "@/components/brand";
+import { ArrowLink } from "./arrow-link";
 import { WidgetPanel, type PreviewMessage } from "./widget-panel";
+import { GUTTERS } from "./section";
 
 const HERO_CHAT: PreviewMessage[] = [
   { kind: "user", text: "Can it learn from my help docs?" },
@@ -16,13 +17,11 @@ function Skel({ className }: { className: string }) {
   return <span className={`block rounded-md bg-skel ${className}`} />;
 }
 
-// Below `wide` the copy sits above a smaller site mock (hidden on phones); from `wide` up it is laid over the mock as in the design.
-// There the mock takes the window's height minus the header and a 24px margin, between 600 and 760px, so
-// the whole first screen fits on a laptop. The chat fills what is left, and the row of filler cards only
-// appears on windows tall enough for it to clear the copy (`tall`, in globals.css).
+// Below `wide` the copy sits above a smaller site mock (hidden on phones). From `wide` it is laid over the mock,
+// which takes the window height (600-760px) so the first screen fits; the filler cards need a `tall` window.
 export function Hero() {
   return (
-    <section id="top" className="px-4 pb-16 sm:px-8 md:pb-24 lg:px-16 wide:pb-30">
+    <section id="top" className={cn("pb-16 md:pb-24 wide:pb-30", GUTTERS)}>
       <div className="relative mx-auto flex max-w-328 flex-col gap-10 md:gap-12">
         <div className="flex max-w-160 flex-col gap-6 pt-2 wide:absolute wide:top-41.75 wide:left-18.25 wide:z-10 wide:w-160 wide:pt-0">
           <h1 className="text-[36px] leading-[1.18] font-extrabold tracking-[-0.045em] text-balance sm:text-[52px] lg:text-[60px] lg:leading-[1.2]">
@@ -36,13 +35,9 @@ export function Hero() {
             Give hovr a few documents: PDFs, Word files or pasted text. It reads them and answers your visitors’ questions
             in a little chat bubble.
           </p>
-          <Link
-            href="/signup"
-            className="flex h-15 items-center justify-between gap-4 self-stretch rounded-full bg-ink pr-2 pl-6.5 text-[17px] font-extrabold text-page transition-opacity hover:opacity-90 sm:self-start"
-          >
+          <ArrowLink href="/signup" size="lg" className="self-stretch sm:self-start">
             Build your bot
-            <ArrowBadge size={44} />
-          </Link>
+          </ArrowLink>
         </div>
 
         <div

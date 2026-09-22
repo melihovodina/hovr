@@ -1,6 +1,7 @@
 import { cn } from "cn";
 import { SETUP_STEPS } from "@/lib/landing";
 import { SITE_URL } from "@/lib/site";
+import { LandingSection } from "./section";
 import { SetupBrand } from "./setup-brand";
 import { SetupInstall } from "./setup-install";
 import { SetupSteps } from "./setup-steps";
@@ -46,16 +47,11 @@ function SourcesPreview() {
 
 export function Setup() {
   return (
-    <section id="setup" className="scroll-mt-28 px-4 pb-16 sm:px-8 md:pb-24 lg:px-16 lg:pb-35">
-      <div className="mx-auto flex max-w-328 flex-col gap-7 lg:gap-12">
-        <h2 className="max-w-205 text-[36px] leading-[1.06] font-extrabold tracking-[-0.04em] sm:text-[44px] lg:text-[52px]">
-          Setting it up takes a few minutes
-        </h2>
-        <SetupSteps
-          steps={SETUP_STEPS}
-          panels={[<SetupBrand key="brand" />, <SourcesPreview key="content" />, <SetupInstall key="install" siteUrl={SITE_URL} />]}
-        />
-      </div>
-    </section>
+    <LandingSection id="setup" title="Setting it up takes a few minutes" titleClassName="max-w-205">
+      <SetupSteps
+        steps={SETUP_STEPS}
+        panels={[<SetupBrand key="brand" />, <SourcesPreview key="content" />, <SetupInstall key="install" siteUrl={SITE_URL} />]}
+      />
+    </LandingSection>
   );
 }

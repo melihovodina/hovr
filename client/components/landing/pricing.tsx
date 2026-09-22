@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { cn } from "cn";
+import { buttonVariants } from "@/components/ui/button";
 import { PLANS, PRICING_ROWS, type Cell } from "@/lib/landing";
+import { LandingSection } from "./section";
 
 type Plan = (typeof PLANS)[number];
 
@@ -28,10 +30,7 @@ function PlanHead({ plan }: { plan: Plan }) {
       </div>
       <Link
         href="/signup"
-        className={cn(
-          "flex h-11.5 items-center justify-center rounded-full text-[15px] font-extrabold transition-opacity hover:opacity-85",
-          plan.featured ? "bg-ink text-page" : "border border-line text-ink",
-        )}
+        className={buttonVariants({ variant: plan.featured ? "strong" : "outline" })}
       >
         {plan.cta}
       </Link>
@@ -97,14 +96,9 @@ function PricingCards() {
 
 export function Pricing() {
   return (
-    <section id="pricing" className="scroll-mt-28 px-4 pb-16 sm:px-8 md:pb-24 lg:px-16 lg:pb-35">
-      <div className="mx-auto flex max-w-328 flex-col gap-7 lg:gap-10">
-        <h2 className="max-w-175 text-[36px] leading-[1.06] font-extrabold tracking-[-0.04em] sm:text-[44px] lg:text-[52px]">
-          Start free, upgrade when you need more
-        </h2>
-        <PricingTable />
-        <PricingCards />
-      </div>
-    </section>
+    <LandingSection id="pricing" title="Start free, upgrade when you need more" titleClassName="max-w-175" className="lg:gap-10">
+      <PricingTable />
+      <PricingCards />
+    </LandingSection>
   );
 }

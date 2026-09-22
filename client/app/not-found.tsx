@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -13,7 +14,7 @@ export default function NotFound() {
           This page isn’t here
         </h1>
         <p className="max-w-105 text-base leading-relaxed text-subtle">The link may be old or mistyped.</p>
-        <Link href="/" className="flex h-13.5 items-center rounded-full bg-ink px-6 text-base font-extrabold text-page hover:opacity-90">
+        <Link href="/" className={buttonVariants({ size: "lg" })}>
           Go to the home page
         </Link>
       </main>

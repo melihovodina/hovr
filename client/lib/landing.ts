@@ -1,11 +1,18 @@
+// Sections the header links to, by their element id.
 export const NAV_LINKS = [
-  { href: "#setup", label: "How it works" },
-  { href: "#features", label: "Features" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
+  { id: "setup", label: "How it works" },
+  { id: "features", label: "Features" },
+  { id: "pricing", label: "Pricing" },
+  { id: "faq", label: "FAQ" },
 ];
 
-export type Cell ={ kind: "yes" } | { kind: "no" } | { kind: "text"; text: string };
+export const FOOTER_LINKS = [
+  { href: "#pricing", label: "Pricing" },
+  { href: "#faq", label: "FAQ" },
+  { href: "/signin", label: "Sign in" },
+];
+
+export type Cell = { kind: "yes" } | { kind: "no" } | { kind: "text"; text: string };
 
 const Y: Cell = { kind: "yes" };
 const N: Cell = { kind: "no" };

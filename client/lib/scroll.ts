@@ -7,3 +7,9 @@ export function smoothstep(t: number): number {
 export function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
+
+// The landing header's height in px, from the --header-h CSS variable (it changes at lg).
+export function headerHeight(): number {
+  const root = getComputedStyle(document.documentElement);
+  return parseFloat(root.getPropertyValue("--header-h")) * parseFloat(root.fontSize);
+}
