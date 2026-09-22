@@ -3,73 +3,107 @@ import { Check } from "lucide-react";
 import { cn } from "cn";
 import { PLANS, PRICING_ROWS, type Cell } from "@/lib/landing";
 
+type Plan = (typeof PLANS)[number];
+
 const row = "flex h-14 items-center border-t border-line text-[15px] font-semibold";
 
 function CellView({ cell }: { cell: Cell }) {
   if (cell.kind === "yes") return <Check className="size-5 text-lime-ink" strokeWidth={2.6} aria-label="Included" />;
-  if (cell.kind === "no")
-    return (
-      <span className="h-0.5 w-3.5 rounded-sm bg-dot" role="img" aria-label="Not included" />
-    );
+  if (cell.kind === "no") return <span className="h-0.5 w-3.5 rounded-sm bg-dot" role="img" aria-label="Not included" />;
   return <span>{cell.text}</span>;
+}
+
+function PlanHead({ plan }: { plan: Plan }) {
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <span className="text-lg font-extrabold">{plan.name}</span>
+        {plan.tag && (
+          <span className="flex h-6 items-center rounded-full bg-lime px-2.5 text-xs font-extrabold text-on-lime">{plan.tag}</span>
+        )}
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-[44px] font-extrabold tracking-[-0.04em]">{plan.price}</span>
+        <span className="text-[15px] text-subtle">a month</span>
+      </div>
+      <Link
+        href="/signup"
+        className={cn(
+          "flex h-[46px] items-center justify-center rounded-full text-[15px] font-extrabold transition-opacity hover:opacity-85",
+          plan.featured ? "bg-ink text-page" : "border border-line text-ink",
+        )}
+      >
+        {plan.cta}
+      </Link>
+    </>
+  );
+}
+
+// Desktop: one comparison table, feature names on the left.
+function PricingTable() {
+  return (
+    <div className="hidden grid-cols-[1.3fr_1fr_1fr_1fr] lg:grid">
+      <div className="flex flex-col pt-[212px]">
+        {PRICING_ROWS.map((r) => (
+          <div key={r} className={row}>
+            {r}
+          </div>
+        ))}
+      </div>
+      {PLANS.map((p) => (
+        <div key={p.name} className={cn("flex flex-col rounded-3xl px-6", p.featured && "bg-surface shadow-[0_0_0_2px_var(--ink)]")}>
+          <div className="flex h-[212px] flex-col gap-2.5 pt-[26px]">
+            <PlanHead plan={p} />
+          </div>
+          {p.cells.map((c, i) => (
+            <div key={i} className={row}>
+              <CellView cell={c} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Phones and tablets: one card per plan, each listing its own features.
+function PricingCards() {
+  return (
+    <div className="flex flex-col gap-4 lg:hidden">
+      {PLANS.map((p) => (
+        <div
+          key={p.name}
+          className={cn(
+            "flex flex-col gap-2.5 rounded-[26px] bg-surface p-5 sm:p-6",
+            p.featured ? "shadow-[0_0_0_2px_var(--ink)]" : "shadow-[0_0_0_1px_var(--line)]",
+          )}
+        >
+          <PlanHead plan={p} />
+          <dl className="mt-2.5 flex flex-col">
+            {PRICING_ROWS.map((label, i) => (
+              <div key={label} className="flex min-h-12 items-center justify-between gap-4 border-t border-line py-2 text-[15px]">
+                <dt className="text-subtle">{label}</dt>
+                <dd className="flex shrink-0 font-bold">
+                  <CellView cell={p.cells[i]} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function Pricing() {
   return (
-    <section id="pricing" className="scroll-mt-28 px-4 pb-24 sm:px-8 lg:px-16 lg:pb-[140px]">
-      <div className="mx-auto flex max-w-[1312px] flex-col gap-10">
-        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end lg:gap-10">
-          <h2 className="max-w-[700px] text-[36px] leading-[1.06] font-extrabold tracking-[-0.04em] sm:text-[44px] lg:text-[52px]">
-            Start on the free plan. Upgrade if it’s worth it to you.
-          </h2>
-          <p className="max-w-[340px] text-base leading-relaxed text-subtle">
-            Monthly, cancel whenever you like. One message means one visitor question and the bot’s reply.
-          </p>
-        </div>
-        <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-          <div className="grid min-w-[820px] grid-cols-[1.3fr_1fr_1fr_1fr]">
-            <div className="flex flex-col pt-[212px]">
-              {PRICING_ROWS.map((r) => (
-                <div key={r} className={row}>
-                  {r}
-                </div>
-              ))}
-            </div>
-            {PLANS.map((p) => (
-              <div
-                key={p.name}
-                className={cn("flex flex-col rounded-3xl px-6", p.featured && "bg-surface shadow-[0_0_0_2px_var(--ink)]")}
-              >
-                <div className="flex h-[212px] flex-col gap-2.5 pt-[26px]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-extrabold">{p.name}</span>
-                    {p.tag && (
-                      <span className="flex h-6 items-center rounded-full bg-lime px-2.5 text-xs font-extrabold text-on-lime">{p.tag}</span>
-                    )}
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[44px] font-extrabold tracking-[-0.04em]">{p.price}</span>
-                    <span className="text-[15px] text-subtle">a month</span>
-                  </div>
-                  <Link
-                    href="/signup"
-                    className={cn(
-                      "flex h-[46px] items-center justify-center rounded-full text-[15px] font-extrabold transition-opacity hover:opacity-85",
-                      p.featured ? "bg-ink text-page" : "border border-line text-ink",
-                    )}
-                  >
-                    {p.cta}
-                  </Link>
-                </div>
-                {p.cells.map((c, i) => (
-                  <div key={i} className={row}>
-                    <CellView cell={c} />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+    <section id="pricing" className="scroll-mt-28 px-4 pb-16 sm:px-8 md:pb-24 lg:px-16 lg:pb-[140px]">
+      <div className="mx-auto flex max-w-[1312px] flex-col gap-7 lg:gap-10">
+        <h2 className="max-w-[700px] text-[36px] leading-[1.06] font-extrabold tracking-[-0.04em] sm:text-[44px] lg:text-[52px]">
+          Start free, upgrade when you need more
+        </h2>
+        <PricingTable />
+        <PricingCards />
       </div>
     </section>
   );

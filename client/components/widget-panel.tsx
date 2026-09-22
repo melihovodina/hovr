@@ -17,6 +17,8 @@ interface WidgetPanelProps {
   messages?: PreviewMessage[];
   // "auto" follows the site theme; the app previews always show the light widget.
   theme?: "light" | "auto";
+  // Take the container's size instead of 360x600.
+  fill?: boolean;
   className?: string;
 }
 
@@ -30,6 +32,7 @@ export function WidgetPanel({
   showBadge = true,
   messages,
   theme = "light",
+  fill = false,
   className,
 }: WidgetPanelProps) {
   const onAccent = onColor(color);
@@ -37,7 +40,8 @@ export function WidgetPanel({
   return (
     <div
       className={cn(
-        "wp flex h-[600px] w-[360px] max-w-full flex-col overflow-hidden rounded-[26px] bg-[var(--w-bg)] text-[var(--w-ink)] shadow-[0_16px_40px_-18px_var(--w-shadow),0_0_0_1px_var(--w-ring)]",
+        "wp flex max-w-full flex-col overflow-hidden rounded-[26px] bg-[var(--w-bg)] text-[var(--w-ink)] shadow-[0_16px_40px_-18px_var(--w-shadow),0_0_0_1px_var(--w-ring)]",
+        fill ? "size-full" : "h-[600px] w-[360px]",
         theme === "auto" && "wp-auto",
         className,
       )}
@@ -66,7 +70,7 @@ export function WidgetPanel({
 
       <div className="flex min-h-0 grow flex-col overflow-hidden">
         {messages ? (
-          <div className="flex grow flex-col gap-2.5 px-3.5 pt-1 pb-3">
+          <div className="flex min-h-0 grow flex-col gap-2.5 px-3.5 pt-1 pb-3">
             <div className="self-center text-[11px] font-bold text-[var(--w-muted)]">Today</div>
             {messages.map((m, i) =>
               m.kind === "user" ? (

@@ -10,7 +10,7 @@ export default function NotFound() {
       <main className="flex grow flex-col items-center justify-center gap-5 py-10 text-center">
         <p className="text-sm font-extrabold text-subtle">404</p>
         <h1 className="max-w-[520px] text-[36px] leading-[1.1] font-extrabold tracking-[-0.04em]">
-          This page isn’t here.
+          This page isn’t here
         </h1>
         <p className="max-w-[420px] text-base leading-relaxed text-subtle">The link may be old or mistyped.</p>
         <Link href="/" className="flex h-[54px] items-center rounded-full bg-ink px-6 text-base font-extrabold text-page hover:opacity-90">

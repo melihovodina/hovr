@@ -1,4 +1,11 @@
-export type Cell = { kind: "yes" } | { kind: "no" } | { kind: "text"; text: string };
+export const NAV_LINKS = [
+  { href: "#setup", label: "How it works" },
+  { href: "#features", label: "Features" },
+  { href: "#pricing", label: "Pricing" },
+  { href: "#faq", label: "FAQ" },
+];
+
+export type Cell ={ kind: "yes" } | { kind: "no" } | { kind: "text"; text: string };
 
 const Y: Cell = { kind: "yes" };
 const N: Cell = { kind: "no" };
@@ -39,7 +46,7 @@ export const FAQS = [
   },
   {
     q: "Where does my content go?",
-    a: "Your files and text are stored in our database and only used for your bot. Replies are written by Google’s Gemini model.",
+    a: "Your files and text are stored in our database and only used for your bot.",
   },
   {
     q: "Can I cancel anytime?",
@@ -48,7 +55,40 @@ export const FAQS = [
 ];
 
 export const SETUP_STEPS = [
+  { title: "Make it look like your brand", body: "Pick a color, write a hello message or add a few suggested questions." },
   { title: "Give it your content", body: "Upload PDFs or Word files, or just paste some text." },
-  { title: "Make it look like your brand", body: "Pick a color, write a hello message and add a few suggested questions." },
   { title: "Put it on your site", body: "Copy one line into your site. Works with Shopify, WordPress, Wix, Webflow and plain HTML." },
+];
+
+// Where to paste the embed code, per site builder (also used by the app's Install tab).
+export const INSTALL_GUIDES = [
+  {
+    id: "shopify",
+    label: "Shopify",
+    steps: ["Online Store → Themes → Edit code.", "Open theme.liquid and paste before </body>.", "Save and preview your store."],
+  },
+  {
+    id: "wordpress",
+    label: "WordPress",
+    steps: [
+      "Install a header and footer code plugin, or open your theme footer.",
+      "Paste the code into the footer section.",
+      "Save, then open your site.",
+    ],
+  },
+  {
+    id: "wix",
+    label: "Wix",
+    steps: ["Settings → Custom code → Add custom code.", "Paste it, pick All pages and Body – end.", "Apply, then publish."],
+  },
+  {
+    id: "webflow",
+    label: "Webflow",
+    steps: ["Site settings → Custom code.", "Paste it into Footer code.", "Save and publish your site."],
+  },
+  {
+    id: "html",
+    label: "Plain HTML",
+    steps: ["Open the HTML file of your site.", "Paste the code right before the closing </body> tag.", "Save, then reload your site."],
+  },
 ];

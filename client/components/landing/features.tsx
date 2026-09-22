@@ -14,16 +14,16 @@ const TOP = [
 
 export function Features() {
   return (
-    <section id="features" className="scroll-mt-28 px-4 py-24 sm:px-8 lg:px-16 lg:py-[140px]">
-      <div className="mx-auto flex max-w-[1312px] flex-col gap-12">
+    <section id="features" className="scroll-mt-28 px-4 py-16 sm:px-8 md:py-24 lg:px-16 lg:py-[140px]">
+      <div className="mx-auto flex max-w-[1312px] flex-col gap-7 lg:gap-12">
         <h2 className="max-w-[760px] text-[36px] leading-[1.06] font-extrabold tracking-[-0.04em] sm:text-[44px] lg:text-[52px]">
-          The little things that make it feel like a real person helped.
+          The little things that make it feel like a real person helped
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className={`${plain} md:col-span-2`}>
             <div className="flex flex-col gap-2.5">
               <div className="max-w-[440px] rounded-[20px_20px_20px_6px] bg-surface-2 px-4 py-3 text-base leading-normal">
-                Returns are free within 30 days. Just print the label from your order email.
+                Yes, you can send it back within 30 days. The return label is in your order email.
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="flex h-[30px] items-center rounded-full border border-line px-3 text-[13px] font-bold">Return policy.docx</span>
@@ -57,6 +57,7 @@ export function Features() {
           <div className={plain}>
             <div className="flex flex-col gap-2">
               <span className={sent}>Do you ship to Canada?</span>
+              <span className={got}>We do, right across Canada.</span>
               <span className={sent}>ok and how long?</span>
               <span className={got}>5 to 8 business days.</span>
             </div>
