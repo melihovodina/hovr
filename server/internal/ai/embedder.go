@@ -1,16 +1,12 @@
-// Package ai wraps the models hovr uses: text embeddings now, chat answers later.
+// Package ai wraps the Gemini models hovr uses: text embeddings and chat answers.
 package ai
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"hash/fnv"
-	"math"
 	"net/http"
-	"strings"
 	"time"
-	"unicode"
 
 	"google.golang.org/genai"
 )
@@ -33,11 +29,8 @@ type Embedder interface {
 	EmbedQuery(ctx context.Context, text string) ([]float32, error)
 }
 
-// NewEmbedder returns the Gemini embedder, or the offline mock when apiKey is empty.
+// NewEmbedder returns the Gemini embedder.
 func NewEmbedder(ctx context.Context, apiKey string) (Embedder, error) {
-	if apiKey == "" {
-		return Mock{}, nil
-	}
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{APIKey: apiKey, Backend: genai.BackendGeminiAPI})
 	if err != nil {
 		return nil, fmt.Errorf("create gemini client: %w", err)
@@ -111,45 +104,4 @@ func vectors(resp *genai.EmbedContentResponse, want int) ([][]float32, error) {
 		out[i] = e.Values
 	}
 	return out, nil
-}
-
-// Mock embeds text offline as a normalized bag of words: texts sharing words get
-// similar vectors. Good enough for tests and for running without an API key.
-type Mock struct{}
-
-func (Mock) EmbedDocuments(_ context.Context, texts []string) ([][]float32, error) {
-	out := make([][]float32, len(texts))
-	for i, t := range texts {
-		out[i] = mockVector(t)
-	}
-	return out, nil
-}
-
-func (Mock) EmbedQuery(_ context.Context, text string) ([]float32, error) {
-	return mockVector(text), nil
-}
-
-func mockVector(text string) []float32 {
-	v := make([]float32, Dims)
-	words := strings.FieldsFunc(strings.ToLower(text), func(r rune) bool {
-		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
-	})
-	for _, w := range words {
-		h := fnv.New32a()
-		_, _ = h.Write([]byte(w))
-		v[h.Sum32()%Dims]++
-	}
-	var norm float64
-	for _, x := range v {
-		norm += float64(x * x)
-	}
-	if norm == 0 {
-		v[0] = 1 // empty text still needs a valid, non-zero vector
-		return v
-	}
-	scale := float32(1 / math.Sqrt(norm))
-	for i := range v {
-		v[i] *= scale
-	}
-	return v
 }

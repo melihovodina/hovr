@@ -7,8 +7,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pgvector/pgvector-go"
 
-	"github.com/melihovodina/hovr/server/internal/ai"
 	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/test/fakeai"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
@@ -31,7 +31,7 @@ func addSource(t *testing.T, pool *pgxpool.Pool, bot, title, status string, text
 	if err != nil {
 		t.Fatalf("create source: %v", err)
 	}
-	vecs, _ := ai.Mock{}.EmbedDocuments(ctx, texts)
+	vecs, _ := fakeai.Embedder{}.EmbedDocuments(ctx, texts)
 	for i, text := range texts {
 		_, err := pool.Exec(ctx,
 			`insert into chunks (source_id, bot_id, chunk_index, content, embedding) values ($1, $2, $3, $4, $5)`,
@@ -44,7 +44,7 @@ func addSource(t *testing.T, pool *pgxpool.Pool, bot, title, status string, text
 
 func TestSearch(t *testing.T) {
 	pool := testdb.Connect(t)
-	r := New(pool, ai.Mock{})
+	r := New(pool, fakeai.Embedder{})
 	ctx := context.Background()
 
 	bot, other := newBot(t, pool), newBot(t, pool)

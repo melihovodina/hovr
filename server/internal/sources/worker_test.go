@@ -8,6 +8,7 @@ import (
 
 	"github.com/melihovodina/hovr/server/internal/ai"
 	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/test/fakeai"
 	"github.com/melihovodina/hovr/server/test/fakestorage"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
@@ -26,7 +27,7 @@ func newWorkerEnv(t *testing.T) *workerEnv {
 	t.Helper()
 	pool := testdb.Connect(t)
 	store, files := NewStore(pool), fakestorage.New()
-	return &workerEnv{t: t, pool: pool, store: store, files: files, worker: NewWorker(store, files, ai.Mock{})}
+	return &workerEnv{t: t, pool: pool, store: store, files: files, worker: NewWorker(store, files, fakeai.Embedder{})}
 }
 
 // queue stores a file and inserts a queued source for it, like the upload endpoint.

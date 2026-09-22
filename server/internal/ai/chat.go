@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"google.golang.org/genai"
@@ -33,11 +32,8 @@ type ChatModel interface {
 	Stream(ctx context.Context, system string, turns []Turn, onText func(string) error) error
 }
 
-// NewChatModel returns the Gemini chat model, or the offline mock when apiKey is empty.
+// NewChatModel returns the Gemini chat model.
 func NewChatModel(ctx context.Context, apiKey string) (ChatModel, error) {
-	if apiKey == "" {
-		return MockChat{}, nil
-	}
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{APIKey: apiKey, Backend: genai.BackendGeminiAPI})
 	if err != nil {
 		return nil, fmt.Errorf("create gemini client: %w", err)
@@ -100,16 +96,4 @@ func (g *geminiChat) stream(ctx context.Context, model string, contents []*genai
 		return false, errors.New("empty answer")
 	}
 	return true, nil
-}
-
-// MockChat answers offline: it repeats the first knowledge passage of the prompt.
-type MockChat struct{}
-
-func (MockChat) Stream(_ context.Context, system string, _ []Turn, onText func(string) error) error {
-	answer := "[no-answer] I'm running offline (no GEMINI_API_KEY) and found nothing about that."
-	if _, rest, ok := strings.Cut(system, "\n[1] "); ok {
-		passage, _, _ := strings.Cut(rest, "\n")
-		answer = "Offline answer from your knowledge: " + passage + " [1]"
-	}
-	return onText(answer)
 }

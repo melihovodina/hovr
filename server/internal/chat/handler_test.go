@@ -16,6 +16,7 @@ import (
 	"github.com/melihovodina/hovr/server/internal/ai"
 	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/rag"
+	"github.com/melihovodina/hovr/server/test/fakeai"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
@@ -60,7 +61,7 @@ func newEnv(t *testing.T) *env {
 		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
 		c.Next()
 	})
-	NewHandler(NewStore(pool), rag.NewAnswerer(rag.New(pool, ai.Mock{}), model)).Routes(g)
+	NewHandler(NewStore(pool), rag.NewAnswerer(rag.New(pool, fakeai.Embedder{}), model)).Routes(g)
 	return &env{t: t, pool: pool, model: model, r: r}
 }
 

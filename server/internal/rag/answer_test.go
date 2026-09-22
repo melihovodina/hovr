@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/melihovodina/hovr/server/internal/ai"
+	"github.com/melihovodina/hovr/server/test/fakeai"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
@@ -84,7 +85,7 @@ func TestAnswer(t *testing.T) {
 
 	model := &fakeModel{chunks: []string{"Five days ", "[1]."}}
 	history := []ai.Turn{{Role: ai.RoleUser, Text: "hi"}, {Role: ai.RoleModel, Text: "Hello!"}}
-	a, err := NewAnswerer(New(pool, ai.Mock{}), model).Answer(ctx,
+	a, err := NewAnswerer(New(pool, fakeai.Embedder{}), model).Answer(ctx,
 		Question{BotID: bot, BotName: "Northwind", Message: "shipping to Canada", History: history}, func(string) error { return nil })
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +103,7 @@ func TestAnswer(t *testing.T) {
 	// A follow-up that matches nothing alone is searched with the previous question.
 	model = &fakeModel{chunks: []string{"Five days [1]."}}
 	history = []ai.Turn{{Role: ai.RoleUser, Text: "shipping to Canada"}, {Role: ai.RoleModel, Text: "Yes."}}
-	_, _ = NewAnswerer(New(pool, ai.Mock{}), model).Answer(ctx,
+	_, _ = NewAnswerer(New(pool, fakeai.Embedder{}), model).Answer(ctx,
 		Question{BotID: bot, BotName: "Northwind", Message: "takes how long", History: history}, func(string) error { return nil })
 	if !strings.Contains(model.system, "[1] (Shipping)") {
 		t.Error("follow-up did not find the passage")
@@ -110,7 +111,7 @@ func TestAnswer(t *testing.T) {
 
 	// Off-topic: no passages, and the model's marker means not answered.
 	model = &fakeModel{chunks: []string{"[no-answer] I don't know."}}
-	a, _ = NewAnswerer(New(pool, ai.Mock{}), model).Answer(ctx,
+	a, _ = NewAnswerer(New(pool, fakeai.Embedder{}), model).Answer(ctx,
 		Question{BotID: bot, BotName: "Northwind", Message: "capital of France"}, func(string) error { return nil })
 	if a.Answered || a.Text != "I don't know." || !strings.Contains(model.system, "nothing relevant") {
 		t.Errorf("off-topic answer = %+v", a)

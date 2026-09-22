@@ -59,9 +59,6 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	if cfg.GeminiAPIKey == "" {
-		slog.Warn("GEMINI_API_KEY not set: using the offline mock models")
-	}
 	files := storage.New(cfg.SupabaseURL, cfg.SupabaseSecretKey, "sources")
 	sourceStore := sources.NewStore(pool)
 	worker := sources.NewWorker(sourceStore, files, embedder)
