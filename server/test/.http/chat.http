@@ -1,0 +1,49 @@
+# Chat requests for local testing (VS Code REST Client or JetBrains HTTP Client).
+#
+# Sign in first with auth.http (request 4), create a bot with bots.http and add
+# knowledge with sources.http, in the same client. Every non-GET request needs an
+# Origin equal to APP_URL. Answers stream as server-sent events:
+# conversation {id} → text {text}... → done {message} (or error {error}).
+
+@baseUrl = http://localhost:8080/api
+@origin = http://localhost:3000
+@botId = PASTE_BOT_ID_HERE
+@conversationId = PASTE_CONVERSATION_ID_HERE
+
+### Ask in a new conversation
+POST {{baseUrl}}/bots/{{botId}}/chat
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "message": "Do you ship to Canada?"
+}
+
+### Follow-up in the same conversation (the bot remembers the last messages)
+POST {{baseUrl}}/bots/{{botId}}/chat
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "message": "And how long does it take?",
+  "conversationId": "{{conversationId}}"
+}
+
+### Not in the knowledge: "done" has "answered": false
+POST {{baseUrl}}/bots/{{botId}}/chat
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "message": "Do you sell espresso machines?"
+}
+
+### Conversations of the bot, most recent first
+GET {{baseUrl}}/bots/{{botId}}/conversations
+
+### One conversation with all its messages and citations
+GET {{baseUrl}}/bots/{{botId}}/conversations/{{conversationId}}
+
+### Delete a conversation — 204
+DELETE {{baseUrl}}/bots/{{botId}}/conversations/{{conversationId}}
+Origin: {{origin}}

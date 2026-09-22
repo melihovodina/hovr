@@ -82,3 +82,17 @@ func TestUUIDParam(t *testing.T) {
 		}
 	}
 }
+
+func TestIsUUID(t *testing.T) {
+	for s, want := range map[string]bool{
+		"7c9e6679-7425-40de-944b-e07fc1f90ae7": true,
+		"7C9E6679-7425-40DE-944B-E07FC1F90AE7": true,
+		"7c9e6679742540de944be07fc1f90ae7":     false,
+		"nope":                                 false,
+		"":                                     false,
+	} {
+		if got := IsUUID(s); got != want {
+			t.Errorf("IsUUID(%q) = %v, want %v", s, got, want)
+		}
+	}
+}

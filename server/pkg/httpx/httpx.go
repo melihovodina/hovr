@@ -46,11 +46,16 @@ func Internal(c *gin.Context, err error) {
 
 var uuidRe = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
+// IsUUID reports whether s looks like a UUID.
+func IsUUID(s string) bool {
+	return uuidRe.MatchString(s)
+}
+
 // UUIDParam reads a UUID path parameter. Anything else can't be one of our records,
 // so it responds 404 with notFound and returns false.
 func UUIDParam(c *gin.Context, name, notFound string) (string, bool) {
 	id := c.Param(name)
-	if !uuidRe.MatchString(id) {
+	if !IsUUID(id) {
 		Error(c, http.StatusNotFound, notFound)
 		return "", false
 	}

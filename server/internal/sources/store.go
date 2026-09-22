@@ -68,7 +68,7 @@ func (s *Store) Create(ctx context.Context, accountID string, src newSource) (*S
 		where a.id = $1 and b.id = $2
 		for update of a`, accountID, src.BotID).Scan(&plan)
 	if err != nil {
-		return nil, notFoundAs(err, errBotNotFound)
+		return nil, apperr.MapNotFound(err, errBotNotFound)
 	}
 	var count int
 	err = tx.QueryRow(ctx, `
@@ -121,7 +121,7 @@ func (s *Store) List(ctx context.Context, accountID, botID string) ([]Source, er
 func (s *Store) BotExists(ctx context.Context, accountID, botID string) error {
 	var one int
 	err := s.db.QueryRow(ctx, `select 1 from bots where id = $1 and account_id = $2`, botID, accountID).Scan(&one)
-	return notFoundAs(err, errBotNotFound)
+	return apperr.MapNotFound(err, errBotNotFound)
 }
 
 // Delete removes a source and its chunks, and returns the file path to clean up.
@@ -132,7 +132,7 @@ func (s *Store) Delete(ctx context.Context, accountID, botID, id string) (storag
 		where s.id = $1 and s.bot_id = $2 and b.id = s.bot_id and b.account_id = $3
 		returning s.storage_path`, id, botID, accountID).Scan(&path)
 	if err != nil {
-		return "", notFoundAs(err, errSourceNotFound)
+		return "", apperr.MapNotFound(err, errSourceNotFound)
 	}
 	if path == nil {
 		return "", nil
@@ -210,14 +210,6 @@ func (s *Store) complete(ctx context.Context, j *job, chunks []string, vectors [
 func (s *Store) markFailed(ctx context.Context, id, reason string) error {
 	_, err := s.db.Exec(ctx, `
 		update sources set status = 'failed', error = $2, processed_at = now() where id = $1`, id, reason)
-	return err
-}
-
-func notFoundAs(err, notFound error) error {
-	err = apperr.Map(err)
-	if errors.Is(err, apperr.ErrNotFound) {
-		return notFound
-	}
 	return err
 }
 

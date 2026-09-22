@@ -65,3 +65,16 @@ func TestConstraint(t *testing.T) {
 		t.Error("Constraint of a plain error is not empty")
 	}
 }
+
+func TestMapNotFound(t *testing.T) {
+	botNotFound := NotFound("Bot not found.")
+	if got := MapNotFound(pgx.ErrNoRows, botNotFound); got != botNotFound {
+		t.Errorf("no rows = %v, want the specific message", got)
+	}
+	if got := MapNotFound(&pgconn.PgError{Code: pgUniqueViolation}, botNotFound); got != ErrConflict {
+		t.Errorf("unique violation = %v, want conflict", got)
+	}
+	if got := MapNotFound(nil, botNotFound); got != nil {
+		t.Errorf("nil = %v", got)
+	}
+}

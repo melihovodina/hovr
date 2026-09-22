@@ -90,6 +90,14 @@ func Map(err error) error {
 	return err
 }
 
+// MapNotFound is Map with a specific message for "not found".
+func MapNotFound(err error, notFound *Error) error {
+	if err = Map(err); errors.Is(err, ErrNotFound) {
+		return notFound
+	}
+	return err
+}
+
 // Constraint returns the name of the database constraint behind err, if any, so a
 // store can tell two unique constraints on the same table apart.
 func Constraint(err error) string {

@@ -2,7 +2,6 @@ package rag
 
 import (
 	"context"
-	"crypto/rand"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,14 +16,7 @@ import (
 
 func newBot(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
-	account := testdb.NewUser(t, pool, plans.Free)
-	var bot string
-	err := pool.QueryRow(context.Background(),
-		`insert into bots (account_id, name, public_key) values ($1, 'Test bot', $2) returning id`,
-		account, "pub_"+rand.Text()).Scan(&bot)
-	if err != nil {
-		t.Fatalf("create bot: %v", err)
-	}
+	_, bot := testdb.NewBot(t, pool, plans.Free)
 	return bot
 }
 

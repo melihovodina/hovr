@@ -53,3 +53,17 @@ func NewUser(t *testing.T, pool *pgxpool.Pool, plan plans.Plan) string {
 	}
 	return id
 }
+
+// NewBot creates a user on plan with one bot and returns (accountID, botID).
+func NewBot(t *testing.T, pool *pgxpool.Pool, plan plans.Plan) (string, string) {
+	t.Helper()
+	account := NewUser(t, pool, plan)
+	var bot string
+	err := pool.QueryRow(context.Background(),
+		`insert into bots (account_id, name, public_key) values ($1, 'Test bot', $2) returning id`,
+		account, "pub_"+rand.Text()).Scan(&bot)
+	if err != nil {
+		t.Fatalf("create bot: %v", err)
+	}
+	return account, bot
+}

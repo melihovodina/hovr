@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"crypto/rand"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -28,20 +27,6 @@ func newWorkerEnv(t *testing.T) *workerEnv {
 	pool := testdb.Connect(t)
 	store, files := NewStore(pool), fakestorage.New()
 	return &workerEnv{t: t, pool: pool, store: store, files: files, worker: NewWorker(store, files, ai.Mock{})}
-}
-
-// newBot creates a user on plan with one bot and returns (accountID, botID).
-func newBot(t *testing.T, pool *pgxpool.Pool, plan plans.Plan) (string, string) {
-	t.Helper()
-	account := testdb.NewUser(t, pool, plan)
-	var bot string
-	err := pool.QueryRow(context.Background(),
-		`insert into bots (account_id, name, public_key) values ($1, 'Test bot', $2) returning id`,
-		account, "pub_"+rand.Text()).Scan(&bot)
-	if err != nil {
-		t.Fatalf("create bot: %v", err)
-	}
-	return account, bot
 }
 
 // queue stores a file and inserts a queued source for it, like the upload endpoint.
@@ -87,7 +72,7 @@ func (e *workerEnv) drain() {
 
 func TestWorkerProcessesSources(t *testing.T) {
 	e := newWorkerEnv(t)
-	account, bot := newBot(t, e.pool, plans.Free)
+	account, bot := testdb.NewBot(t, e.pool, plans.Free)
 
 	pdfID := e.queue(account, bot, "shipping.pdf", typePDF, testPDF("Shipping and delivery.", "We ship to Canada."))
 	mdID := e.queue(account, bot, "faq.md", typeMarkdown, []byte("# FAQ\n\nYes, we sell grinders."))
@@ -108,7 +93,7 @@ func TestWorkerProcessesSources(t *testing.T) {
 
 func TestWorkerRecordsFailures(t *testing.T) {
 	e := newWorkerEnv(t)
-	account, bot := newBot(t, e.pool, plans.Free)
+	account, bot := testdb.NewBot(t, e.pool, plans.Free)
 
 	scanned := e.queue(account, bot, "scan.pdf", typePDF, testPDF())
 	missing := e.queue(account, bot, "gone.txt", typeText, []byte("hello"))
@@ -127,7 +112,7 @@ func TestWorkerRecordsFailures(t *testing.T) {
 
 func TestWorkerRequeuesStuckSources(t *testing.T) {
 	e := newWorkerEnv(t)
-	account, bot := newBot(t, e.pool, plans.Free)
+	account, bot := testdb.NewBot(t, e.pool, plans.Free)
 	id := e.queue(account, bot, "faq.md", typeMarkdown, []byte("Yes, we sell grinders."))
 	// Simulate a crash in the middle of processing.
 	if _, err := e.pool.Exec(context.Background(), `update sources set status = 'processing' where id = $1`, id); err != nil {

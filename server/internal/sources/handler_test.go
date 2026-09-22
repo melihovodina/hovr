@@ -69,7 +69,7 @@ func (e *apiEnv) serve(user string, req *http.Request) (*httptest.ResponseRecord
 
 func TestUploadAndProcess(t *testing.T) {
 	e := newAPIEnv(t)
-	account, bot := newBot(t, e.pool, plans.Free)
+	account, bot := testdb.NewBot(t, e.pool, plans.Free)
 
 	w, src := e.upload(account, bot, "My FAQ.md", []byte("# FAQ\n\nYes, we sell grinders."))
 	if w.Code != http.StatusCreated || src["status"] != statusQueued || src["title"] != "My FAQ.md" {
@@ -109,7 +109,7 @@ func TestUploadAndProcess(t *testing.T) {
 
 func TestUploadValidation(t *testing.T) {
 	e := newAPIEnv(t)
-	account, bot := newBot(t, e.pool, plans.Free)
+	account, bot := testdb.NewBot(t, e.pool, plans.Free)
 	cases := []struct {
 		name, file string
 		data       []byte
@@ -141,7 +141,7 @@ func TestUploadValidation(t *testing.T) {
 
 func TestSourceLimitPerPlan(t *testing.T) {
 	e := newAPIEnv(t)
-	account, bot := newBot(t, e.pool, plans.Free)
+	account, bot := testdb.NewBot(t, e.pool, plans.Free)
 	limit := plans.For(plans.Free).Sources
 	for i := range limit {
 		body := fmt.Sprintf(`{"title":"Note %d","text":"Some text."}`, i)
@@ -160,8 +160,8 @@ func TestSourceLimitPerPlan(t *testing.T) {
 
 func TestSourcesAreIsolatedPerAccount(t *testing.T) {
 	e := newAPIEnv(t)
-	anna, bot := newBot(t, e.pool, plans.Free)
-	bob, _ := newBot(t, e.pool, plans.Free)
+	anna, bot := testdb.NewBot(t, e.pool, plans.Free)
+	bob, _ := testdb.NewBot(t, e.pool, plans.Free)
 
 	_, src := e.upload(anna, bot, "faq.md", []byte("x"))
 	id := src["id"].(string)
@@ -182,7 +182,7 @@ func TestSourcesAreIsolatedPerAccount(t *testing.T) {
 
 func TestStorageOutage(t *testing.T) {
 	e := newAPIEnv(t)
-	account, bot := newBot(t, e.pool, plans.Free)
+	account, bot := testdb.NewBot(t, e.pool, plans.Free)
 	e.files.Down = true
 	if w, out := e.upload(account, bot, "faq.md", []byte("x")); w.Code != http.StatusInternalServerError ||
 		out["error"] != "Something went wrong. Try again." {

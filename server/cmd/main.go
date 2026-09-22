@@ -13,8 +13,10 @@ import (
 
 	"github.com/melihovodina/hovr/server/internal/ai"
 	"github.com/melihovodina/hovr/server/internal/auth"
+	"github.com/melihovodina/hovr/server/internal/chat"
 	"github.com/melihovodina/hovr/server/internal/config"
 	"github.com/melihovodina/hovr/server/internal/db"
+	"github.com/melihovodina/hovr/server/internal/rag"
 	"github.com/melihovodina/hovr/server/internal/router"
 	"github.com/melihovodina/hovr/server/internal/sources"
 	"github.com/melihovodina/hovr/server/internal/storage"
@@ -53,8 +55,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	chatModel, err := ai.NewChatModel(ctx, cfg.GeminiAPIKey)
+	if err != nil {
+		return err
+	}
 	if cfg.GeminiAPIKey == "" {
-		slog.Warn("GEMINI_API_KEY not set: using the offline mock embedder")
+		slog.Warn("GEMINI_API_KEY not set: using the offline mock models")
 	}
 	files := storage.New(cfg.SupabaseURL, cfg.SupabaseSecretKey, "sources")
 	sourceStore := sources.NewStore(pool)
@@ -69,6 +75,7 @@ func run() error {
 			Auth:    authService,
 			Files:   files,
 			Sources: sources.NewHandler(sourceStore, files, worker),
+			Chat:    chat.NewHandler(chat.NewStore(pool), rag.NewAnswerer(rag.New(pool, embedder), chatModel)),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
