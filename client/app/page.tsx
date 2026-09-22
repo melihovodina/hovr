@@ -9,8 +9,6 @@ import { FAQS, PLANS } from "@/lib/landing";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { absolute: SITE_TITLE },
-  description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",

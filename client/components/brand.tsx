@@ -1,9 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { Moon, Sun } from "lucide-react";
 import { cn } from "cn";
-import { useTheme } from "@/lib/theme";
 
 export function LogoMark({ size = 28, shadow = true }: { size?: number; shadow?: boolean }) {
   return (
@@ -23,24 +19,6 @@ export function Logo({ href = "/", className }: { href?: string; className?: str
       <LogoMark />
       <span className="text-[22px] font-extrabold tracking-[-0.03em]">hovr</span>
     </Link>
-  );
-}
-
-export function ThemeToggle({ className, size = 44 }: { className?: string; size?: number }) {
-  const { dark, toggle } = useTheme();
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      style={{ width: size, height: size }}
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-full text-subtle transition-colors hover:bg-surface-2 hover:text-ink",
-        className,
-      )}
-    >
-      {dark ? <Sun className="size-[18px]" strokeWidth={1.8} /> : <Moon className="size-[18px]" strokeWidth={1.8} />}
-    </button>
   );
 }
 

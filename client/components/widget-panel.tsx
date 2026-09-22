@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "cn";
 import { ArrowUp, ArrowUpRight, ChevronDown, FileText, MoreHorizontal } from "lucide-react";
 import { LogoMark } from "@/components/brand";
@@ -146,7 +147,7 @@ export function FakeSite({
 }: {
   host: string;
   position?: "left" | "right";
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (

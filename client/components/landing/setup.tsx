@@ -1,10 +1,8 @@
-"use client";
-
-import { useState } from "react";
 import { cn } from "cn";
 import { Copy, MessageSquare, Upload } from "lucide-react";
 import { SETUP_STEPS } from "@/lib/landing";
 import { SITE_URL } from "@/lib/site";
+import { SetupTabs } from "./setup-tabs";
 
 const FILES = [
   { name: "FAQ.pdf", state: "Done", done: true },
@@ -100,38 +98,13 @@ function StepInstall() {
 }
 
 export function Setup() {
-  const [step, setStep] = useState(0);
   return (
     <section id="setup" className="scroll-mt-28 px-4 sm:px-8 lg:px-16">
       <div className="mx-auto flex max-w-[1312px] flex-col gap-10 rounded-[36px] border border-line bg-surface px-6 py-12 sm:px-12 lg:gap-12 lg:px-[72px] lg:py-[88px]">
         <h2 className="max-w-[820px] text-[36px] leading-[1.06] font-extrabold tracking-[-0.04em] sm:text-[44px] lg:text-[52px]">
           Setting it up takes about as long as making a coffee.
         </h2>
-        <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
-          <div className="flex shrink-0 flex-col gap-2.5 lg:w-[400px]" role="tablist" aria-label="Setup steps">
-            {SETUP_STEPS.map((s, i) => (
-              <button
-                key={s.title}
-                type="button"
-                role="tab"
-                aria-selected={step === i}
-                onClick={() => setStep(i)}
-                className={cn(
-                  "flex flex-col gap-1.5 rounded-[20px] border-2 px-[22px] py-5 text-left transition-colors",
-                  step === i ? "border-ink bg-page" : "border-transparent hover:bg-page/60",
-                )}
-              >
-                <span className="text-[19px] font-extrabold tracking-[-0.01em]">{s.title}</span>
-                <span className="text-[15px] leading-normal text-subtle">{s.body}</span>
-              </button>
-            ))}
-          </div>
-          <div role="tabpanel" className="flex min-h-[440px] grow flex-col justify-center rounded-3xl bg-page p-6 sm:p-10">
-            {step === 0 && <StepContent />}
-            {step === 1 && <StepBrand />}
-            {step === 2 && <StepInstall />}
-          </div>
-        </div>
+        <SetupTabs steps={SETUP_STEPS} panels={[<StepContent key="content" />, <StepBrand key="brand" />, <StepInstall key="install" />]} />
       </div>
     </section>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowBadge, Logo, ThemeToggle } from "@/components/brand";
+import { ArrowBadge, Logo } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const LINKS = [
   { href: "#setup", label: "How it works" },

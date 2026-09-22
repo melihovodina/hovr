@@ -1,6 +1,6 @@
 import { Lock } from "lucide-react";
 
-const card = "flex min-h-[320px] flex-col justify-between gap-8 rounded-[26px] p-[30px]";
+const card = "flex min-h-[320px] flex-col justify-between gap-3 rounded-[26px] p-[30px]";
 const plain = `${card} border border-line bg-surface`;
 const title = "text-[22px] font-extrabold tracking-[-0.02em]";
 const sent = "self-end rounded-[18px_18px_6px_18px] bg-ink px-[13px] py-[9px] text-sm text-page";
