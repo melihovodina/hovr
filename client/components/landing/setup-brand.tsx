@@ -41,7 +41,7 @@ export function SetupBrand() {
 
   return (
     <div className="flex flex-col gap-8 md:flex-row md:items-center md:gap-6">
-      <div className="flex w-full min-w-0 flex-col gap-3 md:w-[344px] md:shrink-0">
+      <div className="flex w-full min-w-0 flex-col gap-3 md:w-86 md:shrink-0">
         <span className={label} id="brand-color">
           Color
         </span>
@@ -89,7 +89,7 @@ export function SetupBrand() {
                   i === questions.length - 1 && questions.length % 2 === 1 && "sm:col-span-2 sm:w-fit sm:justify-self-center",
                 )}
               >
-                <span className="min-w-0 grow break-words">{q}</span>
+                <span className="min-w-0 grow wrap-break-word">{q}</span>
                 <button
                   type="button"
                   aria-label={`Remove “${q}”`}
@@ -126,19 +126,19 @@ export function SetupBrand() {
       </div>
 
       <div className="flex min-w-0 grow flex-col items-end gap-3" aria-label="Preview" role="img">
-        <div className="flex w-[270px] max-w-full flex-col gap-2.5 rounded-[22px_22px_6px_22px] bg-white p-4 text-[#17171B] shadow-[0_16px_40px_-16px_rgba(0,0,0,0.3)]">
-          <span className="text-sm leading-normal break-words">{greeting}</span>
+        <div className="flex w-67.5 max-w-full flex-col gap-2.5 rounded-[22px_22px_6px_22px] bg-white p-4 text-[#17171B] shadow-[0_16px_40px_-16px_rgba(0,0,0,0.3)]">
+          <span className="text-sm leading-normal wrap-break-word">{greeting}</span>
           {questions.map((q, i) => (
-            <span key={`${q}-${i}`} className="flex min-h-[30px] items-center self-start rounded-full bg-[#F3F3F1] px-3 py-1 text-xs font-bold break-words">
+            <span key={`${q}-${i}`} className="flex min-h-7.5 items-center self-start rounded-full bg-[#F3F3F1] px-3 py-1 text-xs font-bold wrap-break-word">
               {q}
             </span>
           ))}
         </div>
         <span
-          className="flex size-[60px] items-center justify-center rounded-full shadow-[0_12px_30px_-10px_rgba(0,0,0,0.4)] transition-colors"
+          className="flex size-15 items-center justify-center rounded-full shadow-[0_12px_30px_-10px_rgba(0,0,0,0.4)] transition-colors"
           style={{ background: color, color: onColor(color) }}
         >
-          <MessageSquare className="size-[26px]" strokeWidth={2} />
+          <MessageSquare className="size-6.5" strokeWidth={2} />
         </span>
       </div>
     </div>

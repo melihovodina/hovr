@@ -12,14 +12,14 @@ export function SetupInstall({ siteUrl }: { siteUrl: string }) {
   const guide = INSTALL_GUIDES.find((g) => g.id === platform) ?? INSTALL_GUIDES[0];
 
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div className="flex flex-col gap-4.5">
       <div className="flex flex-col gap-2">
         <span className="flex h-6 w-fit items-center rounded-full bg-surface-2 px-2.5 text-[11px] font-extrabold tracking-[0.08em] text-subtle uppercase">
           Example
         </span>
         <pre
           aria-hidden="true"
-          className="pointer-events-none rounded-[18px] bg-[#111215] p-4 font-mono text-[13px] leading-[1.7] break-all whitespace-pre-wrap text-[#E9E8E3] select-none sm:px-6 sm:py-[22px] sm:text-[15px]"
+          className="pointer-events-none rounded-[18px] bg-[#111215] p-4 font-mono text-[13px] leading-[1.7] break-all whitespace-pre-wrap text-[#E9E8E3] select-none sm:px-6 sm:py-5.5 sm:text-[15px]"
         >
           {`<script src="${siteUrl}/widget.js"\n  data-bot="`}
           <span className="text-lime">pub_7fK2qLx9</span>

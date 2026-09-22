@@ -11,6 +11,3 @@ export function onColor(hex: string): string {
   return lum > 0.4 ? "#0D0E11" : "#FFFFFF";
 }
 
-export function initial(name: string): string {
-  return ([...name.trim()][0] ?? "?").toUpperCase();
-}

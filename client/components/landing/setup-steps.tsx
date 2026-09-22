@@ -62,7 +62,7 @@ export function SetupSteps({ steps, panels }: { steps: Step[]; panels: ReactNode
   }
 
   return (
-    <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[400px_minmax(0,1fr)] lg:grid-rows-[1fr_auto_auto_auto_1fr] lg:gap-x-12 lg:rounded-[36px] lg:border lg:border-line lg:bg-surface lg:p-[72px]">
+    <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[400px_minmax(0,1fr)] lg:grid-rows-[1fr_auto_auto_auto_1fr] lg:gap-x-12 lg:rounded-4xl lg:border lg:border-line lg:bg-surface lg:p-18">
       {steps.map((s, i) => {
         const isOpen = open === i;
         return (
@@ -80,7 +80,7 @@ export function SetupSteps({ steps, panels }: { steps: Step[]; panels: ReactNode
               aria-controls={`setup-panel-${i}`}
               onClick={(e) => toggle(i, e.currentTarget)}
               className={cn(
-                "flex w-full items-start gap-3 rounded-[22px] px-[22px] py-5 text-left lg:col-start-1 lg:transition-colors",
+                "flex w-full items-start gap-3 rounded-[22px] px-5.5 py-5 text-left lg:col-start-1 lg:transition-colors",
                 ROW_START[i],
                 isOpen ? "lg:bg-page lg:shadow-[0_0_0_2px_var(--ink)]" : "lg:hover:bg-page/60",
               )}
@@ -109,7 +109,7 @@ export function SetupSteps({ steps, panels }: { steps: Step[]; panels: ReactNode
               )}
             >
               <div className="overflow-hidden lg:overflow-visible">
-                <div className="mx-2.5 mb-2.5 flex min-w-0 flex-col justify-center rounded-[18px] bg-page p-4 lg:m-0 lg:h-[500px] lg:rounded-3xl lg:p-10">
+                <div className="mx-2.5 mb-2.5 flex min-w-0 flex-col justify-center rounded-[18px] bg-page p-4 lg:m-0 lg:h-125 lg:rounded-3xl lg:p-10">
                   {panels[i]}
                 </div>
               </div>

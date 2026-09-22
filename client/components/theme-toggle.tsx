@@ -15,8 +15,8 @@ export function ThemeToggle({ className }: { className?: string }) {
         className,
       )}
     >
-      <Moon className="size-[18px] dark:hidden" strokeWidth={1.8} aria-hidden="true" />
-      <Sun className="hidden size-[18px] dark:block" strokeWidth={1.8} aria-hidden="true" />
+      <Moon className="size-4.5 dark:hidden" strokeWidth={1.8} aria-hidden="true" />
+      <Sun className="hidden size-4.5 dark:block" strokeWidth={1.8} aria-hidden="true" />
     </button>
   );
 }

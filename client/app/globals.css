@@ -4,6 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Windows tall enough for the hero's filler cards to clear its copy: the copy ends 501px into the mock
+   (below its 50px bar), the cards need 24px after it plus their 76px and 32px under them, so the mock
+   needs 683px, and the window that plus the 112px header and 24px margin. Re-measure if the hero copy changes. */
+@custom-variant tall (@media (min-height: 51.25rem));
+
 @theme {
   --breakpoint-wide: 85rem;
 }
@@ -19,7 +24,6 @@
   --color-lime: #c8f547;
   --color-on-lime: #0d0e11;
   --color-lime-ink: var(--lime-ink);
-  --color-lime-soft: var(--lime-soft);
   --color-skel: var(--skel);
   --color-dot: var(--dot);
   --color-ok: var(--ok);
@@ -32,29 +36,12 @@
   --color-idle-soft: var(--idle-soft);
   --color-online: #22a55b;
 
-  /* shadcn names mapped onto hovr tokens */
-  --color-background: var(--page);
-  --color-foreground: var(--ink);
-  --color-card: var(--surface);
-  --color-card-foreground: var(--ink);
-  --color-popover: var(--surface);
-  --color-popover-foreground: var(--ink);
-  --color-primary: var(--ink);
-  --color-primary-foreground: var(--page);
-  --color-secondary: var(--surface-2);
-  --color-secondary-foreground: var(--ink);
-  --color-muted: var(--surface-2);
-  --color-muted-foreground: var(--subtle);
-  --color-accent: var(--surface-2);
-  --color-accent-foreground: var(--ink);
-  --color-destructive: var(--bad);
+  /* The names shadcn's base styles use. */
   --color-border: var(--line);
-  --color-input: var(--line);
   --color-ring: var(--ink);
 
   --font-sans: var(--font-manrope), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
-  --font-heading: var(--font-manrope), system-ui, sans-serif;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -73,7 +60,6 @@
   --subtle: #5b5b63;
   --line: #e1dfd7;
   --lime-ink: #3f5c00;
-  --lime-soft: #e6f5bd;
   --skel: #edece6;
   --dot: #d6d4cc;
   --ok: #146b40;
@@ -84,10 +70,7 @@
   --bad-soft: #fbe6e3;
   --idle: #55555d;
   --idle-soft: #e9e8e3;
-  --nav-bg: rgba(255, 255, 255, 0.85);
   --nav-shadow: rgba(20, 20, 23, 0.18);
-  --grid-dot: rgba(20, 20, 23, 0.08);
-  --radius: 16px;
   color-scheme: light;
 }
 
@@ -99,7 +82,6 @@
   --subtle: #a3a3ac;
   --line: #2a2d34;
   --lime-ink: #c8f547;
-  --lime-soft: #2b3514;
   --skel: #23262d;
   --dot: #3a3d45;
   --ok: #7be3a6;
@@ -110,21 +92,38 @@
   --bad-soft: #3a1714;
   --idle: #b4b4bc;
   --idle-soft: #23252b;
-  --nav-bg: rgba(23, 25, 30, 0.85);
   --nav-shadow: rgba(0, 0, 0, 0.6);
-  --grid-dot: rgba(255, 255, 255, 0.07);
   color-scheme: dark;
 }
 
-/* The app, auth and onboarding sit on a slightly deeper background. */
-.app-tone {
-  --page: #f1f0eb;
-  --surface-2: #e6e5df;
+/* Landing header pill. --header-p (0 at the top, 1 after the first 340px, eased in header.tsx) drives
+   the width, background and shadow, so they never disagree about how far along the ramp we are.
+   From lg the pill narrows to 75% of its full width, but never below --header-min: the row's
+   measured content (logo, links, theme, Sign in, Get started, padding and border) is 780px, plus
+   24px either side of the links, so nothing crowds or overflows the rounded edge. Re-measure it if
+   the row changes. Phones and reduced motion keep the full width. */
+.landing-pill {
+  --header-p: 0;
+  --header-full: min(100%, 1080px);
+  --header-narrow: 1;
+  --header-min: 0px;
+  width: max(
+    var(--header-min),
+    calc(var(--header-full) * (1 - var(--header-p) * (1 - var(--header-narrow))))
+  );
+  background: color-mix(in srgb, var(--surface) calc(30% + 55% * var(--header-p)), transparent);
+  box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--nav-shadow) calc(100% * var(--header-p)), transparent);
 }
-.dark .app-tone,
-.dark.app-tone {
-  --page: #0d0e11;
-  --surface-2: #23262d;
+@media (min-width: 64rem) {
+  .landing-pill {
+    --header-narrow: 0.75;
+    --header-min: 828px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-pill {
+    --header-narrow: 1;
+  }
 }
 
 @layer base {
@@ -149,7 +148,7 @@
   }
 }
 
-/* Widget panel palette: light by default, follows the site theme with .wp-auto. */
+/* Landing widget panel palette, following the site theme. */
 .wp {
   --w-bg: #ffffff;
   --w-soft: #f3f3f1;
@@ -159,7 +158,7 @@
   --w-ring: rgba(10, 12, 16, 0.08);
   --w-shadow: rgba(10, 12, 16, 0.16);
 }
-.dark .wp-auto {
+.dark .wp {
   --w-bg: #17191e;
   --w-soft: #23262d;
   --w-ink: #f3f2ee;

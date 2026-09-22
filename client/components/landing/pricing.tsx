@@ -29,7 +29,7 @@ function PlanHead({ plan }: { plan: Plan }) {
       <Link
         href="/signup"
         className={cn(
-          "flex h-[46px] items-center justify-center rounded-full text-[15px] font-extrabold transition-opacity hover:opacity-85",
+          "flex h-11.5 items-center justify-center rounded-full text-[15px] font-extrabold transition-opacity hover:opacity-85",
           plan.featured ? "bg-ink text-page" : "border border-line text-ink",
         )}
       >
@@ -43,7 +43,7 @@ function PlanHead({ plan }: { plan: Plan }) {
 function PricingTable() {
   return (
     <div className="hidden grid-cols-[1.3fr_1fr_1fr_1fr] lg:grid">
-      <div className="flex flex-col pt-[212px]">
+      <div className="flex flex-col pt-53">
         {PRICING_ROWS.map((r) => (
           <div key={r} className={row}>
             {r}
@@ -52,7 +52,7 @@ function PricingTable() {
       </div>
       {PLANS.map((p) => (
         <div key={p.name} className={cn("flex flex-col rounded-3xl px-6", p.featured && "bg-surface shadow-[0_0_0_2px_var(--ink)]")}>
-          <div className="flex h-[212px] flex-col gap-2.5 pt-[26px]">
+          <div className="flex h-53 flex-col gap-2.5 pt-6.5">
             <PlanHead plan={p} />
           </div>
           {p.cells.map((c, i) => (
@@ -97,9 +97,9 @@ function PricingCards() {
 
 export function Pricing() {
   return (
-    <section id="pricing" className="scroll-mt-28 px-4 pb-16 sm:px-8 md:pb-24 lg:px-16 lg:pb-[140px]">
-      <div className="mx-auto flex max-w-[1312px] flex-col gap-7 lg:gap-10">
-        <h2 className="max-w-[700px] text-[36px] leading-[1.06] font-extrabold tracking-[-0.04em] sm:text-[44px] lg:text-[52px]">
+    <section id="pricing" className="scroll-mt-28 px-4 pb-16 sm:px-8 md:pb-24 lg:px-16 lg:pb-35">
+      <div className="mx-auto flex max-w-328 flex-col gap-7 lg:gap-10">
+        <h2 className="max-w-175 text-[36px] leading-[1.06] font-extrabold tracking-[-0.04em] sm:text-[44px] lg:text-[52px]">
           Start free, upgrade when you need more
         </h2>
         <PricingTable />
