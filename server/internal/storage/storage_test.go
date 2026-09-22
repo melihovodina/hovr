@@ -60,3 +60,11 @@ func TestClient(t *testing.T) {
 		}
 	}
 }
+
+func TestPublicURL(t *testing.T) {
+	c := New("http://127.0.0.1:54321", "secret", "avatars")
+	want := "http://127.0.0.1:54321/storage/v1/object/public/avatars/bot/logo%20v2.png"
+	if got := c.PublicURL("bot/logo v2.png"); got != want {
+		t.Errorf("PublicURL = %q, want %q", got, want)
+	}
+}

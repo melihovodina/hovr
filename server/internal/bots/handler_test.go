@@ -27,10 +27,11 @@ import (
 func init() { gin.SetMode(gin.TestMode) }
 
 type testEnv struct {
-	t     *testing.T
-	pool  *pgxpool.Pool
-	r     *gin.Engine
-	files *fakestorage.Files
+	t       *testing.T
+	pool    *pgxpool.Pool
+	r       *gin.Engine
+	files   *fakestorage.Files
+	avatars *fakestorage.Files
 }
 
 func newTestEnv(t *testing.T) *testEnv {
@@ -42,9 +43,9 @@ func newTestEnv(t *testing.T) *testEnv {
 		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
 		c.Next()
 	})
-	files := fakestorage.New()
-	NewHandler(NewStore(pool), accounts.NewStore(pool), files).Routes(g)
-	return &testEnv{t: t, pool: pool, r: r, files: files}
+	files, avatars := fakestorage.New(), fakestorage.New()
+	NewHandler(NewStore(pool), accounts.NewStore(pool), files, avatars).Routes(g)
+	return &testEnv{t: t, pool: pool, r: r, files: files, avatars: avatars}
 }
 
 func (e *testEnv) newUser(plan plans.Plan) string {

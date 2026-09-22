@@ -111,26 +111,50 @@ func (s *Store) Save(ctx context.Context, accountID string, b *Bot) (*Bot, error
 		b.Greeting, b.SuggestedQuestions, b.ShowBadge))
 }
 
-// Delete removes a bot and, through cascades, its sources, chunks and chats. It
-// returns the storage paths of the bot's files so the caller can remove them too.
-// Both parts run in one statement: the sub-select still sees the sources as they
-// were before the cascade.
-func (s *Store) Delete(ctx context.Context, accountID, id string) ([]string, error) {
+// Delete removes a bot (cascading to its data) and returns its file paths and avatar URL.
+// The sub-selects run in the same statement, so they still see the deleted rows.
+func (s *Store) Delete(ctx context.Context, accountID, id string) ([]string, *string, error) {
 	var deleted bool
 	var paths []string
+	var avatar *string
 	err := s.db.QueryRow(ctx, `
 		with gone as (delete from bots where id = $1 and account_id = $2 returning id)
 		select exists (select 1 from gone),
 			coalesce((select array_agg(storage_path) from sources
-				where bot_id = $1 and storage_path is not null), '{}')`,
-		id, accountID).Scan(&deleted, &paths)
+				where bot_id = $1 and storage_path is not null), '{}'),
+			(select avatar_url from bots where id = $1)`,
+		id, accountID).Scan(&deleted, &paths, &avatar)
 	if err != nil {
-		return nil, mapErr(err)
+		return nil, nil, mapErr(err)
 	}
 	if !deleted {
-		return nil, errBotNotFound
+		return nil, nil, errBotNotFound
 	}
-	return paths, nil
+	return paths, avatar, nil
+}
+
+// SetAvatar sets or clears (nil) the bot's avatar and returns the bot with the
+// previous avatar URL, whose file the caller removes.
+func (s *Store) SetAvatar(ctx context.Context, accountID, id string, url *string) (*Bot, *string, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	// Locked, so two quick uploads can't both miss the other's file.
+	var previous *string
+	err = tx.QueryRow(ctx, `select avatar_url from bots where id = $1 and account_id = $2 for update`,
+		id, accountID).Scan(&previous)
+	if err != nil {
+		return nil, nil, mapErr(err)
+	}
+	bot, err := scanBot(tx.QueryRow(ctx, `
+		update bots set avatar_url = $2 where id = $1 returning `+botColumns, id, url))
+	if err != nil {
+		return nil, nil, err
+	}
+	return bot, previous, tx.Commit(ctx)
 }
 
 func botCount(n int) string {

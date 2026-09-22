@@ -74,6 +74,7 @@ func run() error {
 			DB:      pool,
 			Auth:    authService,
 			Files:   files,
+			Avatars: storage.New(cfg.SupabaseURL, cfg.SupabaseSecretKey, "avatars"),
 			Sources: sources.NewHandler(sourceStore, files, worker),
 			Chat:    chat.NewHandler(chatStore, chatService),
 			Widget:  widget.NewHandler(widget.NewStore(pool), chatService, cfg.AppURL),

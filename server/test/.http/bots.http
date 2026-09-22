@@ -67,3 +67,20 @@ Content-Type: application/json
 ### Delete the bot — 204 (its sources, chunks and chats go with it)
 DELETE {{baseUrl}}/bots/{{botId}}
 Origin: {{origin}}
+
+### Upload a logo (PNG, JPG or WebP, up to 1 MB) — 200 with avatarUrl
+# Needs the "avatars" bucket from supabase/migrations/*_avatars.sql.
+POST {{baseUrl}}/bots/{{botId}}/avatar
+Origin: {{origin}}
+Content-Type: multipart/form-data; boundary=hovr
+
+--hovr
+Content-Disposition: form-data; name="file"; filename="logo.png"
+Content-Type: image/png
+
+< ./logo.png
+--hovr--
+
+### Remove the logo (the widget shows the first letter again) — 200, avatarUrl null
+DELETE {{baseUrl}}/bots/{{botId}}/avatar
+Origin: {{origin}}

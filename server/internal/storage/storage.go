@@ -1,5 +1,5 @@
-// Package storage keeps uploaded files in a private Supabase Storage bucket, using
-// its REST API with the server's secret key.
+// Package storage keeps files in Supabase Storage buckets, using its REST API with
+// the server's secret key.
 package storage
 
 import (
@@ -42,6 +42,11 @@ func (c *Client) Upload(ctx context.Context, path, contentType string, data []by
 	req.Header.Set("Content-Type", contentType)
 	_, err = c.do(req)
 	return err
+}
+
+// PublicURL is the address of a file in a public bucket.
+func (c *Client) PublicURL(path string) string {
+	return c.baseURL + "/object/public/" + c.bucket + "/" + escapePath(path)
 }
 
 // Download returns the file at path.

@@ -28,6 +28,7 @@ type Deps struct {
 	DB      *pgxpool.Pool
 	Auth    *auth.Service
 	Files   bots.FileRemover
+	Avatars bots.AvatarStore
 	Sources *sources.Handler
 	Chat    *chat.Handler
 	Widget  *widget.Handler
@@ -47,7 +48,7 @@ func New(d Deps) *gin.Engine {
 	accountStore := accounts.NewStore(d.DB)
 	user := api.Group("", d.Auth.RequireUser())
 	accounts.Routes(user, accountStore)
-	bots.NewHandler(bots.NewStore(d.DB), accountStore, d.Files).Routes(user.Group("/bots"))
+	bots.NewHandler(bots.NewStore(d.DB), accountStore, d.Files, d.Avatars).Routes(user.Group("/bots"))
 	d.Sources.Routes(user.Group("/bots/:id/sources"))
 	d.Chat.Routes(user.Group("/bots/:id"))
 

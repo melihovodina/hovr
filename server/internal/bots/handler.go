@@ -26,10 +26,11 @@ type Handler struct {
 	store    *Store
 	accounts *accounts.Store
 	files    FileRemover
+	avatars  AvatarStore
 }
 
-func NewHandler(store *Store, accounts *accounts.Store, files FileRemover) *Handler {
-	return &Handler{store: store, accounts: accounts, files: files}
+func NewHandler(store *Store, accounts *accounts.Store, files FileRemover, avatars AvatarStore) *Handler {
+	return &Handler{store: store, accounts: accounts, files: files, avatars: avatars}
 }
 
 // Routes registers the bot endpoints on g.
@@ -39,6 +40,8 @@ func (h *Handler) Routes(g *gin.RouterGroup) {
 	g.GET("/:id", h.get)
 	g.PATCH("/:id", h.update)
 	g.DELETE("/:id", h.delete)
+	g.POST("/:id/avatar", h.uploadAvatar)
+	g.DELETE("/:id/avatar", h.deleteAvatar)
 }
 
 func (h *Handler) list(c *gin.Context) {
@@ -125,7 +128,7 @@ func (h *Handler) delete(c *gin.Context) {
 	if !ok {
 		return
 	}
-	paths, err := h.store.Delete(c.Request.Context(), auth.UserID(c), id)
+	paths, avatar, err := h.store.Delete(c.Request.Context(), auth.UserID(c), id)
 	if err != nil {
 		httpx.Write(c, err)
 		return
@@ -136,5 +139,6 @@ func (h *Handler) delete(c *gin.Context) {
 			slog.Warn("delete bot files", "bot", id, "files", len(paths), "err", err)
 		}
 	}
+	h.removeAvatar(avatar)
 	c.Status(http.StatusNoContent)
 }

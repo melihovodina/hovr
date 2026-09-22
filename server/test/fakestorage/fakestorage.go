@@ -62,6 +62,11 @@ func (f *Files) Delete(_ context.Context, paths ...string) error {
 	return nil
 }
 
+// PublicURL mimics a public bucket address.
+func (f *Files) PublicURL(path string) string {
+	return "https://storage.test/public/" + path
+}
+
 // Has reports whether a file is stored at path.
 func (f *Files) Has(path string) bool {
 	f.mu.Lock()
