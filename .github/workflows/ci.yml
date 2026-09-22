@@ -48,6 +48,8 @@ jobs:
           cache-dependency-path: client/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      # Next generates route and layout types; tsc needs them.
+      - run: pnpm exec next typegen
       - run: pnpm exec tsc --noEmit
       - run: pnpm build
         env:
