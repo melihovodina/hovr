@@ -86,7 +86,12 @@ func serveClient(r *gin.Engine, dir string) {
 				return
 			}
 		}
-		c.Status(http.StatusNotFound)
-		c.File(filepath.Join(dir, "404.html"))
+		// c.File would answer 200, so the page is sent with an explicit 404.
+		page, err := os.ReadFile(filepath.Join(dir, "404.html"))
+		if err != nil {
+			c.String(http.StatusNotFound, "Not found")
+			return
+		}
+		c.Data(http.StatusNotFound, "text/html; charset=utf-8", page)
 	})
 }
