@@ -1,15 +1,19 @@
 # hovr
 
-A chat on your site that actually knows your business. Upload your documents, and hovr
-answers visitors in a chat bubble, with a link to where each answer came from.
+An embeddable RAG chatbot builder: a Go API and a Next.js client that ship as one
+container. Owners upload documents, the server turns them into embedded chunks, and
+visitors get grounded answers through an in-app playground or a widget on their site.
 
-- **Knowledge:** PDF, Word, Markdown and text files, or pasted text, processed in the
-  background into searchable pieces.
-- **Answers:** streamed, in the visitor's language, with source chips. When the documents
-  don't cover a question, the bot says so instead of inventing an answer.
-- **Widget:** one script tag on any site, with your colour, greeting and logo.
-- **Inbox:** every question the bot couldn't answer, with "Teach your bot" to fix it in one step.
-- **Billing:** Stripe Checkout, customer portal and plan limits enforced on the server.
+- **Go 1.26 + Gin + pgx**, serving the API and the client's static export from one binary.
+- **Supabase** for Postgres with pgvector, Auth (proxied by the server, sessions in
+  httpOnly cookies) and Storage for uploaded files.
+- **Ingestion** in a background worker: text extraction (PDF, DOCX, Markdown, plain text),
+  paragraph-aware chunking, batched Gemini embeddings, statuses and failure reasons.
+- **Retrieval** over pgvector with an HNSW index, a similarity threshold calibrated on
+  real scores, and a prompt that must answer from the passages or say it doesn't know.
+- **Streaming** answers over SSE with citations, and questions the bot missed collected
+  for the owner to answer.
+- **Stripe** subscriptions kept in sync by webhooks, with plan limits enforced server-side.
 
 ## How it works
 
@@ -41,15 +45,15 @@ sequenceDiagram
     participant G as Gemini
     V->>S: question
     S->>G: embed the question
-    S->>D: nearest chunks of this bot (cosine, HNSW)
+    S->>D: nearest chunks of this bot, by cosine distance
     alt best match below the threshold
-        S->>G: answer with no knowledge (small talk, or "I can only help with X")
+        S->>G: answer with no knowledge, for small talk or off-topic
     else
         S->>G: answer using only these passages, cite them
     end
     G-->>S: streamed answer
     S-->>V: text chunks, then the saved message with citations
-    S->>D: save the message; unanswered widget questions go to the inbox
+    S->>D: save the message, and unanswered widget questions go to the inbox
 ```
 
 ## Run it locally
