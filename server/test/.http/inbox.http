@@ -35,3 +35,7 @@ GET {{baseUrl}}/bots/{{botId}}/leads
 
 ### CSV export — Business only, otherwise 402 upgrade_required
 GET {{baseUrl}}/bots/{{botId}}/leads.csv
+
+### Overview numbers: totals, previous period, daily chart, top questions, "Needs you"
+# days=1..90 (default 7); tz is any IANA name, unknown values fall back to UTC.
+GET {{baseUrl}}/bots/{{botId}}/stats?days=7&tz=Europe/Berlin

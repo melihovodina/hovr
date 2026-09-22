@@ -17,6 +17,7 @@ import (
 	"github.com/melihovodina/hovr/server/internal/config"
 	"github.com/melihovodina/hovr/server/internal/db"
 	"github.com/melihovodina/hovr/server/internal/inbox"
+	"github.com/melihovodina/hovr/server/internal/overview"
 	"github.com/melihovodina/hovr/server/internal/rag"
 	"github.com/melihovodina/hovr/server/internal/router"
 	"github.com/melihovodina/hovr/server/internal/sources"
@@ -81,6 +82,7 @@ func run() error {
 			Chat:    chat.NewHandler(chatStore, chatService),
 			Widget:  widget.NewHandler(widget.NewStore(pool), chatService, cfg.AppURL),
 			Inbox:   inbox.NewHandler(inbox.NewStore(pool), chatStore, sourcesHandler),
+			Stats:   overview.NewHandler(overview.NewStore(pool)),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

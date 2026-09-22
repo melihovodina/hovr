@@ -18,6 +18,7 @@ import (
 	"github.com/melihovodina/hovr/server/internal/chat"
 	"github.com/melihovodina/hovr/server/internal/config"
 	"github.com/melihovodina/hovr/server/internal/inbox"
+	"github.com/melihovodina/hovr/server/internal/overview"
 	"github.com/melihovodina/hovr/server/internal/sources"
 	"github.com/melihovodina/hovr/server/internal/widget"
 	"github.com/melihovodina/hovr/server/pkg/httpx"
@@ -34,6 +35,7 @@ type Deps struct {
 	Chat    *chat.Handler
 	Widget  *widget.Handler
 	Inbox   *inbox.Handler
+	Stats   *overview.Handler
 }
 
 // New builds the Gin engine: API under /api, the exported client for everything else.
@@ -54,6 +56,7 @@ func New(d Deps) *gin.Engine {
 	d.Sources.Routes(user.Group("/bots/:id/sources"))
 	d.Chat.Routes(user.Group("/bots/:id"))
 	d.Inbox.Routes(user.Group("/bots/:id"))
+	d.Stats.Routes(user.Group("/bots/:id"))
 
 	if d.Config.StaticDir != "" {
 		serveClient(r, d.Config.StaticDir)
