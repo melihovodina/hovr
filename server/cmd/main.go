@@ -41,7 +41,7 @@ func run() error {
 	defer pool.Close()
 
 	authService := auth.NewService(
-		auth.NewVerifier(ctx, cfg.SupabaseURL, cfg.SupabaseJWTSecret),
+		auth.NewVerifier(ctx, cfg.SupabaseURL),
 		supabase.NewAuth(cfg.SupabaseURL, cfg.SupabasePublishableKey),
 		cfg.AppURL,
 	)

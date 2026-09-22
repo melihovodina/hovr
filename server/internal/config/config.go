@@ -19,7 +19,6 @@ type Config struct {
 
 	SupabaseURL            string
 	SupabasePublishableKey string
-	SupabaseJWTSecret      string
 	SupabaseSecretKey      string
 
 	GeminiAPIKey string
@@ -39,7 +38,6 @@ func Load() (Config, error) {
 		DatabaseURL:            os.Getenv("DATABASE_URL"),
 		SupabaseURL:            strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"),
 		SupabasePublishableKey: os.Getenv("SUPABASE_PUBLISHABLE_KEY"),
-		SupabaseJWTSecret:      os.Getenv("SUPABASE_JWT_SECRET"),
 		SupabaseSecretKey:      os.Getenv("SUPABASE_SECRET_KEY"),
 		GeminiAPIKey:           os.Getenv("GEMINI_API_KEY"),
 		StaticDir:              os.Getenv("STATIC_DIR"),

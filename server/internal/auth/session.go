@@ -65,12 +65,10 @@ func (k cookies) clearSession(c *gin.Context) {
 
 // newPKCE creates a verifier (kept in our httpOnly cookie) and its S256 challenge
 // (sent to Supabase). Only this browser can finish the flow it started.
-func newPKCE() (verifier, challenge string, err error) {
+func newPKCE() (verifier, challenge string) {
 	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", "", err
-	}
+	_, _ = rand.Read(b) // never fails; it crashes the program instead
 	verifier = base64.RawURLEncoding.EncodeToString(b)
 	sum := sha256.Sum256([]byte(verifier))
-	return verifier, base64.RawURLEncoding.EncodeToString(sum[:]), nil
+	return verifier, base64.RawURLEncoding.EncodeToString(sum[:])
 }

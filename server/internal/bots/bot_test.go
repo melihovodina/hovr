@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/melihovodina/hovr/server/pkg/apperr"
 )
 
 func ptr[T any](v T) *T { return &v }
@@ -57,8 +59,7 @@ func TestPatchApply(t *testing.T) {
 		"too many domain": {AllowedDomains: ptr(manyDomains(maxDomains + 1))},
 	}
 	for name, p := range rejected {
-		var ve *ValidationError
-		if err := p.apply(base()); !errors.As(err, &ve) {
+		if err := p.apply(base()); !errors.Is(err, apperr.ErrBadInput) {
 			t.Errorf("%s: got %v, want a validation error", name, err)
 		}
 	}
@@ -89,11 +90,7 @@ func TestNormalizeHost(t *testing.T) {
 }
 
 func TestNewPublicKey(t *testing.T) {
-	a, err := newPublicKey()
-	if err != nil {
-		t.Fatal(err)
-	}
-	b, _ := newPublicKey()
+	a, b := newPublicKey(), newPublicKey()
 	if !strings.HasPrefix(a, publicKeyPrefix) || len(a) != len(publicKeyPrefix)+24 || a == b {
 		t.Errorf("keys %q %q: want unique pub_ + 24 chars", a, b)
 	}

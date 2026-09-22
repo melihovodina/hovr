@@ -11,7 +11,7 @@ import (
 
 func TestVerify(t *testing.T) {
 	f := newFakeSupabase(t)
-	v := NewVerifier(context.Background(), f.url(), "")
+	v := NewVerifier(context.Background(), f.url())
 	hour := time.Now().Add(time.Hour)
 
 	claims, err := v.Verify(f.signed(hour))
@@ -46,7 +46,7 @@ func TestVerify(t *testing.T) {
 
 func TestVerifyPicksUpRotatedKey(t *testing.T) {
 	f := newFakeSupabase(t)
-	v := NewVerifier(context.Background(), f.url(), "")
+	v := NewVerifier(context.Background(), f.url())
 	// Pretend the last fetch was long ago so an unknown kid may trigger a refetch.
 	v.jwks.lastFetch = time.Time{}
 
@@ -58,7 +58,7 @@ func TestVerifyPicksUpRotatedKey(t *testing.T) {
 
 func TestUnknownKidRefetchIsThrottled(t *testing.T) {
 	f := newFakeSupabase(t)
-	v := NewVerifier(context.Background(), f.url(), "")
+	v := NewVerifier(context.Background(), f.url())
 	// The keys were fetched just now, so a new kid must not cause another fetch yet.
 	f.addKey("k2")
 	if _, err := v.Verify(f.signed(time.Now().Add(time.Hour))); err == nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/melihovodina/hovr/server/internal/supabase"
+	"github.com/melihovodina/hovr/server/pkg/httpx"
 )
 
 const (
@@ -55,19 +56,17 @@ func (s *Service) RequireUser() gin.HandlerFunc {
 
 		refresh, err := c.Cookie(refreshCookie)
 		if err != nil || refresh == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Sign in to continue."})
+			httpx.Abort(c, http.StatusUnauthorized, "Sign in to continue.")
 			return
 		}
 		session, err := s.supabase.Refresh(c.Request.Context(), refresh)
-		if err != nil {
-			s.cookies.clearSession(c)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Your session has expired. Sign in again."})
-			return
+		var claims *Claims
+		if err == nil {
+			claims, err = s.verifier.Verify(session.AccessToken)
 		}
-		claims, err := s.verifier.Verify(session.AccessToken)
 		if err != nil {
 			s.cookies.clearSession(c)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Your session has expired. Sign in again."})
+			httpx.Abort(c, http.StatusUnauthorized, "Your session has expired. Sign in again.")
 			return
 		}
 		s.cookies.setSession(c, session)
@@ -86,7 +85,7 @@ func (s *Service) SameOrigin() gin.HandlerFunc {
 			return
 		}
 		if c.GetHeader("Origin") != s.appOrigin {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "This request came from another site."})
+			httpx.Abort(c, http.StatusForbidden, "This request came from another site.")
 			return
 		}
 		c.Next()

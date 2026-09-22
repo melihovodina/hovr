@@ -24,7 +24,7 @@ func init() { gin.SetMode(gin.TestMode) }
 func newTestApp(t *testing.T) (*gin.Engine, *fakeSupabase) {
 	t.Helper()
 	f := newFakeSupabase(t)
-	svc := NewService(NewVerifier(context.Background(), f.url(), ""), supabase.NewAuth(f.url(), "pk"), appURL)
+	svc := NewService(NewVerifier(context.Background(), f.url()), supabase.NewAuth(f.url(), "pk"), appURL)
 	r := gin.New()
 	api := r.Group("/api", svc.SameOrigin())
 	svc.Routes(api.Group("/auth"))

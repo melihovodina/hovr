@@ -9,19 +9,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/pkg/apperr"
 )
 
-// LimitError means the account's plan does not allow another bot.
-type LimitError struct {
-	Plan plans.Plan
-	Max  int
-}
-
-func (e *LimitError) Error() string {
-	return fmt.Sprintf("plan %s allows %d bots", e.Plan, e.Max)
-}
-
-// Store reads and writes bots. Every query is scoped to the owning account.
+// Store reads and writes bots. Every query is scoped to the owning account, and
+// database errors come back translated by mapErr.
 type Store struct {
 	db *pgxpool.Pool
 }
@@ -37,17 +29,19 @@ func scanBot(row pgx.Row) (*Bot, error) {
 	var b Bot
 	err := row.Scan(&b.ID, &b.Name, &b.PublicKey, &b.AllowedDomains, &b.Color, &b.AvatarURL, &b.Position,
 		&b.Greeting, &b.SuggestedQuestions, &b.ShowBadge, &b.LastSeenHost, &b.LastSeenAt, &b.CreatedAt, &b.UpdatedAt)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, errNotFound
+	if err != nil {
+		return nil, mapErr(err)
 	}
-	return &b, err
+	return &b, nil
 }
 
-// Plan returns the account's current plan.
-func (s *Store) Plan(ctx context.Context, accountID string) (plans.Plan, error) {
-	var p plans.Plan
-	err := s.db.QueryRow(ctx, `select plan from accounts where id = $1`, accountID).Scan(&p)
-	return p, err
+// mapErr translates database errors; "not found" gets the bot-specific message.
+func mapErr(err error) error {
+	err = apperr.Map(err)
+	if errors.Is(err, apperr.ErrNotFound) {
+		return errBotNotFound
+	}
+	return err
 }
 
 // Create adds a bot if the plan allows one more. The account row is locked for the
@@ -61,14 +55,15 @@ func (s *Store) Create(ctx context.Context, accountID, name, publicKey string) (
 
 	var plan plans.Plan
 	if err := tx.QueryRow(ctx, `select plan from accounts where id = $1 for update`, accountID).Scan(&plan); err != nil {
-		return nil, fmt.Errorf("load account: %w", err)
+		return nil, fmt.Errorf("load account: %w", apperr.Map(err))
 	}
 	var count int
 	if err := tx.QueryRow(ctx, `select count(*) from bots where account_id = $1`, accountID).Scan(&count); err != nil {
 		return nil, err
 	}
 	if max := plans.For(plan).Bots; count >= max {
-		return nil, &LimitError{Plan: plan, Max: max}
+		return nil, apperr.UpgradeRequired(fmt.Sprintf(
+			"Your %s plan includes %s. Upgrade to add more.", plan.Name(), botCount(max)))
 	}
 
 	bot, err := scanBot(tx.QueryRow(ctx,
@@ -120,10 +115,17 @@ func (s *Store) Save(ctx context.Context, accountID string, b *Bot) (*Bot, error
 func (s *Store) Delete(ctx context.Context, accountID, id string) error {
 	tag, err := s.db.Exec(ctx, `delete from bots where id = $1 and account_id = $2`, id, accountID)
 	if err != nil {
-		return err
+		return mapErr(err)
 	}
 	if tag.RowsAffected() == 0 {
-		return errNotFound
+		return errBotNotFound
 	}
 	return nil
+}
+
+func botCount(n int) string {
+	if n == 1 {
+		return "1 bot"
+	}
+	return fmt.Sprintf("%d bots", n)
 }

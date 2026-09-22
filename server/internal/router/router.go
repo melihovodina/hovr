@@ -12,9 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/melihovodina/hovr/server/internal/accounts"
 	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/internal/config"
+	"github.com/melihovodina/hovr/server/pkg/httpx"
 )
 
 // Deps are the shared services handlers need.
@@ -34,9 +36,10 @@ func New(d Deps) *gin.Engine {
 	api := r.Group("/api", d.Auth.SameOrigin())
 	d.Auth.Routes(api.Group("/auth"))
 
+	accountStore := accounts.NewStore(d.DB)
 	user := api.Group("", d.Auth.RequireUser())
-	user.GET("/me", me(d.DB))
-	bots.NewHandler(bots.NewStore(d.DB)).Routes(user.Group("/bots"))
+	accounts.Routes(user, accountStore)
+	bots.NewHandler(bots.NewStore(d.DB), accountStore).Routes(user.Group("/bots"))
 
 	if d.Config.StaticDir != "" {
 		serveClient(r, d.Config.StaticDir)
@@ -56,25 +59,12 @@ func health(db *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
-func me(db *pgxpool.Pool) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var plan string
-		err := db.QueryRow(c.Request.Context(),
-			`select plan from accounts where id = $1`, auth.UserID(c)).Scan(&plan)
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Account not found."})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"id": auth.UserID(c), "email": auth.UserEmail(c), "plan": plan})
-	}
-}
-
 // serveClient serves the Next.js static export. Unknown paths fall back to their
 // ".html" page (Next exports /pricing as pricing.html) and finally to 404.html.
 func serveClient(r *gin.Engine, dir string) {
 	r.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Not found."})
+			httpx.Error(c, http.StatusNotFound, "Not found.")
 			return
 		}
 		clean := filepath.Clean("/" + c.Request.URL.Path)

@@ -2,20 +2,22 @@ package bots
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/melihovodina/hovr/server/internal/accounts"
 	"github.com/melihovodina/hovr/server/internal/auth"
-	"github.com/melihovodina/hovr/server/internal/db"
+	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/pkg/apperr"
+	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
 // These tests run against a real database (the local Supabase one) and are
@@ -31,44 +33,19 @@ type testEnv struct {
 
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("TEST_DATABASE_URL not set")
-	}
-	pool, err := db.Connect(context.Background(), url)
-	if err != nil {
-		t.Fatalf("connect: %v", err)
-	}
-	t.Cleanup(pool.Close)
-
+	pool := testdb.Connect(t)
 	r := gin.New()
 	// Stand-in for auth.RequireUser: the test picks the user with a header.
 	g := r.Group("/api/bots", func(c *gin.Context) {
 		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
 		c.Next()
 	})
-	NewHandler(NewStore(pool)).Routes(g)
+	NewHandler(NewStore(pool), accounts.NewStore(pool)).Routes(g)
 	return &testEnv{t: t, pool: pool, r: r}
 }
 
-// newUser creates an auth user; the sign-up trigger creates its free account.
-func (e *testEnv) newUser(plan string) string {
-	e.t.Helper()
-	var id string
-	email := fmt.Sprintf("bots-test-%s@hovr.test", rand.Text())
-	err := e.pool.QueryRow(context.Background(),
-		`insert into auth.users (id, email, aud, role) values (gen_random_uuid(), $1, 'authenticated', 'authenticated') returning id`,
-		email).Scan(&id)
-	if err != nil {
-		e.t.Fatalf("create user: %v", err)
-	}
-	e.t.Cleanup(func() { _, _ = e.pool.Exec(context.Background(), `delete from auth.users where id = $1`, id) })
-	if plan != "free" {
-		if _, err := e.pool.Exec(context.Background(), `update accounts set plan = $2 where id = $1`, id, plan); err != nil {
-			e.t.Fatalf("set plan: %v", err)
-		}
-	}
-	return id
+func (e *testEnv) newUser(plan plans.Plan) string {
+	return testdb.NewUser(e.t, e.pool, plan)
 }
 
 func (e *testEnv) do(user, method, path, body string) (*httptest.ResponseRecorder, map[string]any) {
@@ -84,7 +61,7 @@ func (e *testEnv) do(user, method, path, body string) (*httptest.ResponseRecorde
 
 func TestBotLifecycle(t *testing.T) {
 	e := newTestEnv(t)
-	anna := e.newUser("free")
+	anna := e.newUser(plans.Free)
 
 	w, bot := e.do(anna, http.MethodPost, "/api/bots", `{"name":"Northwind Coffee"}`)
 	if w.Code != http.StatusCreated {
@@ -118,7 +95,7 @@ func TestBotLifecycle(t *testing.T) {
 
 func TestFreePlanLimits(t *testing.T) {
 	e := newTestEnv(t)
-	anna := e.newUser("free")
+	anna := e.newUser(plans.Free)
 
 	w, bot := e.do(anna, http.MethodPost, "/api/bots", `{"name":"First"}`)
 	if w.Code != http.StatusCreated {
@@ -132,7 +109,7 @@ func TestFreePlanLimits(t *testing.T) {
 		t.Errorf("hide badge on free: %d, want 402", w.Code)
 	}
 
-	pro := e.newUser("pro")
+	pro := e.newUser(plans.Pro)
 	for i := 1; i <= 3; i++ {
 		if w, _ := e.do(pro, http.MethodPost, "/api/bots", fmt.Sprintf(`{"name":"Bot %d"}`, i)); w.Code != http.StatusCreated {
 			t.Fatalf("pro bot %d: %d", i, w.Code)
@@ -145,7 +122,7 @@ func TestFreePlanLimits(t *testing.T) {
 
 func TestBotsAreIsolatedPerAccount(t *testing.T) {
 	e := newTestEnv(t)
-	anna, bob := e.newUser("free"), e.newUser("free")
+	anna, bob := e.newUser(plans.Free), e.newUser(plans.Free)
 
 	_, bot := e.do(anna, http.MethodPost, "/api/bots", `{"name":"Anna's bot"}`)
 	id := bot["id"].(string)
@@ -167,5 +144,36 @@ func TestBotsAreIsolatedPerAccount(t *testing.T) {
 	}
 	if w, _ := e.do(anna, http.MethodGet, "/api/bots/not-a-uuid", ""); w.Code != http.StatusNotFound {
 		t.Errorf("malformed id: %d, want 404", w.Code)
+	}
+}
+
+// The store doesn't check before writing; the database rejects bad writes and
+// apperr.Map turns the rejection into a proper error.
+func TestDatabaseErrorsAreTranslated(t *testing.T) {
+	e := newTestEnv(t)
+	store, ctx := NewStore(e.pool), context.Background()
+	anna := e.newUser(plans.Pro)
+
+	first, err := store.Create(ctx, anna, "First", "pub_duplicate_key_for_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Same public key again: unique violation → 409.
+	if _, err := store.Create(ctx, anna, "Second", first.PublicKey); !errors.Is(err, apperr.ErrConflict) {
+		t.Errorf("duplicate public key: %v, want conflict", err)
+	}
+	// No such account: no rows → 404.
+	if _, err := store.Create(ctx, "00000000-0000-0000-0000-000000000000", "Ghost", "pub_ghost"); !errors.Is(err, apperr.ErrNotFound) {
+		t.Errorf("missing account: %v, want not found", err)
+	}
+	// A value the database check constraint rejects → 400.
+	first.Color = "red"
+	if _, err := store.Save(ctx, anna, first); !errors.Is(err, apperr.ErrBadInput) {
+		t.Errorf("bad color saved directly: %v, want bad input", err)
+	}
+	// Someone else's bot: no rows → the bot-specific 404.
+	bob := e.newUser(plans.Free)
+	if _, err := store.Get(ctx, bob, first.ID); err != errBotNotFound {
+		t.Errorf("other account's bot: %v, want errBotNotFound", err)
 	}
 }

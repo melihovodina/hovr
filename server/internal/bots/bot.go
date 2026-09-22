@@ -4,13 +4,14 @@ package bots
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/melihovodina/hovr/server/pkg/apperr"
+	"github.com/melihovodina/hovr/server/pkg/validate"
 )
 
 // Bot is one chatbot with its widget settings.
@@ -53,15 +54,6 @@ const (
 
 var colorRe = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
 
-// ValidationError is a problem with the request that the user can fix.
-type ValidationError struct{ Message string }
-
-func (e *ValidationError) Error() string { return e.Message }
-
-func invalid(format string, args ...any) error {
-	return &ValidationError{Message: fmt.Sprintf(format, args...)}
-}
-
 // apply validates p and writes it onto b.
 func (p Patch) apply(b *Bot) error {
 	if p.Name != nil {
@@ -73,20 +65,21 @@ func (p Patch) apply(b *Bot) error {
 	}
 	if p.Color != nil {
 		if !colorRe.MatchString(*p.Color) {
-			return invalid("Pick a color like #2F6B4F.")
+			return apperr.BadRequest("Pick a color like #2F6B4F.")
 		}
 		b.Color = strings.ToUpper(*p.Color)
 	}
 	if p.Position != nil {
 		if *p.Position != "left" && *p.Position != "right" {
-			return invalid("Position must be left or right.")
+			return apperr.BadRequest("Position must be left or right.")
 		}
 		b.Position = *p.Position
 	}
 	if p.Greeting != nil {
-		greeting := strings.TrimSpace(*p.Greeting)
-		if greeting == "" || utf8.RuneCountInString(greeting) > maxGreetingLen {
-			return invalid("Keep the hello message between 1 and %d characters.", maxGreetingLen)
+		greeting, err := validate.Text(*p.Greeting, 1, maxGreetingLen,
+			"Keep the hello message between 1 and 280 characters.")
+		if err != nil {
+			return err
 		}
 		b.Greeting = greeting
 	}
@@ -111,11 +104,7 @@ func (p Patch) apply(b *Bot) error {
 }
 
 func cleanName(name string) (string, error) {
-	name = strings.TrimSpace(name)
-	if name == "" || utf8.RuneCountInString(name) > maxNameLen {
-		return "", invalid("Give your bot a name up to %d characters.", maxNameLen)
-	}
-	return name, nil
+	return validate.Text(name, 1, maxNameLen, "Give your bot a name up to 80 characters.")
 }
 
 func cleanQuestions(in []string) ([]string, error) {
@@ -126,12 +115,12 @@ func cleanQuestions(in []string) ([]string, error) {
 			continue
 		}
 		if utf8.RuneCountInString(q) > maxQuestionLen {
-			return nil, invalid("Keep each suggested question under %d characters.", maxQuestionLen)
+			return nil, apperr.BadRequest("Keep each suggested question under %d characters.", maxQuestionLen)
 		}
 		out = append(out, q)
 	}
 	if len(out) > maxSuggestions {
-		return nil, invalid("Add up to %d suggested questions.", maxSuggestions)
+		return nil, apperr.BadRequest("Add up to %d suggested questions.", maxSuggestions)
 	}
 	return out, nil
 }
@@ -153,7 +142,7 @@ func cleanDomains(in []string) ([]string, error) {
 		out = append(out, host)
 	}
 	if len(out) > maxDomains {
-		return nil, invalid("Add up to %d websites.", maxDomains)
+		return nil, apperr.BadRequest("Add up to %d websites.", maxDomains)
 	}
 	return out, nil
 }
@@ -170,19 +159,17 @@ func normalizeHost(raw string) (string, error) {
 	}
 	u, err := url.Parse(raw)
 	if err != nil || !hostRe.MatchString(u.Hostname()) {
-		return "", invalid("%q doesn't look like a website address.", strings.TrimPrefix(raw, "https://"))
+		return "", apperr.BadRequest("%q doesn't look like a website address.", strings.TrimPrefix(raw, "https://"))
 	}
 	return u.Hostname(), nil
 }
 
 // newPublicKey returns the id used in the embed code. It is public by design:
 // allowed domains and rate limits protect the bot, not the secrecy of the key.
-func newPublicKey() (string, error) {
+func newPublicKey() string {
 	b := make([]byte, 18)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return publicKeyPrefix + base64.RawURLEncoding.EncodeToString(b), nil
+	_, _ = rand.Read(b) // never fails; it crashes the program instead
+	return publicKeyPrefix + base64.RawURLEncoding.EncodeToString(b)
 }
 
-var errNotFound = errors.New("bot not found")
+var errBotNotFound = apperr.NotFound("Bot not found.")

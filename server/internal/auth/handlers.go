@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/melihovodina/hovr/server/internal/supabase"
+	"github.com/melihovodina/hovr/server/pkg/httpx"
+	"github.com/melihovodina/hovr/server/pkg/validate"
 )
 
 const minPasswordLength = 8
@@ -33,11 +35,7 @@ func (s *Service) signup(c *gin.Context) {
 	if !bindCredentials(c, &in, true) {
 		return
 	}
-	pkce, ok := s.startPKCE(c, "/onboarding")
-	if !ok {
-		return
-	}
-	if err := s.supabase.SignUp(c.Request.Context(), in.Email, in.Password, pkce); err != nil {
+	if err := s.supabase.SignUp(c.Request.Context(), in.Email, in.Password, s.startPKCE(c, "/onboarding")); err != nil {
 		s.fail(c, err)
 		return
 	}
@@ -74,15 +72,13 @@ func (s *Service) recover(c *gin.Context) {
 	var in struct {
 		Email string `json:"email"`
 	}
-	if err := c.ShouldBindJSON(&in); err != nil || !validEmail(in.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Enter a valid email address."})
-		return
-	}
-	pkce, ok := s.startPKCE(c, "/reset-password")
+	_ = c.ShouldBindJSON(&in)
+	email, ok := validate.Email(in.Email)
 	if !ok {
+		httpx.Error(c, http.StatusBadRequest, "Enter a valid email address.")
 		return
 	}
-	if err := s.supabase.Recover(c.Request.Context(), strings.TrimSpace(in.Email), pkce); err != nil {
+	if err := s.supabase.Recover(c.Request.Context(), email, s.startPKCE(c, "/reset-password")); err != nil {
 		if supabase.IsCode(err, "over_email_send_rate_limit") {
 			s.fail(c, err)
 			return
@@ -98,7 +94,7 @@ func (s *Service) updatePassword(c *gin.Context) {
 		Password string `json:"password"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil || len(in.Password) < minPasswordLength {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Use at least 8 characters."})
+		httpx.Error(c, http.StatusBadRequest, "Use at least 8 characters.")
 		return
 	}
 	if err := s.supabase.UpdatePassword(c.Request.Context(), c.GetString(accessTokenKey), in.Password); err != nil {
@@ -137,17 +133,13 @@ func (s *Service) callback(c *gin.Context) {
 
 // startPKCE stores a fresh verifier in a cookie and returns the challenge plus the
 // callback address Supabase should redirect to.
-func (s *Service) startPKCE(c *gin.Context, next string) (supabase.PKCE, bool) {
-	verifier, challenge, err := newPKCE()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong. Try again."})
-		return supabase.PKCE{}, false
-	}
+func (s *Service) startPKCE(c *gin.Context, next string) supabase.PKCE {
+	verifier, challenge := newPKCE()
 	s.cookies.set(c, pkceCookie, verifier, pkceMaxAge)
 	return supabase.PKCE{
 		Challenge:  challenge,
 		RedirectTo: s.appURL + "/api/auth/callback?next=" + url.QueryEscape(next),
-	}, true
+	}
 }
 
 func (s *Service) redirect(c *gin.Context, path string) {
@@ -158,47 +150,40 @@ func (s *Service) redirect(c *gin.Context, path string) {
 func (s *Service) fail(c *gin.Context, err error) {
 	switch {
 	case supabase.IsCode(err, "invalid_credentials"):
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Wrong email or password."})
+		httpx.Error(c, http.StatusUnauthorized, "Wrong email or password.")
 	case supabase.IsCode(err, "email_not_confirmed"):
-		c.JSON(http.StatusForbidden, gin.H{"error": "Confirm your email first. We sent you a link."})
+		httpx.Error(c, http.StatusForbidden, "Confirm your email first. We sent you a link.")
 	case supabase.IsCode(err, "user_already_exists"), supabase.IsCode(err, "email_exists"):
-		c.JSON(http.StatusConflict, gin.H{"error": "There's already an account with this email. Sign in instead."})
+		httpx.Error(c, http.StatusConflict, "There's already an account with this email. Sign in instead.")
 	case supabase.IsCode(err, "weak_password"):
-		c.JSON(http.StatusBadRequest, gin.H{"error": "That password is too easy to guess. Try a longer one."})
+		httpx.Error(c, http.StatusBadRequest, "That password is too easy to guess. Try a longer one.")
 	case supabase.IsCode(err, "same_password"):
-		c.JSON(http.StatusBadRequest, gin.H{"error": "That's your current password. Pick a new one."})
+		httpx.Error(c, http.StatusBadRequest, "That's your current password. Pick a new one.")
 	case supabase.IsCode(err, "email_address_invalid"), supabase.IsCode(err, "validation_failed"):
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Enter a valid email address."})
+		httpx.Error(c, http.StatusBadRequest, "Enter a valid email address.")
 	case supabase.IsCode(err, "over_email_send_rate_limit"), supabase.IsCode(err, "over_request_rate_limit"):
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many attempts. Wait a minute and try again."})
+		httpx.Error(c, http.StatusTooManyRequests, "Too many attempts. Wait a minute and try again.")
 	default:
 		slog.Error("supabase auth request failed", "err", err)
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Sign-in is having trouble right now. Try again in a moment."})
+		httpx.Error(c, http.StatusBadGateway, "Sign-in is having trouble right now. Try again in a moment.")
 	}
 }
 
 func bindCredentials(c *gin.Context, in *credentials, isSignup bool) bool {
-	if err := c.ShouldBindJSON(in); err != nil || !validEmail(in.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Enter a valid email address."})
-		return false
+	_ = c.ShouldBindJSON(in)
+	email, ok := validate.Email(in.Email)
+	switch {
+	case !ok:
+		httpx.Error(c, http.StatusBadRequest, "Enter a valid email address.")
+	case isSignup && len(in.Password) < minPasswordLength:
+		httpx.Error(c, http.StatusBadRequest, "Use at least 8 characters.")
+	case in.Password == "":
+		httpx.Error(c, http.StatusBadRequest, "Enter your password.")
+	default:
+		in.Email = email
+		return true
 	}
-	in.Email = strings.TrimSpace(in.Email)
-	if isSignup && len(in.Password) < minPasswordLength {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Use at least 8 characters."})
-		return false
-	}
-	if in.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Enter your password."})
-		return false
-	}
-	return true
-}
-
-// validEmail is a light sanity check; Supabase does the real validation.
-func validEmail(email string) bool {
-	email = strings.TrimSpace(email)
-	at := strings.LastIndex(email, "@")
-	return at > 0 && at < len(email)-1 && !strings.ContainsAny(email, " \t\n")
+	return false
 }
 
 // safeNext only allows redirects to a path on our own site.
