@@ -31,6 +31,7 @@ is the one exception and is verified by its signature.
 | `POST /signin {email, password}` | sets the cookies, returns `{user:{id,email}}` |
 | `POST /signout` | 204 |
 | `POST /recover {email}` | `{"status":"check_email"}` |
+| `POST /resend {email}` | sends the confirmation email again, same answer for any address |
 | `POST /password {password}` | signed in, at least 8 characters, 204 |
 | `GET /callback?code&next` | the link in emails; redirects to `next`, or `/signin?confirmed=1`, `?error=link_invalid`, `?error=link_expired` |
 
@@ -69,7 +70,7 @@ anything is `queued` or `processing`. A failed source carries a readable `error`
 
 Refusals before the stream starts are plain JSON errors. Use `fetch` and read the body:
 `EventSource` can't POST. A message is `{id, role, content, citations:[{n, sourceId,
-sourceTitle, score}], answered, createdAt}`; `[n]` markers in the text match `citations`,
+sourceTitle, score, excerpt}], answered, createdAt}`; `[n]` markers in the text match `citations`,
 and `answered: false` means the bot said it doesn't know. The last 10 messages are sent to
 the model as memory. Playground chats don't count against the monthly limit.
 
@@ -80,7 +81,7 @@ the model as memory. Playground chats don't count against the monthly limit.
 | Endpoint | Notes |
 | --- | --- |
 | `GET /inbox?status=open\|done` | `{items, historyDays}`; 7 on Free means older items are hidden, 0 means forever |
-| `GET /inbox/<item>` | `{item, messages}`, the conversation it came from (`null` if deleted) |
+| `GET /inbox/<item>` | `{item, conversation, messages}`, where it came from (`null` if deleted); items carry `visitorEmail` when that visitor left one |
 | `POST /inbox/<item>/answer {answer}` | 201 `{item, source}`: the answer becomes a knowledge source and the item is done; 402 if the source limit is reached, and the item stays open |
 | `PATCH /inbox/<item> {status}` | dismiss or reopen |
 | `GET /leads` | `{leads, historyDays, canExport}`; a lead is `{conversationId, email, question, missed, createdAt, lastMessageAt}` |
@@ -113,7 +114,7 @@ minute per IP.
 
 | Endpoint | Notes |
 | --- | --- |
-| `GET /` | `{plan, planName, limits, usage:{messages,bots,sources}, periodEnd, hasSubscription}` |
+| `GET /` | `{plan, planName, limits:{bots, messagesPerMonth, sources, removeBadge, exportLeads, historyDays}, usage:{messages,bots,sources}, periodEnd, hasSubscription}` |
 | `POST /checkout {plan}` | `{url}` to open; `plan` is `pro` or `business` |
 | `POST /confirm {sessionId}` | applies the plan on return, without waiting for the webhook |
 | `POST /portal` | `{url}` for card, plan change, cancel and invoices; 400 without a subscription |

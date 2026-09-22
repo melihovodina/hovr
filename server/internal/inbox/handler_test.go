@@ -97,17 +97,27 @@ func (e *env) item(bot, question, conversation string, daysAgo int) string {
 func TestTeachYourBot(t *testing.T) {
 	e := newEnv(t)
 	user, bot := testdb.NewBot(t, e.pool, plans.Free)
-	conv := e.conversation(bot, "Do you sell tea?", "")
+	conv := e.conversation(bot, "Do you sell tea?", "maria@example.com")
 	id := e.item(bot, "Do you sell tea?", conv, 0)
 	base := "/api/bots/" + bot + "/inbox"
 
 	w, out := e.call(user, http.MethodGet, base, "")
-	if items := out["items"].([]any); w.Code != http.StatusOK || len(items) != 1 || out["historyDays"].(float64) != 7 {
+	items, _ := out["items"].([]any)
+	if w.Code != http.StatusOK || len(items) != 1 || out["historyDays"].(float64) != 7 {
 		t.Fatalf("list: %d %s", w.Code, w.Body)
+	}
+	if first := items[0].(map[string]any); first["visitorEmail"] != "maria@example.com" {
+		t.Errorf("list item = %+v, want the visitor's email", first)
 	}
 	w, out = e.call(user, http.MethodGet, base+"/"+id, "")
 	if msgs := out["messages"].([]any); w.Code != http.StatusOK || len(msgs) != 2 {
 		t.Fatalf("get: %d %s", w.Code, w.Body)
+	}
+	if conv := out["conversation"].(map[string]any); conv["visitorEmail"] != "maria@example.com" {
+		t.Errorf("conversation = %+v, want the visitor's email", conv)
+	}
+	if item := out["item"].(map[string]any); item["visitorEmail"] != "maria@example.com" {
+		t.Errorf("item = %+v, want the visitor's email", item)
 	}
 
 	if w, _ := e.call(user, http.MethodPost, base+"/"+id+"/answer", `{"answer":"  "}`); w.Code != http.StatusBadRequest {

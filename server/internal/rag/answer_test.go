@@ -55,13 +55,29 @@ func TestMarkerFilter(t *testing.T) {
 
 func TestCited(t *testing.T) {
 	matches := []Match{{SourceID: "a", SourceTitle: "A"}, {SourceID: "b", SourceTitle: "B"}}
+	for i := range matches {
+		matches[i].Content = "  Some\n passage.  "
+	}
 	got := cited("Yes [2]. Also [1, 2] and [7].", matches)
-	want := []Citation{{N: 2, SourceID: "b", SourceTitle: "B"}, {N: 1, SourceID: "a", SourceTitle: "A"}}
+	want := []Citation{
+		{N: 2, SourceID: "b", SourceTitle: "B", Excerpt: "Some passage."},
+		{N: 1, SourceID: "a", SourceTitle: "A", Excerpt: "Some passage."},
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("cited = %+v, want %+v", got, want)
 	}
 	if got := cited("No citations.", matches); len(got) != 0 {
 		t.Errorf("cited without markers = %+v", got)
+	}
+}
+
+func TestExcerpt(t *testing.T) {
+	if got := excerpt("  spaced\n\ttext "); got != "spaced text" {
+		t.Errorf("excerpt = %q", got)
+	}
+	long := excerpt(strings.Repeat("é", maxExcerpt+50))
+	if len([]rune(long)) != maxExcerpt || !strings.HasSuffix(long, "…") {
+		t.Errorf("long excerpt = %d runes", len([]rune(long)))
 	}
 }
 

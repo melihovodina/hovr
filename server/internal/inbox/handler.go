@@ -101,15 +101,16 @@ func (h *Handler) get(c *gin.Context) {
 		return
 	}
 	var messages []chat.Message
+	var conversation *chat.Conversation
 	if item.LastConversationID != nil {
-		_, msgs, err := h.chats.Messages(c.Request.Context(), auth.UserID(c), botID, *item.LastConversationID)
+		found, msgs, err := h.chats.Messages(c.Request.Context(), auth.UserID(c), botID, *item.LastConversationID)
 		if err != nil && !errors.Is(err, apperr.ErrNotFound) {
 			httpx.Write(c, err)
 			return
 		}
-		messages = msgs
+		conversation, messages = found, msgs
 	}
-	c.JSON(http.StatusOK, gin.H{"item": item, "messages": messages})
+	c.JSON(http.StatusOK, gin.H{"item": item, "conversation": conversation, "messages": messages})
 }
 
 func (h *Handler) setStatus(c *gin.Context) {

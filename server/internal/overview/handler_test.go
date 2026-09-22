@@ -163,8 +163,11 @@ func TestStatsParams(t *testing.T) {
 	if _, out := e.get(user, base+"?tz=Europe/Berlin"); out["timezone"] != "Europe/Berlin" {
 		t.Errorf("timezone = %v", out["timezone"])
 	}
-	if _, out := e.get(user, base+"?tz=Mars/Olympus"); out["timezone"] != "UTC" {
-		t.Errorf("unknown timezone = %v, want UTC", out["timezone"])
+	// Unknown zones and "Local" (the server's own zone, meaningless to Postgres) fall back.
+	for _, tz := range []string{"Mars/Olympus", "Local"} {
+		if w, out := e.get(user, base+"?tz="+tz); w.Code != http.StatusOK || out["timezone"] != "UTC" {
+			t.Errorf("tz=%s: %d, timezone = %v, want UTC", tz, w.Code, out["timezone"])
+		}
 	}
 	// Nothing to answer yet: the rate is null, not 0.
 	if _, out := e.get(user, base); out["current"].(map[string]any)["answeredRate"] != nil {

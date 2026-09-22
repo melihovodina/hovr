@@ -46,9 +46,9 @@ func (h *Handler) stats(c *gin.Context) {
 	}
 	days := clampDays(c.Query("days"))
 	loc := location(c.Query("tz"))
-	// Whole days in the owner's timezone, the last one being today.
-	midnight := time.Now().In(loc).Truncate(time.Hour * 24)
-	start := time.Date(midnight.Year(), midnight.Month(), midnight.Day(), 0, 0, 0, 0, loc).AddDate(0, 0, -(days - 1))
+	// Whole days in the owner's timezone, the last one being today there.
+	now := time.Now().In(loc)
+	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc).AddDate(0, 0, -(days - 1))
 	end := start.AddDate(0, 0, days)
 	prevStart := start.AddDate(0, 0, -days)
 
@@ -105,8 +105,9 @@ func clampDays(q string) int {
 }
 
 // location falls back to UTC for unknown timezones, so a bad value still shows numbers.
+// "Local" is the server's zone and means nothing to Postgres, so it counts as unknown.
 func location(tz string) *time.Location {
-	if tz == "" {
+	if tz == "" || tz == "Local" {
 		return time.UTC
 	}
 	loc, err := time.LoadLocation(tz)

@@ -74,11 +74,13 @@ func (s *Service) Respond(c *gin.Context, r Request) {
 	conversationID := r.ConversationID
 	if conversationID == "" {
 		if conversationID, err = s.store.startConversation(ctx, r.BotID, r.Channel, r.VisitorID, titleFrom(message)); err != nil {
+			s.refund(ctx, counted, r.AccountID)
 			httpx.Write(c, err)
 			return
 		}
 	}
 	if _, err := s.store.addMessage(ctx, conversationID, roleUser, message, nil, nil); err != nil {
+		s.refund(ctx, counted, r.AccountID)
 		httpx.Write(c, err)
 		return
 	}
@@ -99,11 +101,7 @@ func (s *Service) Respond(c *gin.Context, r Request) {
 		BotID: r.BotID, BotName: r.BotName, Message: message, History: history,
 	}, func(text string) error { return send("text", gin.H{"text": text}) })
 	if err != nil {
-		if counted {
-			if err := s.store.refundMessage(bg, r.AccountID); err != nil {
-				slog.Error("refund message", "account", r.AccountID, "err", err)
-			}
-		}
+		s.refund(bg, counted, r.AccountID)
 		if ctx.Err() == nil {
 			slog.Error("answer failed", "bot", r.BotID, "err", err)
 			_ = send("error", gin.H{"error": "The bot couldn't answer right now. Try again in a moment."})
@@ -122,6 +120,16 @@ func (s *Service) Respond(c *gin.Context, r Request) {
 		}
 	}
 	_ = send("done", gin.H{"message": saved})
+}
+
+// refund gives back a counted message when the question never got an answer.
+func (s *Service) refund(ctx context.Context, counted bool, accountID string) {
+	if !counted {
+		return
+	}
+	if err := s.store.refundMessage(context.WithoutCancel(ctx), accountID); err != nil {
+		slog.Error("refund message", "account", accountID, "err", err)
+	}
 }
 
 func (s *Service) checkOwner(ctx context.Context, r Request) error {

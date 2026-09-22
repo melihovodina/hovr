@@ -24,6 +24,19 @@ type Citation struct {
 	SourceID    string  `json:"sourceId"`
 	SourceTitle string  `json:"sourceTitle"`
 	Score       float64 `json:"score"`
+	// Excerpt is the start of the passage, for "Why it said that".
+	Excerpt string `json:"excerpt"`
+}
+
+// maxExcerpt keeps saved citations small; the whole chunk is rarely needed.
+const maxExcerpt = 400
+
+func excerpt(content string) string {
+	content = strings.Join(strings.Fields(content), " ")
+	if r := []rune(content); len(r) > maxExcerpt {
+		return string(r[:maxExcerpt-1]) + "…"
+	}
+	return content
 }
 
 // Answer is the finished reply.
@@ -94,7 +107,8 @@ func cited(text string, matches []Match) []Citation {
 			}
 			seen[n] = true
 			m := matches[n-1]
-			out = append(out, Citation{N: n, SourceID: m.SourceID, SourceTitle: m.SourceTitle, Score: m.Score})
+			out = append(out, Citation{N: n, SourceID: m.SourceID, SourceTitle: m.SourceTitle,
+				Score: m.Score, Excerpt: excerpt(m.Content)})
 		}
 	}
 	return out

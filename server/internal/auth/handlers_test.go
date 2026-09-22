@@ -159,6 +159,28 @@ func TestSignupStartsPKCE(t *testing.T) {
 	}
 }
 
+func TestResendConfirmation(t *testing.T) {
+	r, f := newTestApp(t)
+
+	w := send(r, http.MethodPost, "/api/auth/resend", `{"email":"anna@example.com"}`)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "check_email") {
+		t.Fatalf("resend: %d %s", w.Code, w.Body)
+	}
+	if !strings.Contains(f.lastResend, "/api/auth/callback") {
+		t.Errorf("redirect_to = %q, want the callback", f.lastResend)
+	}
+	if cookie(w, pkceCookie) == nil {
+		t.Error("no PKCE cookie for the new link")
+	}
+	// The same answer for an address without an account, so nobody can probe.
+	if w := send(r, http.MethodPost, "/api/auth/resend", `{"email":"nobody@example.com"}`); w.Code != http.StatusOK {
+		t.Errorf("unknown address: %d", w.Code)
+	}
+	if w := send(r, http.MethodPost, "/api/auth/resend", `{"email":"not-an-email"}`); w.Code != http.StatusBadRequest {
+		t.Errorf("invalid address: %d, want 400", w.Code)
+	}
+}
+
 func TestCallback(t *testing.T) {
 	r, _ := newTestApp(t)
 	verifier := &http.Cookie{Name: pkceCookie, Value: "some-verifier"}

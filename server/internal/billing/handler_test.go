@@ -125,7 +125,7 @@ func TestSummary(t *testing.T) {
 	if usage["messages"] != 12.0 || usage["bots"] != 1.0 || usage["sources"] != 1.0 {
 		t.Errorf("usage = %+v", usage)
 	}
-	if limits := out["limits"].(map[string]any); limits["MessagesPerMonth"] != 100.0 {
+	if limits := out["limits"].(map[string]any); limits["messagesPerMonth"] != 100.0 {
 		t.Errorf("limits = %+v", limits)
 	}
 }

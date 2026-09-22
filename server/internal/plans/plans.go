@@ -12,13 +12,13 @@ const (
 
 // Limits are the per-account allowances of a plan.
 type Limits struct {
-	Bots             int
-	MessagesPerMonth int
-	Sources          int
-	RemoveBadge      bool
-	ExportLeads      bool
+	Bots             int  `json:"bots"`
+	MessagesPerMonth int  `json:"messagesPerMonth"`
+	Sources          int  `json:"sources"`
+	RemoveBadge      bool `json:"removeBadge"`
+	ExportLeads      bool `json:"exportLeads"`
 	// HistoryDays is how long inbox and leads are kept; 0 means forever.
-	HistoryDays int
+	HistoryDays int `json:"historyDays"`
 }
 
 var limits = map[Plan]Limits{

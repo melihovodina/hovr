@@ -110,6 +110,17 @@ func (a *Auth) Recover(ctx context.Context, email string, pkce PKCE) error {
 	return a.do(ctx, http.MethodPost, "/recover?redirect_to="+url.QueryEscape(pkce.RedirectTo), "", body, nil)
 }
 
+// Resend sends the sign-up confirmation email again, with a fresh PKCE challenge.
+func (a *Auth) Resend(ctx context.Context, email string, pkce PKCE) error {
+	body := map[string]string{
+		"type":                  "signup",
+		"email":                 email,
+		"code_challenge":        pkce.Challenge,
+		"code_challenge_method": "s256",
+	}
+	return a.do(ctx, http.MethodPost, "/resend?redirect_to="+url.QueryEscape(pkce.RedirectTo), "", body, nil)
+}
+
 // UpdatePassword sets a new password for the user who owns accessToken.
 func (a *Auth) UpdatePassword(ctx context.Context, accessToken, password string) error {
 	return a.do(ctx, http.MethodPut, "/user", accessToken, map[string]string{"password": password}, nil)
@@ -118,17 +129,6 @@ func (a *Auth) UpdatePassword(ctx context.Context, accessToken, password string)
 // SignOut revokes the session behind accessToken (this device only).
 func (a *Auth) SignOut(ctx context.Context, accessToken string) error {
 	return a.do(ctx, http.MethodPost, "/logout?scope=local", accessToken, nil, nil)
-}
-
-// AuthorizeURL is where the browser goes to sign in with an OAuth provider.
-func (a *Auth) AuthorizeURL(provider string, pkce PKCE) string {
-	q := url.Values{
-		"provider":              {provider},
-		"redirect_to":           {pkce.RedirectTo},
-		"code_challenge":        {pkce.Challenge},
-		"code_challenge_method": {"s256"},
-	}
-	return a.baseURL + "/authorize?" + q.Encode()
 }
 
 func (a *Auth) do(ctx context.Context, method, path, bearer string, in, out any) error {

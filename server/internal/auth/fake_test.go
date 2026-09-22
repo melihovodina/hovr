@@ -33,6 +33,7 @@ type fakeSupabase struct {
 	activeKid  string
 	lastSignup map[string]string
 	lastQuery  map[string]string
+	lastResend string
 }
 
 func newFakeSupabase(t *testing.T) *fakeSupabase {
@@ -44,6 +45,10 @@ func newFakeSupabase(t *testing.T) *fakeSupabase {
 	mux.HandleFunc("POST /auth/v1/token", f.token)
 	mux.HandleFunc("POST /auth/v1/signup", f.signup)
 	mux.HandleFunc("POST /auth/v1/recover", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+	mux.HandleFunc("POST /auth/v1/resend", func(w http.ResponseWriter, r *http.Request) {
+		f.lastResend = r.URL.Query().Get("redirect_to")
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /auth/v1/logout", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	mux.HandleFunc("PUT /auth/v1/user", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	f.srv = httptest.NewServer(mux)

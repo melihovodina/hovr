@@ -26,6 +26,7 @@ func (s *Service) Routes(g *gin.RouterGroup) {
 	g.POST("/signin", s.signin)
 	g.POST("/signout", s.signout)
 	g.POST("/recover", s.recover)
+	g.POST("/resend", s.resend)
 	g.GET("/callback", s.callback)
 	g.POST("/password", s.RequireUser(), s.updatePassword)
 }
@@ -85,6 +86,28 @@ func (s *Service) recover(c *gin.Context) {
 		}
 		// Don't reveal whether the address has an account.
 		slog.Warn("password recovery failed", "err", err)
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "check_email"})
+}
+
+// resend sends the confirmation email again, for the "check your email" screen.
+func (s *Service) resend(c *gin.Context) {
+	var in struct {
+		Email string `json:"email"`
+	}
+	_ = c.ShouldBindJSON(&in)
+	email, ok := validate.Email(in.Email)
+	if !ok {
+		httpx.Error(c, http.StatusBadRequest, "Enter a valid email address.")
+		return
+	}
+	if err := s.supabase.Resend(c.Request.Context(), email, s.startPKCE(c, "/signin")); err != nil {
+		if supabase.IsCode(err, "over_email_send_rate_limit") {
+			s.fail(c, err)
+			return
+		}
+		// Don't reveal whether the address has an account, or is already confirmed.
+		slog.Warn("resend confirmation failed", "err", err)
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "check_email"})
 }

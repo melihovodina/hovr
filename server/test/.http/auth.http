@@ -91,3 +91,12 @@ Origin: {{origin}}
 
 ### 11. Who am I after sign-out — expect 401
 GET {{baseUrl}}/me
+
+### Resend the confirmation email ("check your email" screen) — always "check_email"
+POST {{baseUrl}}/auth/resend
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
