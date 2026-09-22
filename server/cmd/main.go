@@ -13,6 +13,7 @@ import (
 
 	"github.com/melihovodina/hovr/server/internal/ai"
 	"github.com/melihovodina/hovr/server/internal/auth"
+	"github.com/melihovodina/hovr/server/internal/billing"
 	"github.com/melihovodina/hovr/server/internal/chat"
 	"github.com/melihovodina/hovr/server/internal/config"
 	"github.com/melihovodina/hovr/server/internal/db"
@@ -62,6 +63,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	billingHandler := billing.NewHandler(billing.NewStore(pool), cfg.AppURL, cfg.StripeSecretKey,
+		cfg.StripeWebhookSecret, cfg.StripePricePro, cfg.StripePriceBusiness)
 	files := storage.New(cfg.SupabaseURL, cfg.SupabaseSecretKey, "sources")
 	sourceStore := sources.NewStore(pool)
 	worker := sources.NewWorker(sourceStore, files, embedder)
@@ -83,6 +86,7 @@ func run() error {
 			Widget:  widget.NewHandler(widget.NewStore(pool), chatService, cfg.AppURL),
 			Inbox:   inbox.NewHandler(inbox.NewStore(pool), chatStore, sourcesHandler),
 			Stats:   overview.NewHandler(overview.NewStore(pool)),
+			Billing: billingHandler,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

@@ -23,6 +23,11 @@ type Config struct {
 
 	GeminiAPIKey string
 
+	StripeSecretKey     string
+	StripeWebhookSecret string
+	StripePricePro      string
+	StripePriceBusiness string
+
 	StaticDir string
 }
 
@@ -40,6 +45,10 @@ func Load() (Config, error) {
 		SupabasePublishableKey: os.Getenv("SUPABASE_PUBLISHABLE_KEY"),
 		SupabaseSecretKey:      os.Getenv("SUPABASE_SECRET_KEY"),
 		GeminiAPIKey:           os.Getenv("GEMINI_API_KEY"),
+		StripeSecretKey:        os.Getenv("STRIPE_SECRET_KEY"),
+		StripeWebhookSecret:    os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		StripePricePro:         os.Getenv("STRIPE_PRICE_PRO"),
+		StripePriceBusiness:    os.Getenv("STRIPE_PRICE_BUSINESS"),
 		StaticDir:              os.Getenv("STATIC_DIR"),
 	}
 
@@ -58,6 +67,16 @@ func Load() (Config, error) {
 	}
 	if cfg.GeminiAPIKey == "" {
 		missing = append(missing, "GEMINI_API_KEY")
+	}
+	for name, value := range map[string]string{
+		"STRIPE_SECRET_KEY":     cfg.StripeSecretKey,
+		"STRIPE_WEBHOOK_SECRET": cfg.StripeWebhookSecret,
+		"STRIPE_PRICE_PRO":      cfg.StripePricePro,
+		"STRIPE_PRICE_BUSINESS": cfg.StripePriceBusiness,
+	} {
+		if value == "" {
+			missing = append(missing, name)
+		}
 	}
 	if len(missing) > 0 {
 		return Config{}, fmt.Errorf("missing required env: %s", strings.Join(missing, ", "))

@@ -1,0 +1,40 @@
+# Billing (signed in; see auth.http). Needs the Stripe test keys in server/.env and
+# a running: stripe listen --forward-to localhost:8080/api/billing/webhook
+# Test card in Checkout: 4242 4242 4242 4242, any future date and CVC.
+
+@baseUrl = http://localhost:8080/api
+@origin = http://localhost:3000
+
+### Plan, limits, this month's usage, renewal date, mock flag
+GET {{baseUrl}}/billing
+
+### Start an upgrade — returns the URL the browser should open
+POST {{baseUrl}}/billing/checkout
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "plan": "pro"
+}
+
+### Confirm after coming back from checkout (?checkout=<session> in the app URL)
+POST {{baseUrl}}/billing/confirm
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "sessionId": "PASTE_CHECKOUT_SESSION_ID"
+}
+
+### Stripe customer portal (card, plan change, cancel, invoices) — 400 without a subscription
+POST {{baseUrl}}/billing/portal
+Origin: {{origin}}
+
+### Webhook — Stripe calls this; locally use: stripe listen --forward-to localhost:8080/api/billing/webhook
+# An unsigned request must answer 400.
+POST {{baseUrl}}/billing/webhook
+Content-Type: application/json
+
+{
+  "type": "customer.subscription.updated"
+}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/melihovodina/hovr/server/internal/accounts"
 	"github.com/melihovodina/hovr/server/internal/auth"
+	"github.com/melihovodina/hovr/server/internal/billing"
 	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/internal/chat"
 	"github.com/melihovodina/hovr/server/internal/config"
@@ -36,6 +37,7 @@ type Deps struct {
 	Widget  *widget.Handler
 	Inbox   *inbox.Handler
 	Stats   *overview.Handler
+	Billing *billing.Handler
 }
 
 // New builds the Gin engine: API under /api, the exported client for everything else.
@@ -44,6 +46,9 @@ func New(d Deps) *gin.Engine {
 	r.Use(gin.Recovery(), gin.Logger())
 
 	r.GET("/healthz", health(d.DB))
+
+	// Stripe posts from its own servers, so the webhook sits outside the Origin check.
+	r.POST("/api/billing/webhook", d.Billing.Webhook)
 
 	api := r.Group("/api", d.Auth.SameOrigin())
 	d.Auth.Routes(api.Group("/auth"))
@@ -57,6 +62,7 @@ func New(d Deps) *gin.Engine {
 	d.Chat.Routes(user.Group("/bots/:id"))
 	d.Inbox.Routes(user.Group("/bots/:id"))
 	d.Stats.Routes(user.Group("/bots/:id"))
+	d.Billing.Routes(user.Group("/billing"))
 
 	if d.Config.StaticDir != "" {
 		serveClient(r, d.Config.StaticDir)

@@ -10,6 +10,7 @@ require (
 	github.com/ledongthuc/pdf v0.0.0-20260907135840-6c8c28e0e8a0
 	github.com/pgvector/pgvector-go v0.4.1
 	github.com/pgvector/pgvector-go/pgx v0.4.1
+	github.com/stripe/stripe-go/v86 v86.4.2
 	google.golang.org/genai v1.71.0
 )
 
