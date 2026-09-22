@@ -1,0 +1,37 @@
+# Inbox and leads (signed in; see auth.http). Items appear when a widget visitor asks
+# something the bot couldn't answer (widget.http); leads when a visitor leaves an email.
+
+@baseUrl = http://localhost:8080/api
+@origin = http://localhost:3000
+@botId = PASTE_BOT_ID_HERE
+@itemId = PASTE_ITEM_ID_HERE
+
+### Open questions (?status=done for answered ones); Free shows the last 7 days
+GET {{baseUrl}}/bots/{{botId}}/inbox
+
+### One question with the conversation it came from
+GET {{baseUrl}}/bots/{{botId}}/inbox/{{itemId}}
+
+### Teach your bot — the answer becomes a knowledge source, the item is done
+POST {{baseUrl}}/bots/{{botId}}/inbox/{{itemId}}/answer
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "answer": "Yes, we sell green and black tea."
+}
+
+### Dismiss (done) or reopen (open)
+PATCH {{baseUrl}}/bots/{{botId}}/inbox/{{itemId}}
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "status": "done"
+}
+
+### Visitors who left an email
+GET {{baseUrl}}/bots/{{botId}}/leads
+
+### CSV export — Business only, otherwise 402 upgrade_required
+GET {{baseUrl}}/bots/{{botId}}/leads.csv

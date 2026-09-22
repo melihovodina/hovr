@@ -13,6 +13,7 @@ import (
 	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/pkg/apperr"
 	"github.com/melihovodina/hovr/server/pkg/httpx"
+	"github.com/melihovodina/hovr/server/pkg/validate"
 )
 
 // Handler serves /api/bots/:id/sources. It must be mounted behind auth.RequireUser.
@@ -135,30 +136,57 @@ func (h *Handler) addText(c *gin.Context) {
 	}, textFileName, []byte(text))
 }
 
-// create uploads the content, then inserts the queued source and wakes the worker.
-// If the insert is refused (plan limit, not your bot) the upload is removed again.
+// create responds with the new source; see save.
 func (h *Handler) create(c *gin.Context, src newSource, fileName string, data []byte) {
-	ctx, accountID := c.Request.Context(), auth.UserID(c)
+	source, err := h.save(c.Request.Context(), auth.UserID(c), src, fileName, data)
+	if err != nil {
+		httpx.Write(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, source)
+}
+
+// AddAnswer turns an answer from the inbox into a source, so the bot learns it.
+func (h *Handler) AddAnswer(ctx context.Context, accountID, botID, question, answer string) (*Source, error) {
+	text, err := validate.Text(answer, 1, maxTextLen, "Write an answer, up to 200,000 characters.")
+	if err != nil {
+		return nil, err
+	}
+	title := []rune(strings.TrimSpace(question))
+	if len(title) > maxTitleLen {
+		title = append(title[:maxTitleLen-1], '…')
+	}
+	// The question is kept in the text so visitors' wording matches it.
+	body := "Question: " + strings.TrimSpace(question) + "\n\nAnswer: " + text
+	return h.save(ctx, accountID, newSource{
+		BotID:       botID,
+		Type:        typeInbox,
+		Title:       string(title),
+		ContentType: typeText,
+		SizeBytes:   int64(len(body)),
+	}, textFileName, []byte(body))
+}
+
+// save uploads the content, inserts the queued source and wakes the worker.
+// If the insert is refused (plan limit, not your bot) the upload is removed again.
+func (h *Handler) save(ctx context.Context, accountID string, src newSource, fileName string, data []byte) (*Source, error) {
 	src.ID = newID()
 	src.StoragePath = src.BotID + "/" + src.ID + "/" + fileName
 
 	// Cheap ownership check first, so strangers can't write into storage at all.
 	if err := h.store.BotExists(ctx, accountID, src.BotID); err != nil {
-		httpx.Write(c, err)
-		return
+		return nil, err
 	}
 	if err := h.files.Upload(ctx, src.StoragePath, src.ContentType, data); err != nil {
-		httpx.Internal(c, err)
-		return
+		return nil, err
 	}
 	source, err := h.store.Create(ctx, accountID, src)
 	if err != nil {
 		h.removeFile(src.StoragePath)
-		httpx.Write(c, err)
-		return
+		return nil, err
 	}
 	h.worker.Notify()
-	c.JSON(http.StatusCreated, source)
+	return source, nil
 }
 
 func (h *Handler) delete(c *gin.Context) {

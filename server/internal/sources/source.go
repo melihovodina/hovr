@@ -24,6 +24,7 @@ const (
 const (
 	typeFile       = "file"
 	typeTextSource = "text"
+	typeInbox      = "inbox"
 )
 
 const (
