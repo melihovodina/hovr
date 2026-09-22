@@ -16,9 +16,8 @@ const (
 	maxOverlapLen = 250
 )
 
-// chunkText splits normalized text into chunks along paragraph and sentence
-// boundaries. It never cuts a sentence in half unless one sentence alone is longer
-// than maxChunkLen.
+// chunkText splits text along paragraphs and sentences; a sentence is cut only
+// when it alone is longer than maxChunkLen.
 func chunkText(text string) []string {
 	var units []string
 	for _, para := range strings.Split(text, "\n\n") {

@@ -21,9 +21,8 @@ func hostOf(raw string) string {
 	return strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
 }
 
-// allowedOn reports whether the widget may run on host. No allowed domains means
-// anywhere; "example.com" also covers its subdomains. The app itself is always allowed
-// so owners can preview the widget.
+// allowedOn reports whether the widget may run on host: no domains = anywhere, a domain
+// covers its subdomains, and the app itself is always allowed for previews.
 func allowedOn(host string, allowed []string, appHost string) bool {
 	if host != "" && host == appHost {
 		return true

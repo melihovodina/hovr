@@ -1,6 +1,5 @@
-// Package validate has the input checks shared by several handlers. Rules that only
-// one feature has (bot colors, widget position...) stay in that feature's package.
-// Failures are *apperr.Error with status 400 and a message people can act on.
+// Package validate has input checks shared by several handlers; failures are 400
+// *apperr.Error values. Feature-specific rules stay in their own packages.
 package validate
 
 import (

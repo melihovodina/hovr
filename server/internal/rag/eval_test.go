@@ -13,8 +13,7 @@ import (
 )
 
 // TestEvalAnswers prints real answers for the calibration docs to check the prompt.
-//
-//	HOVR_EVAL=1 GEMINI_API_KEY=... make test
+// Run: HOVR_EVAL=1 GEMINI_API_KEY=... make test
 func TestEvalAnswers(t *testing.T) {
 	if os.Getenv("HOVR_EVAL") == "" || os.Getenv("GEMINI_API_KEY") == "" {
 		t.Skip("set HOVR_EVAL=1 and GEMINI_API_KEY to run")

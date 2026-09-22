@@ -1,7 +1,5 @@
-// Package apperr is the one error type for everything the user should see: an HTTP
-// status, a message people can read and an optional machine-readable code. Map turns
-// database errors into it, so stores can just try a write and let the database say
-// what went wrong (duplicate, missing parent row...) instead of checking first.
+// Package apperr is the user-facing error type (status, readable message, optional code).
+// Map translates database errors, so stores can write first instead of checking.
 package apperr
 
 import (

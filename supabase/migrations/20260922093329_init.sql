@@ -1,7 +1,5 @@
--- hovr initial schema.
--- The Go server is the only client of these tables: it connects with the database
--- owner role and enforces ownership in its queries. RLS is enabled with no policies,
--- so the public Data API (anon / authenticated roles) cannot read or write anything.
+-- hovr initial schema. Only the Go server uses these tables (owner role, ownership in queries);
+-- RLS is on with no policies, so the public Data API can't read or write anything.
 
 create extension if not exists vector with schema extensions;
 

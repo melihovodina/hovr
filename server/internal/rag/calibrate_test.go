@@ -11,8 +11,7 @@ import (
 )
 
 // TestCalibrateThreshold prints real Gemini scores to pick MinScore.
-//
-//	HOVR_CALIBRATE=1 GEMINI_API_KEY=... go test ./internal/rag -run Calibrate -v
+// Run: HOVR_CALIBRATE=1 GEMINI_API_KEY=... go test ./internal/rag -run Calibrate -v
 func TestCalibrateThreshold(t *testing.T) {
 	if os.Getenv("HOVR_CALIBRATE") == "" || os.Getenv("GEMINI_API_KEY") == "" {
 		t.Skip("set HOVR_CALIBRATE=1 and GEMINI_API_KEY to run")
