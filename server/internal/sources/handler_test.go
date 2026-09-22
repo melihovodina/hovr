@@ -12,14 +12,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/plans"
 	"github.com/melihovodina/hovr/server/test/fakeai"
 	"github.com/melihovodina/hovr/server/test/fakestorage"
+	"github.com/melihovodina/hovr/server/test/testapi"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
-
-func init() { gin.SetMode(gin.TestMode) }
 
 type apiEnv struct {
 	*workerEnv
@@ -31,12 +29,7 @@ func newAPIEnv(t *testing.T) *apiEnv {
 	pool := testdb.Connect(t)
 	store, files := NewStore(pool), fakestorage.New()
 	w := NewWorker(store, files, fakeai.Embedder{})
-	r := gin.New()
-	// Stand-in for auth.RequireUser: the test picks the user with a header.
-	g := r.Group("/api/bots/:id/sources", func(c *gin.Context) {
-		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
-		c.Next()
-	})
+	r, g := testapi.Router("/api/bots/:id/sources")
 	NewHandler(store, files, w).Routes(g)
 	return &apiEnv{workerEnv: &workerEnv{t: t, pool: pool, store: store, files: files, worker: w}, r: r}
 }

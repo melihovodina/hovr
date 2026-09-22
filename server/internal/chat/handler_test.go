@@ -9,21 +9,21 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/melihovodina/hovr/server/internal/ai"
-	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/rag"
+	"github.com/melihovodina/hovr/server/internal/usage"
 	"github.com/melihovodina/hovr/server/pkg/httpx"
 	"github.com/melihovodina/hovr/server/test/fakeai"
+	"github.com/melihovodina/hovr/server/test/testapi"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
 // These tests need the local database (TEST_DATABASE_URL, set by `make test`).
-
-func init() { gin.SetMode(gin.TestMode) }
 
 // fakeModel replies with chunks (or fails) and records the turns it was given.
 type fakeModel struct {
@@ -57,12 +57,7 @@ func newEnv(t *testing.T) *env {
 	t.Helper()
 	pool := testdb.Connect(t)
 	model := &fakeModel{chunks: []string{"Hello", " there."}}
-	r := gin.New()
-	// Stand-in for auth.RequireUser: the test picks the user with a header.
-	g := r.Group("/api/bots/:id", func(c *gin.Context) {
-		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
-		c.Next()
-	})
+	r, g := testapi.Router("/api/bots/:id")
 	store := NewStore(pool)
 	service := NewService(store, rag.NewAnswerer(rag.New(pool, fakeai.Embedder{}), model))
 	NewHandler(store, service).Routes(g)
@@ -221,7 +216,7 @@ func TestChatRefusals(t *testing.T) {
 	}
 }
 
-func usage(t *testing.T, pool *pgxpool.Pool, account string) int {
+func usedMessages(t *testing.T, pool *pgxpool.Pool, account string) int {
 	t.Helper()
 	var n int
 	_ = pool.QueryRow(context.Background(),
@@ -233,7 +228,7 @@ func TestMessageLimit(t *testing.T) {
 	e := newEnv(t)
 	user, bot := testdb.NewBot(t, e.pool, "free")
 	_, err := e.pool.Exec(context.Background(),
-		`insert into usage_counters (account_id, period, messages) values ($1, $2, 99)`, user, period())
+		`insert into usage_counters (account_id, period, messages) values ($1, $2, 99)`, user, usage.Period(time.Now()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +243,7 @@ func TestMessageLimit(t *testing.T) {
 	if w, _ := e.chat(user, bot, `{"message":"test"}`); w.Code != http.StatusOK {
 		t.Errorf("playground over the limit: %d", w.Code)
 	}
-	if n := usage(t, e.pool, user); n != 100 {
+	if n := usedMessages(t, e.pool, user); n != 100 {
 		t.Errorf("usage = %d, want 100", n)
 	}
 }
@@ -263,7 +258,7 @@ func TestModelFailure(t *testing.T) {
 	if last.name != "error" || last.data["error"] != "The bot couldn't answer right now. Try again in a moment." {
 		t.Errorf("events = %+v", events)
 	}
-	if n := usage(t, e.pool, user); n != 0 {
+	if n := usedMessages(t, e.pool, user); n != 0 {
 		t.Errorf("usage = %d, want 0 (failed answers don't count)", n)
 	}
 	var roles []string

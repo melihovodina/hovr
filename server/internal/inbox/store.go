@@ -9,14 +9,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/pkg/apperr"
 )
 
-var (
-	errBotNotFound  = apperr.NotFound("Bot not found.")
-	errItemNotFound = apperr.NotFound("Question not found.")
-)
+var errItemNotFound = apperr.NotFound("Question not found.")
 
 // Item is a question the bot couldn't answer, grouped over everyone who asked it.
 type Item struct {
@@ -43,19 +40,12 @@ type Lead struct {
 
 // Store reads and updates inbox items and leads. Callers check the bot's owner first.
 type Store struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	access *bots.Access
 }
 
 func NewStore(db *pgxpool.Pool) *Store {
-	return &Store{db: db}
-}
-
-func (s *Store) botPlan(ctx context.Context, accountID, botID string) (plans.Plan, error) {
-	var plan plans.Plan
-	err := s.db.QueryRow(ctx, `
-		select a.plan from bots b join accounts a on a.id = b.account_id
-		where b.id = $1 and a.id = $2`, botID, accountID).Scan(&plan)
-	return plan, apperr.MapNotFound(err, errBotNotFound)
+	return &Store{db: db, access: bots.NewAccess(db)}
 }
 
 const itemColumns = `i.id, i.question, i.times_asked, i.status, i.last_conversation_id,

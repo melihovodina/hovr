@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/melihovodina/hovr/server/internal/auth"
+	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/internal/plans"
 	"github.com/melihovodina/hovr/server/pkg/httpx"
 )
@@ -34,12 +35,12 @@ func (h *Handler) Routes(g *gin.RouterGroup) {
 }
 
 func (h *Handler) stats(c *gin.Context) {
-	botID, ok := httpx.UUIDParam(c, "id", errBotNotFound.Message)
+	botID, ok := httpx.UUIDParam(c, "id", bots.ErrNotFound.Message)
 	if !ok {
 		return
 	}
 	ctx := c.Request.Context()
-	plan, err := h.store.botPlan(ctx, auth.UserID(c), botID)
+	bot, err := h.store.access.Bot(ctx, auth.UserID(c), botID)
 	if err != nil {
 		httpx.Write(c, err)
 		return
@@ -79,7 +80,7 @@ func (h *Handler) stats(c *gin.Context) {
 		httpx.Write(c, err)
 		return
 	}
-	openCount, items, err := h.store.openItems(ctx, botID, plans.For(plan).HistoryDays, needsYouSize)
+	openCount, items, err := h.store.openItems(ctx, botID, plans.For(bot.Plan).HistoryDays, needsYouSize)
 	if err != nil {
 		httpx.Write(c, err)
 		return

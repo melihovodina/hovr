@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/melihovodina/hovr/server/internal/auth"
+	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/pkg/httpx"
 )
 
@@ -28,7 +29,7 @@ func (h *Handler) Routes(g *gin.RouterGroup) {
 }
 
 func (h *Handler) chat(c *gin.Context) {
-	botID, ok := httpx.UUIDParam(c, "id", errBotNotFound.Message)
+	botID, ok := httpx.UUIDParam(c, "id", bots.ErrNotFound.Message)
 	if !ok {
 		return
 	}
@@ -50,7 +51,7 @@ func (h *Handler) chat(c *gin.Context) {
 }
 
 func (h *Handler) list(c *gin.Context) {
-	botID, ok := httpx.UUIDParam(c, "id", errBotNotFound.Message)
+	botID, ok := httpx.UUIDParam(c, "id", bots.ErrNotFound.Message)
 	if !ok {
 		return
 	}
@@ -88,7 +89,7 @@ func (h *Handler) delete(c *gin.Context) {
 }
 
 func (h *Handler) ids(c *gin.Context) (botID, id string, ok bool) {
-	if botID, ok = httpx.UUIDParam(c, "id", errBotNotFound.Message); !ok {
+	if botID, ok = httpx.UUIDParam(c, "id", bots.ErrNotFound.Message); !ok {
 		return
 	}
 	id, ok = httpx.UUIDParam(c, "conversationId", errConversationNotFound.Message)

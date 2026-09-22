@@ -66,7 +66,7 @@ func (s *Service) Respond(c *gin.Context, r Request) {
 	// Playground chats are free; only visitors' messages count.
 	counted := r.Channel == ChannelWidget
 	if counted {
-		if err := s.store.countMessage(ctx, r.AccountID, r.Plan); err != nil {
+		if err := s.store.usage.Count(ctx, r.AccountID, r.Plan); err != nil {
 			httpx.Write(c, err)
 			return
 		}
@@ -127,7 +127,7 @@ func (s *Service) refund(ctx context.Context, counted bool, accountID string) {
 	if !counted {
 		return
 	}
-	if err := s.store.refundMessage(context.WithoutCancel(ctx), accountID); err != nil {
+	if err := s.store.usage.Refund(context.WithoutCancel(ctx), accountID); err != nil {
 		slog.Error("refund message", "account", accountID, "err", err)
 	}
 }

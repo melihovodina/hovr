@@ -2,7 +2,6 @@ package billing
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -13,14 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/internal/usage"
+	"github.com/melihovodina/hovr/server/test/testapi"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
 // These tests need the local database (TEST_DATABASE_URL, set by `make test`).
-
-func init() { gin.SetMode(gin.TestMode) }
 
 // fakeProvider stands in for Stripe and records what it was asked.
 type fakeProvider struct {
@@ -72,26 +70,14 @@ func newEnv(t *testing.T) *env {
 	pool := testdb.Connect(t)
 	provider := &fakeProvider{customerID: "cus_test"}
 	h := &Handler{store: NewStore(pool), provider: provider, appURL: "http://localhost:3000"}
-	r := gin.New()
+	r, g := testapi.Router("/api/billing")
 	r.POST("/api/billing/webhook", h.Webhook)
-	// Stand-in for auth.RequireUser: the test picks the user with a header.
-	g := r.Group("/api/billing", func(c *gin.Context) {
-		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
-		c.Next()
-	})
 	h.Routes(g)
 	return &env{t: t, pool: pool, provider: provider, r: r}
 }
 
 func (e *env) call(user, method, path, body string) (*httptest.ResponseRecorder, map[string]any) {
-	req := httptest.NewRequest(method, path, strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Test-User", user)
-	w := httptest.NewRecorder()
-	e.r.ServeHTTP(w, req)
-	var out map[string]any
-	_ = json.Unmarshal(w.Body.Bytes(), &out)
-	return w, out
+	return testapi.Call(e.r, user, method, path, body)
 }
 
 func (e *env) plan(account string) (string, *string, *time.Time) {
@@ -114,7 +100,7 @@ func TestSummary(t *testing.T) {
 	ctx := context.Background()
 	_, _ = e.pool.Exec(ctx, `insert into sources (bot_id, type, title, status) values ($1, 'text', 'FAQ', 'ready')`, bot)
 	_, _ = e.pool.Exec(ctx, `insert into usage_counters (account_id, period, messages) values ($1, $2, 12)`,
-		user, time.Now().UTC().Format("2006-01"))
+		user, usage.Period(time.Now()))
 
 	w, out := e.call(user, http.MethodGet, "/api/billing", "")
 	if w.Code != http.StatusOK || out["plan"] != "free" || out["planName"] != "Free" ||

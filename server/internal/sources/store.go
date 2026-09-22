@@ -10,23 +10,25 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pgvector/pgvector-go"
 
+	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/internal/plans"
 	"github.com/melihovodina/hovr/server/pkg/apperr"
 )
 
 var (
-	errBotNotFound    = apperr.NotFound("Bot not found.")
+	errBotNotFound    = bots.ErrNotFound
 	errSourceNotFound = apperr.NotFound("Source not found.")
 )
 
 // Store reads and writes sources and their chunks. API queries are scoped to the
 // owning account; worker queries are not (the worker serves every account).
 type Store struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	access *bots.Access
 }
 
 func NewStore(db *pgxpool.Pool) *Store {
-	return &Store{db: db}
+	return &Store{db: db, access: bots.NewAccess(db)}
 }
 
 // newSource is what the API inserts; the worker fills in the rest.
@@ -119,9 +121,8 @@ func (s *Store) List(ctx context.Context, accountID, botID string) ([]Source, er
 
 // BotExists reports whether the bot belongs to the account (for empty lists vs 404).
 func (s *Store) BotExists(ctx context.Context, accountID, botID string) error {
-	var one int
-	err := s.db.QueryRow(ctx, `select 1 from bots where id = $1 and account_id = $2`, botID, accountID).Scan(&one)
-	return apperr.MapNotFound(err, errBotNotFound)
+	_, err := s.access.Bot(ctx, accountID, botID)
+	return err
 }
 
 // Delete removes a source and its chunks, and returns the file path to clean up.

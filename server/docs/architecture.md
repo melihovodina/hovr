@@ -35,7 +35,7 @@ flowchart TB
 | `internal/supabase` | Supabase Auth REST client |
 | `internal/accounts` | account and plan lookup, `/api/me` |
 | `internal/plans` | what each plan allows |
-| `internal/bots` | bot settings, public key, avatars, plan limits |
+| `internal/bots` | bot settings, public key, avatars, plan limits; `Access` is the shared "is this bot yours?" lookup every feature uses |
 | `internal/sources` | upload, extraction, chunking, the background worker |
 | `internal/storage` | Supabase Storage REST client |
 | `internal/ai` | Gemini embeddings and chat models behind interfaces |
@@ -45,8 +45,9 @@ flowchart TB
 | `internal/inbox` | unanswered questions, "Teach your bot", leads |
 | `internal/overview` | dashboard numbers |
 | `internal/billing` | Stripe checkout, portal, webhook, plan sync |
+| `internal/usage` | the monthly message counter: count, refund, read |
 | `pkg/apperr`, `pkg/httpx`, `pkg/validate`, `pkg/ratelimit` | generic helpers |
-| `test/` | test-only: `testdb`, `fakeai`, `fakestorage`, `.http` requests |
+| `test/` | test-only: `testdb`, `testapi`, `fakeai`, `fakestorage`, `.http` requests |
 
 `internal/` is product code, `pkg/` is code that would work in another project, and `test/`
 is imported only by tests.
@@ -100,3 +101,9 @@ rest.
 - Stores don't check before writing: `apperr.Map` translates database errors (missing row,
   duplicate, bad value) into readable messages.
 - Deleting a bot also deletes its stored files and avatar.
+
+## Known duplication
+
+Question grouping exists twice: `chat.normalizeQuestion` in Go for inbox items, and the
+same rules as SQL in the overview's top-questions query. Unifying them means storing the
+normalized text on messages, which is a migration; until then, change both together.

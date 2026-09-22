@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/internal/usage"
 	"github.com/melihovodina/hovr/server/pkg/apperr"
 )
 
@@ -32,11 +33,12 @@ type Usage struct {
 }
 
 type Store struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	usage *usage.Counters
 }
 
 func NewStore(db *pgxpool.Pool) *Store {
-	return &Store{db: db}
+	return &Store{db: db, usage: usage.New(db)}
 }
 
 func (s *Store) account(ctx context.Context, accountID string) (*Account, error) {
@@ -51,14 +53,18 @@ func (s *Store) account(ctx context.Context, accountID string) (*Account, error)
 	return &a, nil
 }
 
-// usage counts this month's messages and what the account has created.
-func (s *Store) usage(ctx context.Context, accountID string) (Usage, error) {
+// counts is this month's messages and what the account has created.
+func (s *Store) counts(ctx context.Context, accountID string) (Usage, error) {
 	var u Usage
-	err := s.db.QueryRow(ctx, `
-		select coalesce((select messages from usage_counters where account_id = $1 and period = $2), 0),
-			(select count(*) from bots where account_id = $1),
+	messages, err := s.usage.Messages(ctx, accountID)
+	if err != nil {
+		return u, err
+	}
+	u.Messages = messages
+	err = s.db.QueryRow(ctx, `
+		select (select count(*) from bots where account_id = $1),
 			(select count(*) from sources s join bots b on b.id = s.bot_id where b.account_id = $1)`,
-		accountID, time.Now().UTC().Format("2006-01")).Scan(&u.Messages, &u.Bots, &u.Sources)
+		accountID).Scan(&u.Bots, &u.Sources)
 	return u, err
 }
 

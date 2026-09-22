@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/melihovodina/hovr/server/internal/auth"
+	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/internal/chat"
 	"github.com/melihovodina/hovr/server/internal/plans"
 	"github.com/melihovodina/hovr/server/internal/sources"
@@ -46,16 +47,16 @@ func (h *Handler) Routes(g *gin.RouterGroup) {
 
 // bot checks the owner and returns the bot id with the plan's limits.
 func (h *Handler) bot(c *gin.Context) (string, plans.Limits, bool) {
-	botID, ok := httpx.UUIDParam(c, "id", errBotNotFound.Message)
+	botID, ok := httpx.UUIDParam(c, "id", bots.ErrNotFound.Message)
 	if !ok {
 		return "", plans.Limits{}, false
 	}
-	plan, err := h.store.botPlan(c.Request.Context(), auth.UserID(c), botID)
+	bot, err := h.store.access.Bot(c.Request.Context(), auth.UserID(c), botID)
 	if err != nil {
 		httpx.Write(c, err)
 		return "", plans.Limits{}, false
 	}
-	return botID, plans.For(plan), true
+	return botID, plans.For(bot.Plan), true
 }
 
 // item loads the :itemId item within the plan's history window.

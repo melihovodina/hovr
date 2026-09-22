@@ -172,4 +172,4 @@ func newPublicKey() string {
 	return publicKeyPrefix + base64.RawURLEncoding.EncodeToString(b)
 }
 
-var errBotNotFound = apperr.NotFound("Bot not found.")
+var errBotNotFound = ErrNotFound

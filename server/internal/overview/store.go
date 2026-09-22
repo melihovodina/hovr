@@ -8,11 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/melihovodina/hovr/server/internal/plans"
-	"github.com/melihovodina/hovr/server/pkg/apperr"
+	"github.com/melihovodina/hovr/server/internal/bots"
 )
-
-var errBotNotFound = apperr.NotFound("Bot not found.")
 
 // Totals are the counts for one period.
 type Totals struct {
@@ -46,19 +43,12 @@ type OpenItem struct {
 }
 
 type Store struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	access *bots.Access
 }
 
 func NewStore(db *pgxpool.Pool) *Store {
-	return &Store{db: db}
-}
-
-func (s *Store) botPlan(ctx context.Context, accountID, botID string) (plans.Plan, error) {
-	var plan plans.Plan
-	err := s.db.QueryRow(ctx, `
-		select a.plan from bots b join accounts a on a.id = b.account_id
-		where b.id = $1 and a.id = $2`, botID, accountID).Scan(&plan)
-	return plan, apperr.MapNotFound(err, errBotNotFound)
+	return &Store{db: db, access: bots.NewAccess(db)}
 }
 
 // totals counts the current period [start, end) and the previous one [prevStart, start).

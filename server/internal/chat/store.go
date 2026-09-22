@@ -2,73 +2,34 @@ package chat
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"slices"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/melihovodina/hovr/server/internal/ai"
-	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/internal/bots"
 	"github.com/melihovodina/hovr/server/internal/rag"
+	"github.com/melihovodina/hovr/server/internal/usage"
 	"github.com/melihovodina/hovr/server/pkg/apperr"
 )
 
-var (
-	errBotNotFound          = apperr.NotFound("Bot not found.")
-	errConversationNotFound = apperr.NotFound("Conversation not found.")
-)
+var errConversationNotFound = apperr.NotFound("Conversation not found.")
 
 // Store reads and writes conversations. Queries are scoped to the owning account.
 type Store struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	access *bots.Access
+	usage  *usage.Counters
 }
 
 func NewStore(db *pgxpool.Pool) *Store {
-	return &Store{db: db}
+	return &Store{db: db, access: bots.NewAccess(db), usage: usage.New(db)}
 }
 
-type botInfo struct {
-	Name string
-	Plan plans.Plan
-}
-
-func (s *Store) bot(ctx context.Context, accountID, botID string) (botInfo, error) {
-	var b botInfo
-	err := s.db.QueryRow(ctx, `
-		select b.name, a.plan from bots b join accounts a on a.id = b.account_id
-		where b.id = $1 and a.id = $2`, botID, accountID).Scan(&b.Name, &b.Plan)
-	return b, apperr.MapNotFound(err, errBotNotFound)
-}
-
-// countMessage adds one to this month's usage, or refuses when the plan's limit is reached.
-func (s *Store) countMessage(ctx context.Context, accountID string, plan plans.Plan) error {
-	limit := plans.For(plan).MessagesPerMonth
-	var n int
-	err := s.db.QueryRow(ctx, `
-		insert into usage_counters (account_id, period, messages) values ($1, $2, 1)
-		on conflict (account_id, period) do update set messages = usage_counters.messages + 1
-		where usage_counters.messages < $3
-		returning messages`, accountID, period(), limit).Scan(&n)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return apperr.UpgradeRequired(fmt.Sprintf(
-			"You've used all %d messages of the %s plan this month. Upgrade to keep chatting.", limit, plan.Name()))
-	}
-	return err
-}
-
-func (s *Store) refundMessage(ctx context.Context, accountID string) error {
-	_, err := s.db.Exec(ctx, `
-		update usage_counters set messages = messages - 1
-		where account_id = $1 and period = $2 and messages > 0`, accountID, period())
-	return err
-}
-
-// period is the usage month, "YYYY-MM" in UTC.
-func period() string {
-	return time.Now().UTC().Format("2006-01")
+// bot is the owner check every chat request starts with.
+func (s *Store) bot(ctx context.Context, accountID, botID string) (bots.Owned, error) {
+	return s.access.Bot(ctx, accountID, botID)
 }
 
 func (s *Store) startConversation(ctx context.Context, botID, channel, visitorID, title string) (string, error) {

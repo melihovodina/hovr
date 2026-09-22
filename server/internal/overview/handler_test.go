@@ -11,14 +11,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/plans"
+	"github.com/melihovodina/hovr/server/test/testapi"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
 // These tests need the local database (TEST_DATABASE_URL, set by `make test`).
-
-func init() { gin.SetMode(gin.TestMode) }
 
 type env struct {
 	t    *testing.T
@@ -29,12 +27,7 @@ type env struct {
 func newEnv(t *testing.T) *env {
 	t.Helper()
 	pool := testdb.Connect(t)
-	r := gin.New()
-	// Stand-in for auth.RequireUser: the test picks the user with a header.
-	g := r.Group("/api/bots/:id", func(c *gin.Context) {
-		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
-		c.Next()
-	})
+	r, g := testapi.Router("/api/bots/:id")
 	NewHandler(NewStore(pool)).Routes(g)
 	return &env{t: t, pool: pool, r: r}
 }

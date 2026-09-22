@@ -84,7 +84,7 @@ func (h *Handler) summary(c *gin.Context) {
 		httpx.Write(c, err)
 		return
 	}
-	usage, err := h.store.usage(ctx, accountID)
+	usage, err := h.store.counts(ctx, accountID)
 	if err != nil {
 		httpx.Write(c, err)
 		return

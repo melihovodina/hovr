@@ -14,17 +14,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/melihovodina/hovr/server/internal/accounts"
-	"github.com/melihovodina/hovr/server/internal/auth"
 	"github.com/melihovodina/hovr/server/internal/plans"
 	"github.com/melihovodina/hovr/server/pkg/apperr"
 	"github.com/melihovodina/hovr/server/test/fakestorage"
+	"github.com/melihovodina/hovr/server/test/testapi"
 	"github.com/melihovodina/hovr/server/test/testdb"
 )
 
 // These tests run against a real database (the local Supabase one) and are
 // skipped when TEST_DATABASE_URL is not set. `make test` sets it.
-
-func init() { gin.SetMode(gin.TestMode) }
 
 type testEnv struct {
 	t       *testing.T
@@ -37,12 +35,7 @@ type testEnv struct {
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
 	pool := testdb.Connect(t)
-	r := gin.New()
-	// Stand-in for auth.RequireUser: the test picks the user with a header.
-	g := r.Group("/api/bots", func(c *gin.Context) {
-		auth.SetUser(c, c.GetHeader("X-Test-User"), "")
-		c.Next()
-	})
+	r, g := testapi.Router("/api/bots")
 	files, avatars := fakestorage.New(), fakestorage.New()
 	NewHandler(NewStore(pool), accounts.NewStore(pool), files, avatars).Routes(g)
 	return &testEnv{t: t, pool: pool, r: r, files: files, avatars: avatars}
