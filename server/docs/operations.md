@@ -1,0 +1,64 @@
+# Operations
+
+## Environment
+
+`config.Load` reads `server/.env` in development and fails at startup if anything required
+is missing, so the server never runs half-configured. `.env.example` lists every value.
+
+| Value | Required | What it is |
+| --- | --- | --- |
+| `PORT` | no (8080) | listening port |
+| `APP_URL` | no (`http://localhost:3000`) | the site's own address: Origin checks, email links, Stripe return URLs, widget previews |
+| `DATABASE_URL` | yes | Postgres connection string |
+| `SUPABASE_URL` | yes | Supabase project URL (Auth and Storage) |
+| `SUPABASE_PUBLISHABLE_KEY` | yes | used for sign-in calls to Supabase Auth |
+| `SUPABASE_SECRET_KEY` | yes | server-side key for Storage; never send it to a browser |
+| `GEMINI_API_KEY` | yes | embeddings and chat |
+| `STRIPE_SECRET_KEY` | yes | test or live key |
+| `STRIPE_WEBHOOK_SECRET` | yes | `whsec_...`, verifies webhook calls |
+| `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` | yes | the monthly prices |
+| `STATIC_DIR` | no | folder with the client export; empty means API only |
+
+The client needs `NEXT_PUBLIC_SITE_URL` at build time, which the Dockerfile takes as a
+build argument.
+
+## Running
+
+`docker compose up --build` runs the image the way it deploys: one container serving the
+API and the client. The image is built in `Dockerfile`: client export, Go binary, then a
+small Alpine runtime that runs as a non-root user.
+
+The ingestion worker runs inside the same process as a goroutine. It claims jobs with
+`for update skip locked`, so several instances would be safe, but the widget rate limiter
+counts in memory and would only count per instance.
+
+## Deploying
+
+1. Create the Supabase project and apply `supabase/migrations` to it.
+2. Set the environment values above, with `APP_URL` as the public address.
+3. Build with `NEXT_PUBLIC_SITE_URL` set to that same address.
+4. Point a Stripe webhook at `https://<host>/api/billing/webhook` for
+   `customer.subscription.created`, `.updated` and `.deleted`, and use its signing secret.
+5. Supabase's built-in email sender only reaches project members, so set SMTP in the
+   Supabase dashboard for sign-up and password-reset emails.
+6. Ping `/healthz` from an uptime monitor; on a free host that also keeps the instance from
+   sleeping.
+
+Behind a proxy, check that the client IP the server sees is the visitor's, otherwise the
+widget rate limits apply to everyone together. Gin trusts forwarded headers from any proxy
+by default.
+
+## Watching it
+
+- `/healthz` returns `{"status":"ok","db":"up"}`, or 503 when the database is unreachable.
+- Logs are structured (`slog`): failed requests, ingestion results, chat model failures,
+  refunds, webhook rejections. Readable errors answer with their own message; anything
+  unexpected is logged and becomes a 500.
+- Gemini's free tier is the usual source of trouble: overloaded models answer 503, and chat
+  falls back to the next model in the list in `internal/ai/chat.go`.
+
+## Local tools
+
+Supabase Studio http://127.0.0.1:54323, Mailpit (all local email) http://127.0.0.1:54324,
+database `postgresql://postgres:postgres@127.0.0.1:54322/postgres`.
+`make db-reset` rebuilds the local database from the migrations and deletes local data.

@@ -113,6 +113,13 @@ Inside `server/`: `internal/` holds the product code (`auth`, `bots`, `sources`,
 `chat`, `widget`, `inbox`, `overview`, `billing`), `pkg/` the generic helpers, and `test/`
 everything only tests use, including `.http` files for trying the API by hand.
 
+## Docs
+
+- [`server/docs/architecture.md`](server/docs/architecture.md) — packages, request flow, ingestion, answering
+- [`server/docs/api.md`](server/docs/api.md) — every endpoint, errors, widget and billing details
+- [`server/docs/database.md`](server/docs/database.md) — schema, indexes, limits
+- [`server/docs/operations.md`](server/docs/operations.md) — environment values, deploying, monitoring
+
 ## Decisions worth knowing
 
 - **One container.** The Go server serves the API and the exported client, so there is one
