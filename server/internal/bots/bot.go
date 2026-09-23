@@ -22,9 +22,9 @@ type Bot struct {
 	PublicKey           string     `json:"publicKey"`
 	AllowedDomains      []string   `json:"allowedDomains"`
 	Color               string     `json:"color"`
-	ChatBackground      *string    `json:"chatBackground"`
+	ChatBackground      string     `json:"chatBackground"`
 	VisitorMessageColor *string    `json:"visitorMessageColor"`
-	BotMessageColor     *string    `json:"botMessageColor"`
+	BotMessageColor     string     `json:"botMessageColor"`
 	AvatarURL           *string    `json:"avatarUrl"`
 	Position            string     `json:"position"`
 	Greeting            string     `json:"greeting"`
@@ -94,15 +94,17 @@ func (p Patch) apply(b *Bot) error {
 	}
 	for _, f := range []struct {
 		in  Optional[string]
-		out **string
+		out *string
 	}{
 		{p.ChatBackground, &b.ChatBackground},
-		{p.VisitorMessageColor, &b.VisitorMessageColor},
 		{p.BotMessageColor, &b.BotMessageColor},
 	} {
-		if err := applyOptionalColor(f.in, f.out); err != nil {
+		if err := applyColor(f.in, f.out); err != nil {
 			return err
 		}
+	}
+	if err := applyOptionalColor(p.VisitorMessageColor, &b.VisitorMessageColor); err != nil {
+		return err
 	}
 	if p.Position != nil {
 		if *p.Position != "left" && *p.Position != "right" {
@@ -138,8 +140,21 @@ func (p Patch) apply(b *Bot) error {
 	return nil
 }
 
-// applyOptionalColor writes a nullable colour: null resets it to automatic, and a
-// field that wasn't sent leaves the current value alone.
+// applyColor writes a colour that always has a value: a field that wasn't sent
+// leaves the current one, and null has nothing to fall back to, so it is refused.
+func applyColor(in Optional[string], out *string) error {
+	if !in.Sent {
+		return nil
+	}
+	if in.Value == nil || !colorRe.MatchString(*in.Value) {
+		return apperr.BadRequest("Pick a color like #2F6B4F.")
+	}
+	*out = strings.ToUpper(*in.Value)
+	return nil
+}
+
+// applyOptionalColor writes the one colour that may be automatic: null returns it
+// to the bot's main color, and a field that wasn't sent leaves it alone.
 func applyOptionalColor(in Optional[string], out **string) error {
 	if !in.Sent {
 		return nil

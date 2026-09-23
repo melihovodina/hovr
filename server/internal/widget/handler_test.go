@@ -80,17 +80,19 @@ func TestConfig(t *testing.T) {
 	if seen != "shop.example.com" {
 		t.Errorf("last seen host = %q", seen)
 	}
-	// Unset colours reach the widget as null, which is what makes it pick its own.
-	for _, field := range []string{"chatBackground", "visitorMessageColor", "botMessageColor"} {
-		if value, ok := out[field]; !ok || value != nil {
-			t.Errorf("%s = %v, want null", field, value)
-		}
+	// An untouched bot carries the stored defaults, and only the visitor colour is
+	// null, which tells the widget to use the bot's main color for it.
+	if out["chatBackground"] != "#FFFFFF" || out["botMessageColor"] != "#F0F0EE" {
+		t.Errorf("default colors: %v", out)
+	}
+	if value, ok := out["visitorMessageColor"]; !ok || value != nil {
+		t.Errorf("visitorMessageColor = %v, want null", value)
 	}
 	_, _ = e.pool.Exec(context.Background(), `update bots set chat_background = '#101114',
-		visitor_message_color = '#2F6B4F', bot_message_color = '#FFFFFF' where id = $1`, bot)
+		visitor_message_color = '#2F6B4F', bot_message_color = '#1B1D22' where id = $1`, bot)
 	_, colored := e.call(http.MethodGet, "/api/widget/"+key+"/config?host=https://shop.example.com/pricing", "")
 	if colored["chatBackground"] != "#101114" || colored["visitorMessageColor"] != "#2F6B4F" ||
-		colored["botMessageColor"] != "#FFFFFF" {
+		colored["botMessageColor"] != "#1B1D22" {
 		t.Errorf("colors: %v", colored)
 	}
 

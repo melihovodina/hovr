@@ -45,11 +45,14 @@ Patch takes any of `name`, `allowedDomains`, `color`, `position`, `greeting`,
 `suggestedQuestions`, `showBadge`, and the three widget colours below. Domains are
 normalized to hostnames. Hiding the badge needs Pro, and a second bot on Free returns 402.
 
-`chatBackground`, `visitorMessageColor` and `botMessageColor` are `#RRGGBB` or `null`, on
-every plan including Free. Null means automatic: the chat panel follows the visitor's
-device, visitor messages use the bot's `color`, and bot messages use a shade of the panel.
-Leaving one out of a patch keeps it; sending it as `null` returns it to automatic. The
-database rejects anything that isn't a hex colour, so the two agree.
+`chatBackground` and `botMessageColor` are `#RRGGBB` and always have a value, defaulting
+to `#FFFFFF` and `#F0F0EE`. `visitorMessageColor` is `#RRGGBB` or `null`, where null means
+the visitor's messages use the bot's main `color`. All three are on every plan, Free
+included.
+
+Leaving one out of a patch keeps it. Sending `visitorMessageColor` as `null` returns it to
+the main colour; `null` on the other two is a 400, since they have nothing to fall back
+to. The database rejects anything that isn't a hex colour, so the two agree.
 
 `POST /<bot>/avatar` takes a multipart `file` (PNG, JPEG or WebP, up to 1 MB, checked by
 its bytes) and returns the bot with a new `avatarUrl`; `DELETE /<bot>/avatar` clears it.
@@ -104,7 +107,7 @@ and `needsYou`. Widget conversations only.
 
 | Endpoint | Notes |
 | --- | --- |
-| `GET /config?host=` | `{name, color, chatBackground, visitorMessageColor, botMessageColor, avatarUrl, position, greeting, suggestedQuestions, showBadge}`; the three colours are null when automatic; also records "last seen on" |
+| `GET /config?host=` | `{name, color, chatBackground, visitorMessageColor, botMessageColor, avatarUrl, position, greeting, suggestedQuestions, showBadge}`; `visitorMessageColor` is null when it follows `color`; also records "last seen on" |
 | `POST /chat {message, conversationId?, visitorId, host}` | same events as the playground |
 | `GET /conversations/<id>?visitorId=&host=` | restore after a reload |
 | `POST /lead {conversationId, visitorId, email, host}` | 204 |

@@ -212,8 +212,8 @@ func TestDeleteBotRemovesItsFiles(t *testing.T) {
 	}
 }
 
-// The widget colours are nullable, and "not sent" has to stay different from
-// "sent as null": one keeps the colour, the other returns it to automatic.
+// Only the visitor colour may be automatic. The other two always hold a value, so
+// a patch has to tell "sent as null" from "not sent": one is refused, one is a no-op.
 func TestWidgetColors(t *testing.T) {
 	e := newTestEnv(t)
 	// Free, because picking colours is on every plan.
@@ -227,18 +227,19 @@ func TestWidgetColors(t *testing.T) {
 	if bot["greeting"] != "Hey there, how can I help?" {
 		t.Errorf("greeting = %v", bot["greeting"])
 	}
-	for _, field := range []string{"chatBackground", "visitorMessageColor", "botMessageColor"} {
-		if value, ok := bot[field]; !ok || value != nil {
-			t.Errorf("new bot %s = %v, want null", field, value)
-		}
+	if bot["chatBackground"] != "#FFFFFF" || bot["botMessageColor"] != "#F0F0EE" {
+		t.Errorf("new bot colors: %v", bot)
+	}
+	if value, ok := bot["visitorMessageColor"]; !ok || value != nil {
+		t.Errorf("new bot visitorMessageColor = %v, want null", value)
 	}
 
 	w, set := e.do(anna, http.MethodPatch, "/api/bots/"+id,
-		`{"chatBackground":"#101114","visitorMessageColor":"#2f6b4f","botMessageColor":"#FFFFFF"}`)
+		`{"chatBackground":"#101114","visitorMessageColor":"#2f6b4f","botMessageColor":"#1B1D22"}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("set colors: %d %s", w.Code, w.Body)
 	}
-	if set["chatBackground"] != "#101114" || set["visitorMessageColor"] != "#2F6B4F" || set["botMessageColor"] != "#FFFFFF" {
+	if set["chatBackground"] != "#101114" || set["visitorMessageColor"] != "#2F6B4F" || set["botMessageColor"] != "#1B1D22" {
 		t.Errorf("set colors: %v", set)
 	}
 
@@ -248,7 +249,7 @@ func TestWidgetColors(t *testing.T) {
 		t.Errorf("colors not kept: %d %s", w.Code, w.Body)
 	}
 
-	// An explicit null puts one back to automatic without touching the others.
+	// Null puts the visitor colour back to the bot's main one, and leaves the rest.
 	w, reset := e.do(anna, http.MethodPatch, "/api/bots/"+id, `{"visitorMessageColor":null}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("reset: %d %s", w.Code, w.Body)
@@ -256,7 +257,7 @@ func TestWidgetColors(t *testing.T) {
 	if reset["visitorMessageColor"] != nil {
 		t.Errorf("visitorMessageColor = %v, want null", reset["visitorMessageColor"])
 	}
-	if reset["chatBackground"] != "#101114" || reset["botMessageColor"] != "#FFFFFF" {
+	if reset["chatBackground"] != "#101114" || reset["botMessageColor"] != "#1B1D22" {
 		t.Errorf("reset touched the other colors: %v", reset)
 	}
 
@@ -264,6 +265,9 @@ func TestWidgetColors(t *testing.T) {
 		`{"chatBackground":"red"}`,
 		`{"visitorMessageColor":"#FFF"}`,
 		`{"botMessageColor":"rgb(0,0,0)"}`,
+		// These two always have a value, so null has nothing to mean.
+		`{"chatBackground":null}`,
+		`{"botMessageColor":null}`,
 	} {
 		if w, _ := e.do(anna, http.MethodPatch, "/api/bots/"+id, body); w.Code != http.StatusBadRequest {
 			t.Errorf("%s: %d, want 400", body, w.Code)

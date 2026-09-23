@@ -15,9 +15,9 @@ var errBotNotFound = apperr.NotFound("This chat isn't available.")
 type Config struct {
 	Name                string   `json:"name"`
 	Color               string   `json:"color"`
-	ChatBackground      *string  `json:"chatBackground"`
+	ChatBackground      string   `json:"chatBackground"`
 	VisitorMessageColor *string  `json:"visitorMessageColor"`
-	BotMessageColor     *string  `json:"botMessageColor"`
+	BotMessageColor     string   `json:"botMessageColor"`
 	AvatarURL           *string  `json:"avatarUrl"`
 	Position            string   `json:"position"`
 	Greeting            string   `json:"greeting"`
