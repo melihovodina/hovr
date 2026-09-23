@@ -13,13 +13,16 @@ var errBotNotFound = apperr.NotFound("This chat isn't available.")
 
 // Config is what the widget needs to draw itself.
 type Config struct {
-	Name               string   `json:"name"`
-	Color              string   `json:"color"`
-	AvatarURL          *string  `json:"avatarUrl"`
-	Position           string   `json:"position"`
-	Greeting           string   `json:"greeting"`
-	SuggestedQuestions []string `json:"suggestedQuestions"`
-	ShowBadge          bool     `json:"showBadge"`
+	Name                string   `json:"name"`
+	Color               string   `json:"color"`
+	ChatBackground      *string  `json:"chatBackground"`
+	VisitorMessageColor *string  `json:"visitorMessageColor"`
+	BotMessageColor     *string  `json:"botMessageColor"`
+	AvatarURL           *string  `json:"avatarUrl"`
+	Position            string   `json:"position"`
+	Greeting            string   `json:"greeting"`
+	SuggestedQuestions  []string `json:"suggestedQuestions"`
+	ShowBadge           bool     `json:"showBadge"`
 }
 
 type bot struct {
@@ -42,11 +45,13 @@ func NewStore(db *pgxpool.Pool) *Store {
 func (s *Store) bot(ctx context.Context, publicKey string) (*bot, error) {
 	var b bot
 	err := s.db.QueryRow(ctx, `
-		select b.id, b.account_id, a.plan, b.allowed_domains, b.name, b.color, b.avatar_url, b.position,
+		select b.id, b.account_id, a.plan, b.allowed_domains, b.name, b.color,
+			b.chat_background, b.visitor_message_color, b.bot_message_color, b.avatar_url, b.position,
 			b.greeting, b.suggested_questions, b.show_badge
 		from bots b join accounts a on a.id = b.account_id
 		where b.public_key = $1`, publicKey).Scan(&b.ID, &b.AccountID, &b.Plan, &b.AllowedDomains,
-		&b.Name, &b.Color, &b.AvatarURL, &b.Position, &b.Greeting, &b.SuggestedQuestions, &b.ShowBadge)
+		&b.Name, &b.Color, &b.ChatBackground, &b.VisitorMessageColor, &b.BotMessageColor,
+		&b.AvatarURL, &b.Position, &b.Greeting, &b.SuggestedQuestions, &b.ShowBadge)
 	if err != nil {
 		return nil, apperr.MapNotFound(err, errBotNotFound)
 	}

@@ -211,3 +211,62 @@ func TestDeleteBotRemovesItsFiles(t *testing.T) {
 		t.Error("another bot's file was deleted")
 	}
 }
+
+// The widget colours are nullable, and "not sent" has to stay different from
+// "sent as null": one keeps the colour, the other returns it to automatic.
+func TestWidgetColors(t *testing.T) {
+	e := newTestEnv(t)
+	// Free, because picking colours is on every plan.
+	anna := e.newUser(plans.Free)
+
+	w, bot := e.do(anna, http.MethodPost, "/api/bots", `{"name":"Northwind Coffee"}`)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", w.Code, w.Body)
+	}
+	id := bot["id"].(string)
+	if bot["greeting"] != "Hey there, how can I help?" {
+		t.Errorf("greeting = %v", bot["greeting"])
+	}
+	for _, field := range []string{"chatBackground", "visitorMessageColor", "botMessageColor"} {
+		if value, ok := bot[field]; !ok || value != nil {
+			t.Errorf("new bot %s = %v, want null", field, value)
+		}
+	}
+
+	w, set := e.do(anna, http.MethodPatch, "/api/bots/"+id,
+		`{"chatBackground":"#101114","visitorMessageColor":"#2f6b4f","botMessageColor":"#FFFFFF"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("set colors: %d %s", w.Code, w.Body)
+	}
+	if set["chatBackground"] != "#101114" || set["visitorMessageColor"] != "#2F6B4F" || set["botMessageColor"] != "#FFFFFF" {
+		t.Errorf("set colors: %v", set)
+	}
+
+	// A patch that doesn't mention them leaves all three alone.
+	w, kept := e.do(anna, http.MethodPatch, "/api/bots/"+id, `{"name":"Northwind"}`)
+	if w.Code != http.StatusOK || kept["chatBackground"] != "#101114" || kept["visitorMessageColor"] != "#2F6B4F" {
+		t.Errorf("colors not kept: %d %s", w.Code, w.Body)
+	}
+
+	// An explicit null puts one back to automatic without touching the others.
+	w, reset := e.do(anna, http.MethodPatch, "/api/bots/"+id, `{"visitorMessageColor":null}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("reset: %d %s", w.Code, w.Body)
+	}
+	if reset["visitorMessageColor"] != nil {
+		t.Errorf("visitorMessageColor = %v, want null", reset["visitorMessageColor"])
+	}
+	if reset["chatBackground"] != "#101114" || reset["botMessageColor"] != "#FFFFFF" {
+		t.Errorf("reset touched the other colors: %v", reset)
+	}
+
+	for _, body := range []string{
+		`{"chatBackground":"red"}`,
+		`{"visitorMessageColor":"#FFF"}`,
+		`{"botMessageColor":"rgb(0,0,0)"}`,
+	} {
+		if w, _ := e.do(anna, http.MethodPatch, "/api/bots/"+id, body); w.Code != http.StatusBadRequest {
+			t.Errorf("%s: %d, want 400", body, w.Code)
+		}
+	}
+}

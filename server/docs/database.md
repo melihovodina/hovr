@@ -27,8 +27,9 @@ sign-up. Holds `plan` (`free`, `pro`, `business`), `stripe_customer_id`,
 
 **bots** — `account_id`, `name`, `public_key` (unique, used by the widget),
 `allowed_domains`, and the widget's look: `color`, `avatar_url`, `position`, `greeting`,
-`suggested_questions`, `show_badge`. `last_seen_host` and `last_seen_at` record where the
-widget was last opened.
+`suggested_questions`, `show_badge`. `chat_background`, `visitor_message_color` and
+`bot_message_color` are nullable hex colours, where null means automatic. `last_seen_host`
+and `last_seen_at` record where the widget was last opened.
 
 **sources** — a piece of knowledge: `type` (`file`, `text`, `inbox`), `title`,
 `storage_path`, `content_type`, `size_bytes`, `pages`, `status`

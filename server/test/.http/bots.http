@@ -53,6 +53,17 @@ Content-Type: application/json
   "color": "green"
 }
 
+### Pick the chat colours — null on any of them means automatic
+PATCH {{baseUrl}}/bots/{{botId}}
+Origin: {{origin}}
+Content-Type: application/json
+
+{
+  "chatBackground": "#101114",
+  "visitorMessageColor": "#2F6B4F",
+  "botMessageColor": null
+}
+
 ### Hide "Powered by hovr" — on Free: 402 upgrade_required
 PATCH {{baseUrl}}/bots/{{botId}}
 Origin: {{origin}}

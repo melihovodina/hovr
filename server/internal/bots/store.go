@@ -22,12 +22,14 @@ func NewStore(db *pgxpool.Pool) *Store {
 	return &Store{db: db}
 }
 
-const botColumns = `id, name, public_key, allowed_domains, color, avatar_url, position,
+const botColumns = `id, name, public_key, allowed_domains, color, chat_background,
+	visitor_message_color, bot_message_color, avatar_url, position,
 	greeting, suggested_questions, show_badge, last_seen_host, last_seen_at, created_at, updated_at`
 
 func scanBot(row pgx.Row) (*Bot, error) {
 	var b Bot
-	err := row.Scan(&b.ID, &b.Name, &b.PublicKey, &b.AllowedDomains, &b.Color, &b.AvatarURL, &b.Position,
+	err := row.Scan(&b.ID, &b.Name, &b.PublicKey, &b.AllowedDomains, &b.Color,
+		&b.ChatBackground, &b.VisitorMessageColor, &b.BotMessageColor, &b.AvatarURL, &b.Position,
 		&b.Greeting, &b.SuggestedQuestions, &b.ShowBadge, &b.LastSeenHost, &b.LastSeenAt, &b.CreatedAt, &b.UpdatedAt)
 	if err != nil {
 		return nil, mapErr(err)
@@ -104,11 +106,13 @@ func (s *Store) Get(ctx context.Context, accountID, id string) (*Bot, error) {
 func (s *Store) Save(ctx context.Context, accountID string, b *Bot) (*Bot, error) {
 	return scanBot(s.db.QueryRow(ctx, `
 		update bots set name = $3, allowed_domains = $4, color = $5, position = $6,
-			greeting = $7, suggested_questions = $8, show_badge = $9
+			greeting = $7, suggested_questions = $8, show_badge = $9,
+			chat_background = $10, visitor_message_color = $11, bot_message_color = $12
 		where id = $1 and account_id = $2
 		returning `+botColumns,
 		b.ID, accountID, b.Name, b.AllowedDomains, b.Color, b.Position,
-		b.Greeting, b.SuggestedQuestions, b.ShowBadge))
+		b.Greeting, b.SuggestedQuestions, b.ShowBadge,
+		b.ChatBackground, b.VisitorMessageColor, b.BotMessageColor))
 }
 
 // Delete removes a bot (cascading to its data) and returns its file paths and avatar URL.

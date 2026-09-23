@@ -4,6 +4,7 @@ package bots
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"net/url"
 	"regexp"
 	"strings"
@@ -16,31 +17,37 @@ import (
 
 // Bot is one chatbot with its widget settings.
 type Bot struct {
-	ID                 string     `json:"id"`
-	Name               string     `json:"name"`
-	PublicKey          string     `json:"publicKey"`
-	AllowedDomains     []string   `json:"allowedDomains"`
-	Color              string     `json:"color"`
-	AvatarURL          *string    `json:"avatarUrl"`
-	Position           string     `json:"position"`
-	Greeting           string     `json:"greeting"`
-	SuggestedQuestions []string   `json:"suggestedQuestions"`
-	ShowBadge          bool       `json:"showBadge"`
-	LastSeenHost       *string    `json:"lastSeenHost"`
-	LastSeenAt         *time.Time `json:"lastSeenAt"`
-	CreatedAt          time.Time  `json:"createdAt"`
-	UpdatedAt          time.Time  `json:"updatedAt"`
+	ID                  string     `json:"id"`
+	Name                string     `json:"name"`
+	PublicKey           string     `json:"publicKey"`
+	AllowedDomains      []string   `json:"allowedDomains"`
+	Color               string     `json:"color"`
+	ChatBackground      *string    `json:"chatBackground"`
+	VisitorMessageColor *string    `json:"visitorMessageColor"`
+	BotMessageColor     *string    `json:"botMessageColor"`
+	AvatarURL           *string    `json:"avatarUrl"`
+	Position            string     `json:"position"`
+	Greeting            string     `json:"greeting"`
+	SuggestedQuestions  []string   `json:"suggestedQuestions"`
+	ShowBadge           bool       `json:"showBadge"`
+	LastSeenHost        *string    `json:"lastSeenHost"`
+	LastSeenAt          *time.Time `json:"lastSeenAt"`
+	CreatedAt           time.Time  `json:"createdAt"`
+	UpdatedAt           time.Time  `json:"updatedAt"`
 }
 
 // Patch holds the fields a PATCH request may change; nil means "leave as is".
 type Patch struct {
-	Name               *string   `json:"name"`
-	AllowedDomains     *[]string `json:"allowedDomains"`
-	Color              *string   `json:"color"`
-	Position           *string   `json:"position"`
-	Greeting           *string   `json:"greeting"`
-	SuggestedQuestions *[]string `json:"suggestedQuestions"`
-	ShowBadge          *bool     `json:"showBadge"`
+	Name                *string          `json:"name"`
+	AllowedDomains      *[]string        `json:"allowedDomains"`
+	Color               *string          `json:"color"`
+	ChatBackground      Optional[string] `json:"chatBackground"`
+	VisitorMessageColor Optional[string] `json:"visitorMessageColor"`
+	BotMessageColor     Optional[string] `json:"botMessageColor"`
+	Position            *string          `json:"position"`
+	Greeting            *string          `json:"greeting"`
+	SuggestedQuestions  *[]string        `json:"suggestedQuestions"`
+	ShowBadge           *bool            `json:"showBadge"`
 }
 
 const (
@@ -53,6 +60,22 @@ const (
 )
 
 var colorRe = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
+
+// Optional is a PATCH field that can be left out or sent as null, which mean
+// different things: keep the current value, or reset it to automatic.
+type Optional[T any] struct {
+	Sent  bool
+	Value *T
+}
+
+func (o *Optional[T]) UnmarshalJSON(data []byte) error {
+	o.Sent = true
+	if string(data) == "null" {
+		o.Value = nil
+		return nil
+	}
+	return json.Unmarshal(data, &o.Value)
+}
 
 // apply validates p and writes it onto b.
 func (p Patch) apply(b *Bot) error {
@@ -68,6 +91,18 @@ func (p Patch) apply(b *Bot) error {
 			return apperr.BadRequest("Pick a color like #2F6B4F.")
 		}
 		b.Color = strings.ToUpper(*p.Color)
+	}
+	for _, f := range []struct {
+		in  Optional[string]
+		out **string
+	}{
+		{p.ChatBackground, &b.ChatBackground},
+		{p.VisitorMessageColor, &b.VisitorMessageColor},
+		{p.BotMessageColor, &b.BotMessageColor},
+	} {
+		if err := applyOptionalColor(f.in, f.out); err != nil {
+			return err
+		}
 	}
 	if p.Position != nil {
 		if *p.Position != "left" && *p.Position != "right" {
@@ -100,6 +135,24 @@ func (p Patch) apply(b *Bot) error {
 	if p.ShowBadge != nil {
 		b.ShowBadge = *p.ShowBadge
 	}
+	return nil
+}
+
+// applyOptionalColor writes a nullable colour: null resets it to automatic, and a
+// field that wasn't sent leaves the current value alone.
+func applyOptionalColor(in Optional[string], out **string) error {
+	if !in.Sent {
+		return nil
+	}
+	if in.Value == nil {
+		*out = nil
+		return nil
+	}
+	if !colorRe.MatchString(*in.Value) {
+		return apperr.BadRequest("Pick a color like #2F6B4F.")
+	}
+	upper := strings.ToUpper(*in.Value)
+	*out = &upper
 	return nil
 }
 
