@@ -2,7 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import type { Citation, Message } from "@/lib/types";
-import { AnswerText, Composer, SourceChips, WhyItSaidThat } from "@/components/playground/parts";
+import { AnswerText } from "@/components/chat-text";
+import { Composer, SourceChips, WhyItSaidThat } from "@/components/playground/parts";
 
 const cite = (n: number, sourceTitle: string, score: number): Citation => ({ n, sourceId: `s${n}`, sourceTitle, score, excerpt: `Passage ${n}` });
 

@@ -10,7 +10,8 @@ import { errorMessage } from "@/lib/api";
 import { AVATAR_ACCEPT, checkAvatar, uploadAvatar } from "@/lib/bots";
 import { DEFAULT_BOT_MESSAGE } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
-import { ColorChoice, Group, Segmented, type ColorOption } from "./controls";
+import { Segmented } from "@/components/ui/segmented";
+import { ColorChoice, Group, type ColorOption } from "./controls";
 import type { Draft } from "./widget-screen";
 
 export const SWATCHES = [

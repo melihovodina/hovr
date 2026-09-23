@@ -8,20 +8,13 @@ import { Wordmark } from "@/components/brand";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, errorMessage } from "@/lib/api";
 import { isSignedOut } from "@/lib/session";
+import { readLocal, writeLocal } from "@/lib/storage";
 import type { Billing, Bot, InboxItem, Me } from "@/lib/types";
 import { AppContext, type AppState } from "./app-context";
 import { LoadError } from "./load-error";
 import { Sidebar } from "./sidebar";
 
 const LAST_BOT_KEY = "hovr-bot";
-
-function rememberedBot(): string | null {
-  try {
-    return localStorage.getItem(LAST_BOT_KEY);
-  } catch {
-    return null;
-  }
-}
 
 // Sidebar plus the floating main panel. Loads the account once and keeps the selected bot in ?bot=.
 export function AppShell({ children }: { children: ReactNode }) {
@@ -54,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => ctrl.abort();
   }, [router, version]);
 
-  const wanted = params.get("bot") ?? rememberedBot();
+  const wanted = params.get("bot") ?? readLocal(LAST_BOT_KEY);
   const bot = bots?.find((b) => b.id === wanted) ?? bots?.[0] ?? null;
 
   useEffect(() => {
@@ -63,9 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!bot) return;
-    try {
-      localStorage.setItem(LAST_BOT_KEY, bot.id);
-    } catch {}
+    writeLocal(LAST_BOT_KEY, bot.id);
     const ctrl = new AbortController();
     api<{ items: InboxItem[] }>(`/bots/${bot.id}/inbox?status=open`, { signal: ctrl.signal })
       .then(({ items }) => setInboxOpen(items.length))

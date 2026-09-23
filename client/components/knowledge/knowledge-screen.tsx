@@ -14,6 +14,7 @@ import { errorMessage } from "@/lib/api";
 import { shortDate } from "@/lib/format";
 import { addText, checkFile, deleteSource, FILE_ACCEPT, formatSize, MAX_TEXT, MAX_TITLE, sourceKind, uploadFile } from "@/lib/sources";
 import type { Source } from "@/lib/types";
+import { knowledgeField } from "./knowledge-draft";
 import { StatusPill } from "./status-pill";
 import { useSources } from "./use-sources";
 
@@ -21,8 +22,6 @@ const LEAVE_MS = 200;
 
 const tile = "flex items-center gap-3.5 rounded-[20px] p-4.5 text-left transition-opacity hover:opacity-90";
 const tileIcon = "flex size-11 shrink-0 items-center justify-center rounded-[14px]";
-const field =
-  "w-full rounded-[18px] bg-app px-4.5 text-[15px] text-ink outline-none placeholder:text-subtle focus-visible:shadow-[0_0_0_2px_var(--ink)]";
 const cols = "md:grid md:grid-cols-[2.4fr_1fr_1fr_1fr_1.2fr_44px] md:items-center";
 
 function sizeOf(s: Source): string {
@@ -272,7 +271,7 @@ function PasteText({ botId, onDone, onCancel }: { botId: string; onDone: () => v
         maxLength={MAX_TITLE}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className={cn(field, "h-12")}
+        className={cn(knowledgeField, "h-12")}
       />
       <textarea
         aria-label="Text"
@@ -282,7 +281,7 @@ function PasteText({ botId, onDone, onCancel }: { botId: string; onDone: () => v
         placeholder="Paste answers, policies, prices… anything your visitors ask about."
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className={cn(field, "resize-y py-3 leading-normal")}
+        className={cn(knowledgeField, "resize-y py-3 leading-normal")}
       />
       {error && <Notice tone="bad">{error}</Notice>}
       <div className="flex gap-2">

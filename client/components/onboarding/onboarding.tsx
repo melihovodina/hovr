@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { cn } from "cn";
+import { PlanError } from "@/components/app/plan-error";
 import { Notice } from "@/components/auth/fields";
 import { ArrowBadge, Wordmark } from "@/components/brand";
 import { draftProblem, draftSize, EMPTY_DRAFT, KnowledgeDraft, saveDraft, type Draft, type Failure } from "@/components/knowledge/knowledge-draft";
 import { buttonVariants } from "@/components/ui/button";
-import { api, ApiError, errorMessage } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAccount, useSignOut } from "@/lib/session";
 import type { Bot } from "@/lib/types";
 
@@ -53,9 +54,7 @@ export function Onboarding() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [bot, setBot] = useState<Bot | null>(null);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  // The plan doesn't allow another bot: point to the plans.
-  const [upgrade, setUpgrade] = useState(false);
+  const [error, setError] = useState<unknown>(null);
   const [failures, setFailures] = useState<Failure[]>([]);
 
   useEffect(() => {
@@ -70,7 +69,7 @@ export function Onboarding() {
       return;
     }
     setPending(true);
-    setError("");
+    setError(null);
     try {
       // Kept after the first try, so sending again doesn't make a second bot.
       const created = bot ?? (await api<Bot>("/bots", { method: "POST", body: { name } }));
@@ -82,8 +81,7 @@ export function Onboarding() {
       }
       setFailures(failed);
     } catch (err) {
-      setError(errorMessage(err));
-      setUpgrade(err instanceof ApiError && err.upgradeRequired);
+      setError(err);
     }
     setPending(false);
   }
@@ -145,21 +143,12 @@ export function Onboarding() {
                     value={draft}
                     onChange={(d) => {
                       setDraft(d);
-                      setError("");
+                      setError(null);
                     }}
                     disabled={pending}
                   />
                 </div>
-                {error && (
-                  <Notice tone="bad">
-                    {error}{" "}
-                    {upgrade && (
-                      <Link href="/app/billing" className="underline">
-                        See plans
-                      </Link>
-                    )}
-                  </Notice>
-                )}
+                {error !== null && <PlanError error={error} billingHref="/app/billing" />}
                 <button type="submit" disabled={pending} className={cn(buttonVariants({ size: "lg" }), "w-full pr-2.5 disabled:opacity-60")}>
                   {pending ? "Setting it up…" : draftSize(draft) > 0 ? "Create bot and start reading" : "Create bot"}
                   {!pending && <ArrowBadge size={32} />}

@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { readLocal, writeLocal } from "./storage";
 import type { Message, WidgetConfig } from "./types";
 
 // The public widget API (/api/widget/<key>). `host` is the customer's page, which the server
@@ -32,20 +33,11 @@ const memory = new Map<string, string>();
 export function remember(key: string, value: string | null) {
   if (value === null) memory.delete(key);
   else memory.set(key, value);
-  try {
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
-  } catch {
-    // The memory copy above is all there is.
-  }
+  writeLocal(key, value);
 }
 
 export function recall(key: string): string | null {
-  try {
-    return localStorage.getItem(key) ?? memory.get(key) ?? null;
-  } catch {
-    return memory.get(key) ?? null;
-  }
+  return readLocal(key) ?? memory.get(key) ?? null;
 }
 
 // The anonymous id that lets a visitor come back to their own conversation.

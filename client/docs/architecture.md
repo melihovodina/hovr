@@ -36,14 +36,15 @@ shared links land in the same place.
 | Folder | What it owns |
 | --- | --- |
 | `app/` | routes only: metadata and one screen component each |
-| `components/app` | the shell, sidebar, app context, page header, Welcome steps, load errors |
+| `components/app` | the shell, sidebar, app context, page header, Welcome steps, load errors, `PlanError` (an error with "See plans" on a plan limit) |
 | `components/landing` | landing sections |
 | `components/auth`, `onboarding` | sign-in and sign-up forms, first bot setup |
 | `components/overview`, `playground`, `knowledge`, `inbox`, `billing`, `widget-editor` | one folder per app screen |
 | `components/widget` | the live chat in the iframe and its email form |
 | `components/widget-panel.tsx`, `widget-preview.tsx` | the drawn widget used by the landing, Welcome and the widget editor |
-| `components/ui` | shadcn/Radix primitives: button, dropdown menu, skeleton |
-| `lib/` | API calls per feature, shared types, formatting, colours, theme |
+| `components/chat-text.tsx` | `AnswerText` (answers with `[n]` as small numbers) and the typing `Caret`, used by the Playground, Inbox and widget |
+| `components/ui` | shared primitives: button, dropdown menu, the `Segmented` pill switch, skeleton |
+| `lib/` | API calls per feature, shared types, formatting, colours, theme, and the shared hooks below |
 | `public/widget.js` | the loader customers paste on their site |
 | `test/` | Vitest tests and their helpers; see [development.md](development.md) |
 
@@ -74,6 +75,13 @@ to `/signin` (`isSignedOut` in `lib/session.ts`). An account with no bots goes t
 `useApp()` also gives `href(path)` for links that keep the selected bot, `reload()` after a
 change that affects the sidebar or plan, and `updateBot(bot)` to swap in a saved bot
 without reloading.
+
+Shared hooks and helpers in `lib/`:
+
+- `useKeyed(key, load)` loads what's on screen again when `key` changes, and treats a result
+  for an older key as still loading.
+- `useSetQuery()` changes `?tab=` / `?item=` in place.
+- `readLocal` / `writeLocal` wrap `localStorage`, so blocked storage never throws.
 
 ## Styling
 

@@ -4,28 +4,12 @@ import { Mail } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useApp } from "@/components/app/app-context";
-import { Notice } from "@/components/auth/fields";
-import { ApiError, errorMessage } from "@/lib/api";
+import { PlanError } from "@/components/app/plan-error";
 import { replyLink, setInboxStatus, teach } from "@/lib/inbox";
 import { MAX_TEXT } from "@/lib/sources";
 import type { InboxItem } from "@/lib/types";
 
 const quietButton = "h-11 rounded-full text-sm font-bold text-subtle transition-colors hover:text-ink disabled:opacity-50";
-
-function Failure({ error }: { error: unknown }) {
-  const { href } = useApp();
-  if (error instanceof ApiError && error.upgradeRequired) {
-    return (
-      <Notice tone="bad">
-        {error.message}{" "}
-        <Link href={href("/app/billing")} className="underline">
-          See plans
-        </Link>
-      </Notice>
-    );
-  }
-  return <Notice tone="bad">{errorMessage(error)}</Notice>;
-}
 
 export function ReplyLink({ email, question }: { email: string; question?: string }) {
   const { bot } = useApp();
@@ -80,7 +64,7 @@ export function ItemActions({ item, onChange }: { item: InboxItem; onChange: (it
             "Marked as done without an answer."
           )}
         </p>
-        {error !== null && <Failure error={error} />}
+        {error !== null && <PlanError error={error} billingHref={href("/app/billing")} />}
         {item.visitorEmail && <ReplyLink email={item.visitorEmail} question={item.question} />}
         <button type="button" disabled={pending} onClick={() => run(() => setInboxStatus(bot.id, item.id, "open"), false)} className={quietButton}>
           Move back to Needs an answer
@@ -115,7 +99,7 @@ export function ItemActions({ item, onChange }: { item: InboxItem; onChange: (it
           {pending ? "Saving…" : "Save to knowledge"}
         </button>
       </form>
-      {error !== null && <Failure error={error} />}
+      {error !== null && <PlanError error={error} billingHref={href("/app/billing")} />}
       {item.visitorEmail && <ReplyLink email={item.visitorEmail} question={item.question} />}
       <button type="button" disabled={pending} onClick={() => run(() => setInboxStatus(bot.id, item.id, "done"), false)} className={quietButton}>
         Mark as done

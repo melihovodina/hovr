@@ -2,7 +2,7 @@
 
 import { Download, Inbox as InboxIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { cn } from "cn";
 import { useApp } from "@/components/app/app-context";
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { timeAgo } from "@/lib/format";
 import { leadsCsvUrl } from "@/lib/inbox";
 import type { InboxItem } from "@/lib/types";
+import { useSetQuery } from "@/lib/use-set-query";
 import { ItemDetail, LeadDetail } from "./details";
 import { useInbox, type InboxData } from "./use-inbox";
 
@@ -37,9 +38,8 @@ function count(data: InboxData, tab: Tab): number {
 // Questions the bot couldn't answer (to teach it) and visitors who left an email (to reply).
 export function InboxScreen() {
   const { bot, href, reload: reloadApp } = useApp();
-  const router = useRouter();
-  const pathname = usePathname();
   const params = useSearchParams();
+  const setQuery = useSetQuery();
   const { data, error, reload } = useInbox(bot.id);
   const [flash, setFlash] = useState("");
 
@@ -47,12 +47,8 @@ export function InboxScreen() {
   const selected = params.get("item");
 
   function go(next: { tab?: Tab; item?: string | null }) {
-    const q = new URLSearchParams(params.toString());
-    if (next.tab) q.set("tab", next.tab);
-    if (next.item) q.set("item", next.item);
-    else q.delete("item");
     setFlash("");
-    router.replace(`${pathname}?${q.toString()}`, { scroll: false });
+    setQuery({ ...(next.tab && { tab: next.tab }), item: next.item ?? null });
   }
 
   function changed(item: InboxItem, taught: boolean) {

@@ -1,9 +1,5 @@
-/*
- * hovr widget loader. Paste on any site:
- *   <script src="https://YOUR-HOVR-ADDRESS/widget.js" data-bot="pub_..." defer></script>
- * It adds one iframe that holds the chat. The iframe stays hidden until the bot's settings have
- * loaded, then shows the launcher in the bot's colours and grows into the chat panel when opened.
- */
+// hovr widget loader: <script src="https://YOUR-HOVR-ADDRESS/widget.js" data-bot="pub_..." defer></script>
+// Adds one hidden iframe with the chat; it shows once the bot's settings load and grows when opened.
 (function () {
   "use strict";
 

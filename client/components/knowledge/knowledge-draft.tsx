@@ -53,7 +53,8 @@ export async function saveDraft(botId: string, d: Draft): Promise<Failure[]> {
 const tile =
   "flex w-full items-center gap-3 rounded-[20px] bg-app p-4 text-left text-ink transition-colors hover:bg-surface-2";
 const tileIcon = "flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface";
-const input =
+// The text inputs for pasted knowledge, here and on the Knowledge screen.
+export const knowledgeField =
   "w-full rounded-[18px] bg-app px-4.5 text-[15px] text-ink outline-none placeholder:text-subtle focus-visible:shadow-[0_0_0_2px_var(--ink)]";
 
 export function KnowledgeDraft({ value, onChange, disabled }: { value: Draft; onChange: (d: Draft) => void; disabled?: boolean }) {
@@ -157,7 +158,7 @@ export function KnowledgeDraft({ value, onChange, disabled }: { value: Draft; on
             disabled={disabled}
             value={value.text.title}
             onChange={(e) => onChange({ ...value, text: { ...value.text!, title: e.target.value } })}
-            className={cn(input, "h-12")}
+            className={cn(knowledgeField, "h-12")}
           />
           <textarea
             aria-label="Text"
@@ -167,7 +168,7 @@ export function KnowledgeDraft({ value, onChange, disabled }: { value: Draft; on
             disabled={disabled}
             value={value.text.body}
             onChange={(e) => onChange({ ...value, text: { ...value.text!, body: e.target.value } })}
-            className={cn(input, "resize-y py-3 leading-normal")}
+            className={cn(knowledgeField, "resize-y py-3 leading-normal")}
           />
         </div>
       ) : (

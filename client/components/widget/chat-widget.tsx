@@ -4,7 +4,7 @@ import { ArrowUp } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { cn } from "cn";
-import { Caret } from "@/components/playground/parts";
+import { Caret } from "@/components/chat-text";
 import { PANEL, PoweredBy, WidgetFirstScreen, WidgetHeader, WidgetLauncher } from "@/components/widget-panel";
 import { ApiError } from "@/lib/api";
 import { streamChat } from "@/lib/chat";

@@ -1,6 +1,6 @@
 import { Mail } from "lucide-react";
 import type { ReactNode } from "react";
-import { AnswerText } from "@/components/playground/parts";
+import { AnswerText } from "@/components/chat-text";
 import type { Message } from "@/lib/types";
 
 // A visitor's chat as they saw it, read-only. `messages` null means the chat was deleted.

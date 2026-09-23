@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useApp } from "@/components/app/app-context";
 import { PageHeader } from "@/components/app/page-header";
 import { Notice } from "@/components/auth/fields";
 import { useSources } from "@/components/knowledge/use-sources";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Segmented } from "@/components/widget-editor/controls";
-import { errorMessage } from "@/lib/api";
 import { getStats } from "@/lib/inbox";
-import type { Stats } from "@/lib/types";
+import { useKeyed } from "@/lib/use-keyed";
 import { Chart } from "./chart";
 import { Metrics } from "./metrics";
 import { NeedsYou, todos, TopQuestions } from "./side-cards";
@@ -18,22 +17,6 @@ const PERIODS = [
   { value: "7", label: "7 days" },
   { value: "30", label: "30 days" },
 ];
-
-function useStats(botId: string, days: number) {
-  const [result, setResult] = useState<{ key: string; stats?: Stats; error?: string } | null>(null);
-  const key = `${botId}:${days}`;
-  useEffect(() => {
-    const ctrl = new AbortController();
-    getStats(botId, days, ctrl.signal)
-      .then((stats) => setResult({ key, stats }))
-      .catch((err) => {
-        if (!ctrl.signal.aborted) setResult({ key, error: errorMessage(err) });
-      });
-    return () => ctrl.abort();
-  }, [botId, days, key]);
-  // A result for another bot or period is stale: show the loading state instead.
-  return result?.key === key ? result : null;
-}
 
 function OverviewSkeleton() {
   return (
@@ -54,9 +37,9 @@ function OverviewSkeleton() {
 export function Overview() {
   const { bot, billing, href } = useApp();
   const [days, setDays] = useState(7);
-  const result = useStats(bot.id, days);
+  const result = useKeyed(`${bot.id}:${days}`, (signal) => getStats(bot.id, days, signal));
   const { sources } = useSources(bot.id);
-  const stats = result?.stats;
+  const stats = result?.data;
 
   return (
     <>

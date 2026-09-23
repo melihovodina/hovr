@@ -1,34 +1,17 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useApp } from "@/components/app/app-context";
 import { Notice } from "@/components/auth/fields";
 import { Skeleton } from "@/components/ui/skeleton";
-import { errorMessage } from "@/lib/api";
 import { getConversation } from "@/lib/chat";
 import { timeAgo } from "@/lib/format";
 import { getInboxItem } from "@/lib/inbox";
-import type { InboxItem, Lead, Message } from "@/lib/types";
+import type { InboxItem, Lead } from "@/lib/types";
+import { useKeyed } from "@/lib/use-keyed";
 import { ItemActions, ReplyLink } from "./actions";
 import { Thread } from "./thread";
-
-// Loads a chat's messages; null while loading, and null messages when the chat is gone.
-function useMessages(load: (signal: AbortSignal) => Promise<Message[] | null>, key: string) {
-  const [result, setResult] = useState<{ key: string; messages?: Message[] | null; error?: string } | null>(null);
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load(ctrl.signal)
-      .then((messages) => setResult({ key, messages }))
-      .catch((err) => {
-        if (!ctrl.signal.aborted) setResult({ key, error: errorMessage(err) });
-      });
-    return () => ctrl.abort();
-    // `load` is rebuilt every render; the key says when it points elsewhere.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-  return result?.key === key ? result : null;
-}
 
 // The chat on the left, what to do about it on the right (below it on narrower screens).
 function Layout({ onBack, thread, actions }: { onBack: () => void; thread: ReactNode; actions: ReactNode }) {
@@ -65,7 +48,7 @@ function times(n: number): string {
 
 export function ItemDetail({ item, onBack, onChange }: { item: InboxItem; onBack: () => void; onChange: (item: InboxItem, taught: boolean) => void }) {
   const { bot } = useApp();
-  const result = useMessages((signal) => getInboxItem(bot.id, item.id, signal).then((r) => r.messages), item.id);
+  const result = useKeyed(item.id, (signal) => getInboxItem(bot.id, item.id, signal).then((r) => r.messages));
   return (
     <Layout
       onBack={onBack}
@@ -78,7 +61,7 @@ export function ItemDetail({ item, onBack, onChange }: { item: InboxItem; onBack
           <Thread
             title={item.question}
             meta={`Asked ${times(item.timesAsked)} · latest chat ${timeAgo(item.lastAskedAt)}`}
-            messages={result.messages ?? null}
+            messages={result.data ?? null}
             email={item.visitorEmail}
           />
         )
@@ -90,7 +73,7 @@ export function ItemDetail({ item, onBack, onChange }: { item: InboxItem; onBack
 
 export function LeadDetail({ lead, onBack }: { lead: Lead; onBack: () => void }) {
   const { bot } = useApp();
-  const result = useMessages((signal) => getConversation(bot.id, lead.conversationId, signal).then((r) => r.messages), lead.conversationId);
+  const result = useKeyed(lead.conversationId, (signal) => getConversation(bot.id, lead.conversationId, signal).then((r) => r.messages));
   return (
     <Layout
       onBack={onBack}
@@ -103,7 +86,7 @@ export function LeadDetail({ lead, onBack }: { lead: Lead; onBack: () => void })
           <Thread
             title={lead.email}
             meta={`Chat started ${timeAgo(lead.createdAt)} · last message ${timeAgo(lead.lastMessageAt)}`}
-            messages={result.messages ?? null}
+            messages={result.data ?? null}
             email={null}
           />
         )

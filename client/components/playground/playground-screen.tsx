@@ -7,13 +7,14 @@ import { cn } from "cn";
 import { useApp } from "@/components/app/app-context";
 import { PageHeader } from "@/components/app/page-header";
 import { Notice } from "@/components/auth/fields";
+import { AnswerText, Caret } from "@/components/chat-text";
 import { useSources } from "@/components/knowledge/use-sources";
 import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/api";
 import { deleteConversation, getConversation, listConversations, streamChat } from "@/lib/chat";
 import { shortDate } from "@/lib/format";
 import type { Conversation, Message } from "@/lib/types";
-import { AnswerText, Caret, Composer, SourceChips, WhyItSaidThat } from "./parts";
+import { Composer, SourceChips, WhyItSaidThat } from "./parts";
 
 // Test chats with the bot: history on the left, the chat, and why each answer said what it said.
 // Keyed by bot, so switching bots starts clean.

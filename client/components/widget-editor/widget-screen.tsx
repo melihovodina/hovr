@@ -1,21 +1,21 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { cn } from "cn";
 import { useApp } from "@/components/app/app-context";
 import { PageHeader } from "@/components/app/page-header";
-import { Notice } from "@/components/auth/fields";
+import { PlanError } from "@/components/app/plan-error";
 import { buttonVariants } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
 import { type PreviewMessage } from "@/components/widget-panel";
 import { WidgetPreview } from "@/components/widget-preview";
-import { ApiError, errorMessage } from "@/lib/api";
 import { removeAvatar, updateBot, type BotPatch } from "@/lib/bots";
 import { chatColors } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
+import { readLocal, writeLocal } from "@/lib/storage";
 import type { Bot } from "@/lib/types";
-import { Segmented } from "./controls";
+import { useSetQuery } from "@/lib/use-set-query";
 import { InstallTab } from "./install-tab";
 import { LookTab } from "./look-tab";
 import { MessagesTab } from "./messages-tab";
@@ -80,24 +80,20 @@ export function WidgetScreen() {
 
 function WidgetEditor() {
   const { bot, href, updateBot: setBot } = useApp();
-  const router = useRouter();
-  const pathname = usePathname();
   const params = useSearchParams();
+  const setQuery = useSetQuery();
   const tab: Tab = TABS.some((t) => t.value === params.get("tab")) ? (params.get("tab") as Tab) : "look";
   const [draft, setDraft] = useState<Draft>(() => draftOf(bot));
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const [upgrade, setUpgrade] = useState(false);
+  const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
   const [view, setView] = useState<View>("start");
   // Only colours the made-up site in the preview; kept in this browser, never saved to the bot.
-  const [site, setSite] = useState(() => savedSiteColor() ?? "#16161A");
+  const [site, setSite] = useState(() => readLocal(SITE_KEY) ?? "#16161A");
 
   function pickSite(color: string) {
     setSite(color);
-    try {
-      localStorage.setItem(SITE_KEY, color);
-    } catch {}
+    writeLocal(SITE_KEY, color);
   }
 
   const patch = changes(bot, draft);
@@ -106,18 +102,16 @@ function WidgetEditor() {
   function change(next: Partial<Draft>) {
     setDraft((d) => ({ ...d, ...next }));
     setSaved(false);
-    setError("");
+    setError(null);
   }
 
   function openTab(next: Tab) {
-    const q = new URLSearchParams(params.toString());
-    q.set("tab", next);
-    router.replace(`${pathname}?${q.toString()}`, { scroll: false });
+    setQuery({ tab: next });
   }
 
   async function save() {
     setPending(true);
-    setError("");
+    setError(null);
     try {
       let next = Object.keys(patch).length > 0 ? await updateBot(bot.id, patch) : bot;
       if (dropsLogo(bot, draft)) next = await removeAvatar(bot.id);
@@ -125,8 +119,7 @@ function WidgetEditor() {
       setDraft(draftOf(next));
       setSaved(true);
     } catch (err) {
-      setError(errorMessage(err));
-      setUpgrade(err instanceof ApiError && err.upgradeRequired);
+      setError(err);
     }
     setPending(false);
   }
@@ -161,16 +154,7 @@ function WidgetEditor() {
 
           {tab !== "install" && (
             <div className="flex shrink-0 flex-col gap-2.5 border-t border-line px-5 py-4 sm:px-5.5">
-              {error && (
-                <Notice tone="bad">
-                  {error}{" "}
-                  {upgrade && (
-                    <Link href={href("/app/billing")} className="underline">
-                      See plans
-                    </Link>
-                  )}
-                </Notice>
-              )}
+              {error !== null && <PlanError error={error} billingHref={href("/app/billing")} />}
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -192,16 +176,8 @@ function WidgetEditor() {
   );
 }
 
-const SITE_KEY = "hovr-preview-site";
-
 // The preview site's colour is only for the owner's eyes, so it stays in this browser.
-function savedSiteColor(): string | null {
-  try {
-    return localStorage.getItem(SITE_KEY);
-  } catch {
-    return null;
-  }
-}
+const SITE_KEY = "hovr-preview-site";
 
 // A made-up page in the owner's site colour: its bar, dots and text blocks are shades of it.
 function siteColors(bg: string) {
