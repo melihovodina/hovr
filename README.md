@@ -82,6 +82,9 @@ everything only tests use, including `.http` files for trying the API by hand.
 - [`server/docs/api.md`](server/docs/api.md) — every endpoint, errors, widget and billing details
 - [`server/docs/database.md`](server/docs/database.md) — schema, indexes, limits
 - [`server/docs/operations.md`](server/docs/operations.md) — environment values, deploying, monitoring
+- [`client/docs/architecture.md`](client/docs/architecture.md) — routes, folders, API calls, sessions, styling
+- [`client/docs/widget.md`](client/docs/widget.md) — the loader, the iframe chat, colours, previews
+- [`client/docs/development.md`](client/docs/development.md) — commands, static export rules, tests, conventions
 
 ## Decisions worth knowing
 
