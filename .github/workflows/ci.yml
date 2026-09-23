@@ -19,10 +19,30 @@ jobs:
           cache-dependency-path: server/go.sum
       - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          # Pinned: a new CLI can switch to a Postgres image from another registry,
+          # and this is the version the project is developed against.
+          version: 2.117.0
       # Postgres only (migrations applied): the schema needs auth.users,
       # storage.buckets and the extensions schema, so plain Postgres won't do.
-      - run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      # The registry throttles ("toomanyrequests"), which fails the pull part way.
+      - name: Start Postgres
+        run: |
+          set -u
+          exclude=gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+          delay=15
+          for attempt in 1 2 3 4 5; do
+            if supabase start -x "$exclude"; then
+              exit 0
+            fi
+            if [ "$attempt" = 5 ]; then
+              echo "supabase start failed after $attempt attempts"
+              exit 1
+            fi
+            echo "attempt $attempt failed, retrying in ${delay}s"
+            supabase stop --no-backup || true
+            sleep "$delay"
+            delay=$((delay * 2))
+          done
       - run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
         working-directory: server
       - run: go vet ./...
