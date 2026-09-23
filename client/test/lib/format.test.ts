@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { onColor, shortDate, timeAgo } from "@/lib/format";
+import { onColor, resetDate, shortDate, timeAgo } from "@/lib/format";
 
 test("onColor picks readable text for a background", () => {
   expect(onColor("#C8F547")).toBe("#0D0E11"); // lime: dark text
@@ -28,4 +28,9 @@ test("timeAgo", () => {
   expect(ago(5 * 3_600_000)).toBe("5 hours ago");
   expect(ago(30 * 3_600_000)).toBe("yesterday");
   expect(ago(4 * 86_400_000)).toBe("4 days ago");
+});
+
+test("resetDate is the first of next month in UTC", () => {
+  expect(resetDate("short", new Date("2026-09-23T12:00:00Z"))).toBe("Oct 1");
+  expect(resetDate("long", new Date("2026-12-31T23:30:00Z"))).toBe("January 1");
 });

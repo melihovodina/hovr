@@ -31,3 +31,9 @@ export function timeAgo(iso: string, now = new Date()): string {
   const days = Math.floor(hours / 24);
   return days === 1 ? "yesterday" : `${days} days ago`;
 }
+
+// When the monthly messages start over: usage periods are calendar months in UTC (server: internal/usage).
+export function resetDate(month: "short" | "long" = "short", now = new Date()): string {
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return next.toLocaleDateString("en-US", { month, day: "numeric", timeZone: "UTC" });
+}

@@ -13,14 +13,3 @@ export function PageHeader({ title, sub, aside }: { title: string; sub: string; 
   );
 }
 
-// Screens that come in a later step: the header, and a note in place of the content.
-export function NotYet({ title, sub }: { title: string; sub: string }) {
-  return (
-    <>
-      <PageHeader title={title} sub={sub} />
-      <div className="m-5 mt-1 flex grow items-center justify-center rounded-3xl bg-app p-8 text-center text-sm font-semibold text-subtle sm:m-7 sm:mt-1">
-        This screen is being built.
-      </div>
-    </>
-  );
-}

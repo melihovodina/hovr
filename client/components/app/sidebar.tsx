@@ -7,7 +7,7 @@ import { cn } from "cn";
 import { Logo } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { onColor } from "@/lib/format";
+import { onColor, resetDate } from "@/lib/format";
 import { useSignOut } from "@/lib/session";
 import type { Billing, Bot } from "@/lib/types";
 import { useApp } from "./app-context";
@@ -68,13 +68,6 @@ function BotSwitcher({ onNavigate }: { onNavigate?: () => void }) {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-// Usage periods are calendar months in UTC (server: internal/usage).
-function resetDate(): string {
-  const now = new Date();
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  return next.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
 const NEXT_PLAN: Record<string, string> = {
