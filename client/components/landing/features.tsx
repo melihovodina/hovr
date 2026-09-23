@@ -61,7 +61,7 @@ export function Features() {
           </div>
           <div className="flex flex-col gap-1.5">
             <h3 className={title}>It follows along</h3>
-            <p className="text-[15px] leading-[1.55] text-subtle">“And how long?” just works.</p>
+            <p className="text-[15px] leading-[1.55] text-subtle">It remembers the conversation, so short follow-ups get the right answer.</p>
           </div>
         </div>
 
