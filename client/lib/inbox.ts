@@ -37,8 +37,10 @@ export function leadsCsvUrl(botId: string): string {
 export function replyLink(email: string, botName: string, question?: string): string {
   const q = new URLSearchParams({ subject: `Your question to ${botName}` });
   if (question) q.set("body", `You asked: “${question}”\n\n`);
-  // URLSearchParams writes spaces as "+", which mail apps show literally.
-  return `mailto:${email}?${q.toString().replace(/\+/g, "%20")}`;
+  // The address is encoded so a visitor's "me@x.com?bcc=..." can't add recipients or fields;
+  // "@" stays readable. URLSearchParams writes spaces as "+", which mail apps show literally.
+  const to = encodeURIComponent(email).replace(/%40/g, "@");
+  return `mailto:${to}?${q.toString().replace(/\+/g, "%20")}`;
 }
 
 export function getStats(botId: string, days: number, signal?: AbortSignal): Promise<Stats> {

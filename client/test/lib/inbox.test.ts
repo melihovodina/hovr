@@ -13,6 +13,13 @@ test("replyLink writes spaces as %20 so mail apps don't show plus signs", () => 
   expect(q.get("body")).toBe("You asked: “Can I pay with crypto? 1+1”\n\n");
 });
 
+test("replyLink keeps a visitor's email from adding recipients or fields", () => {
+  const link = replyLink("me@x.example?bcc=boss@x.example&subject=hi", "Bot");
+  expect(link.startsWith("mailto:me@x.example%3Fbcc%3Dboss@x.example%26subject%3Dhi?subject=")).toBe(true);
+  const q = new URLSearchParams(link.split("?")[1]);
+  expect([...q.keys()]).toEqual(["subject"]);
+});
+
 test("replyLink leaves the body out without a question", () => {
   expect(replyLink("a@b.example", "Bot")).toBe("mailto:a@b.example?subject=Your%20question%20to%20Bot");
 });
