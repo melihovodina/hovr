@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pgvector/pgvector-go"
 
 	"github.com/melihovodina/hovr/server/internal/ai"
 	"github.com/melihovodina/hovr/server/internal/rag"
@@ -180,6 +181,78 @@ func TestConversationFlow(t *testing.T) {
 	}
 	if w := e.call(user, http.MethodGet, path, ""); w.Code != http.StatusNotFound {
 		t.Errorf("get after delete: %d", w.Code)
+	}
+}
+
+// addSource gives the bot one chunk to cite, so answers come back with citations.
+func (e *env) addSource(bot, title, text string) {
+	e.t.Helper()
+	ctx := context.Background()
+	var source string
+	err := e.pool.QueryRow(ctx,
+		`insert into sources (bot_id, type, title, status) values ($1, 'text', $2, 'ready') returning id`,
+		bot, title).Scan(&source)
+	if err != nil {
+		e.t.Fatalf("create source: %v", err)
+	}
+	vecs, _ := fakeai.Embedder{}.EmbedDocuments(ctx, []string{text})
+	if _, err := e.pool.Exec(ctx,
+		`insert into chunks (source_id, bot_id, chunk_index, content, embedding) values ($1, $2, 0, $3, $4)`,
+		source, bot, text, pgvector.NewVector(vecs[0])); err != nil {
+		e.t.Fatalf("insert chunk: %v", err)
+	}
+}
+
+// Visitors get the answer only: the passages it came from are the owner's, and
+// the [n] markers would point at passages the widget never shows.
+func TestWidgetHidesSources(t *testing.T) {
+	e := newEnv(t)
+	user, bot := testdb.NewBot(t, e.pool, "free")
+	e.addSource(bot, "Shipping", "Delivery to Canada takes five days.")
+	question := `{"message":"Delivery to Canada takes how long?"}`
+	// The marker arrives split across chunks, as a real model streams it.
+	e.model.chunks = []string{"Five days", " [1", "]", " at most."}
+
+	_, events := e.widgetChat(user, "visitor-1234", bot, question)
+	var streamed string
+	for _, ev := range events {
+		if ev.name == "text" {
+			streamed += ev.data["text"].(string)
+		}
+	}
+	if streamed != "Five days at most." {
+		t.Errorf("streamed to visitor = %q", streamed)
+	}
+	last := events[len(events)-1]
+	msg := last.data["message"].(map[string]any)
+	if last.name != "done" || msg["content"] != "Five days at most." {
+		t.Errorf("done message = %+v", msg)
+	}
+	if citations := msg["citations"].([]any); len(citations) != 0 {
+		t.Errorf("visitor citations = %+v", citations)
+	}
+
+	// Restoring the chat after a reload hides them too.
+	conversation := events[0].data["id"].(string)
+	messages, err := e.service.VisitorMessages(context.Background(), bot, "visitor-1234", conversation)
+	if err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	answer := messages[len(messages)-1]
+	if answer.Content != "Five days at most." || len(answer.Citations) != 0 {
+		t.Errorf("restored answer = %+v", answer)
+	}
+
+	// The owner still sees both, so the Playground can explain the answer.
+	_, events = e.chat(user, bot, question)
+	msg = events[len(events)-1].data["message"].(map[string]any)
+	if msg["content"] != "Five days [1] at most." {
+		t.Errorf("owner content = %+v", msg["content"])
+	}
+	if citations := msg["citations"].([]any); len(citations) != 1 {
+		t.Fatalf("owner citations = %+v", citations)
+	} else if c := citations[0].(map[string]any); c["sourceTitle"] != "Shipping" {
+		t.Errorf("owner citation = %+v", c)
 	}
 }
 

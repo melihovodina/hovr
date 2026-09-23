@@ -53,6 +53,47 @@ func TestMarkerFilter(t *testing.T) {
 	}
 }
 
+func TestStripCitations(t *testing.T) {
+	cases := []struct{ text, want string }{
+		{"We ship to Canada [2].", "We ship to Canada."},
+		{"Yes [1, 2] and no [3].", "Yes and no."},
+		{"[1] Straight away.", "Straight away."},
+		{"See [see below] for more.", "See [see below] for more."},
+		{"Nothing to strip.", "Nothing to strip."},
+	}
+	for _, tc := range cases {
+		if got := StripCitations(tc.text); got != tc.want {
+			t.Errorf("StripCitations(%q) = %q, want %q", tc.text, got, tc.want)
+		}
+	}
+}
+
+func TestCitationStripper(t *testing.T) {
+	cases := []struct {
+		chunks []string
+		want   string
+	}{
+		{[]string{"We ship ", "to Canada [1]."}, "We ship to Canada."},
+		// A marker split across chunks never reaches the reader.
+		{[]string{"Five days", " [1", ", 2]", " at most."}, "Five days at most."},
+		{[]string{"Open ", "[", "3", "]", " now."}, "Open now."},
+		{[]string{"See [see", " below] for more."}, "See [see below] for more."},
+		// An open bracket that never becomes a marker is sent as it is.
+		{[]string{"Ends with [1"}, "Ends with [1"},
+	}
+	for _, tc := range cases {
+		var sent strings.Builder
+		f := NewCitationStripper(func(s string) error { sent.WriteString(s); return nil })
+		for _, c := range tc.chunks {
+			_ = f.Write(c)
+		}
+		_ = f.Flush()
+		if sent.String() != tc.want {
+			t.Errorf("%q: sent %q, want %q", tc.chunks, sent.String(), tc.want)
+		}
+	}
+}
+
 func TestCited(t *testing.T) {
 	matches := []Match{{SourceID: "a", SourceTitle: "A"}, {SourceID: "b", SourceTitle: "B"}}
 	for i := range matches {

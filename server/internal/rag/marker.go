@@ -1,6 +1,9 @@
 package rag
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 // markerFilter removes a marker from streamed text. Text that could be the start
 // of the marker is held back until the next chunk shows whether it is.
@@ -48,4 +51,55 @@ func partialSuffix(s, marker string) int {
 		}
 	}
 	return 0
+}
+
+// spacedCitationRe is a citation marker with the space in front of it, so taking
+// "We ship to Canada [2]." apart leaves no gap before the full stop.
+var spacedCitationRe = regexp.MustCompile(`[ \t]*` + citationRe.String())
+
+// StripCitations removes the [n] markers from a finished answer. Visitors are not
+// shown the passages, so the markers would point at nothing.
+func StripCitations(text string) string {
+	return strings.TrimSpace(spacedCitationRe.ReplaceAllString(text, ""))
+}
+
+// citationHoldRe is the end of a chunk that could still grow into a marker: an
+// open bracket with the digits and commas so far, or the space before one.
+var citationHoldRe = regexp.MustCompile(`(?:[ \t]*\[[\d,\s]*|[ \t]+)$`)
+
+// CitationStripper removes citation markers from streamed text. A marker can be
+// split across chunks, so an end that might still become one is held back until
+// the next chunk settles it.
+type CitationStripper struct {
+	out     func(string) error
+	pending string
+}
+
+func NewCitationStripper(out func(string) error) *CitationStripper {
+	return &CitationStripper{out: out}
+}
+
+func (s *CitationStripper) Write(chunk string) error {
+	text := spacedCitationRe.ReplaceAllString(s.pending+chunk, "")
+	hold := citationHoldRe.FindStringIndex(text)
+	if hold == nil {
+		s.pending = ""
+		return s.emit(text)
+	}
+	s.pending = text[hold[0]:]
+	return s.emit(text[:hold[0]])
+}
+
+// Flush sends what was held back, once no more chunks can arrive.
+func (s *CitationStripper) Flush() error {
+	text := s.pending
+	s.pending = ""
+	return s.emit(text)
+}
+
+func (s *CitationStripper) emit(text string) error {
+	if text == "" {
+		return nil
+	}
+	return s.out(text)
 }

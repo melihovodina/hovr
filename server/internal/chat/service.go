@@ -97,9 +97,17 @@ func (s *Service) Respond(c *gin.Context, r Request) {
 
 	// Work that must finish even if the visitor leaves mid-stream.
 	bg := context.WithoutCancel(ctx)
+	// Visitors never see the passages, so the markers pointing at them are taken
+	// out of the stream as it goes; a marker split across chunks is held back.
+	onText := func(text string) error { return send("text", gin.H{"text": text}) }
+	var stripper *rag.CitationStripper
+	if r.Channel == ChannelWidget {
+		stripper = rag.NewCitationStripper(onText)
+		onText = stripper.Write
+	}
 	answer, err := s.answerer.Answer(ctx, rag.Question{
 		BotID: r.BotID, BotName: r.BotName, Message: message, History: history,
-	}, func(text string) error { return send("text", gin.H{"text": text}) })
+	}, onText)
 	if err != nil {
 		s.refund(bg, counted, r.AccountID)
 		if ctx.Err() == nil {
@@ -107,6 +115,9 @@ func (s *Service) Respond(c *gin.Context, r Request) {
 			_ = send("error", gin.H{"error": "The bot couldn't answer right now. Try again in a moment."})
 		}
 		return
+	}
+	if stripper != nil {
+		_ = stripper.Flush()
 	}
 	saved, err := s.store.addMessage(bg, conversationID, roleAssistant, answer.Text, answer.Citations, &answer.Answered)
 	if err != nil {
@@ -119,7 +130,19 @@ func (s *Service) Respond(c *gin.Context, r Request) {
 			slog.Error("record unanswered", "bot", r.BotID, "err", err)
 		}
 	}
-	_ = send("done", gin.H{"message": saved})
+	_ = send("done", gin.H{"message": forChannel(r.Channel, *saved)})
+}
+
+// forChannel hides the owner's knowledge from visitors: the widget gets the answer
+// without the citations or the [n] markers that point at them. The message is
+// stored whole, so the owner still sees both in the Playground and the Inbox.
+func forChannel(channel string, m Message) Message {
+	if channel != ChannelWidget {
+		return m
+	}
+	m.Content = rag.StripCitations(m.Content)
+	m.Citations = []rag.Citation{}
+	return m
 }
 
 // refund gives back a counted message when the question never got an answer.
@@ -152,7 +175,14 @@ func (s *Service) VisitorMessages(ctx context.Context, botID, visitorID, convers
 	if _, err := s.store.visitorConversation(ctx, botID, visitorID, conversationID); err != nil {
 		return nil, err
 	}
-	return s.store.messages(ctx, conversationID)
+	messages, err := s.store.messages(ctx, conversationID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range messages {
+		messages[i] = forChannel(ChannelWidget, messages[i])
+	}
+	return messages, nil
 }
 
 // SaveLead stores the email a visitor left so the team can get back to them.

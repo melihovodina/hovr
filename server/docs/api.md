@@ -112,9 +112,14 @@ and `needsYou`. Widget conversations only.
 | Endpoint | Notes |
 | --- | --- |
 | `GET /config?host=` | `{name, color, chatBackground, visitorMessageColor, botMessageColor, avatarUrl, position, greeting, suggestedQuestions, showBadge}`; `visitorMessageColor` is null when it follows `color`; also records "last seen on" |
-| `POST /chat {message, conversationId?, visitorId, host}` | same events as the playground |
-| `GET /conversations/<id>?visitorId=&host=` | restore after a reload |
+| `POST /chat {message, conversationId?, visitorId, host}` | same events as the playground, without the sources |
+| `GET /conversations/<id>?visitorId=&host=` | restore after a reload, without the sources |
 | `POST /lead {conversationId, visitorId, email, host}` | 204; the address must be a bare mailbox, up to 254 characters |
+
+The passages an answer came from belong to the owner, so visitors never receive them:
+on these two endpoints `citations` is always `[]` and the `[n]` markers are taken out of
+`content` and of the streamed `text`, including a marker split across chunks. Messages are
+stored whole, so the owner still sees both in the playground and the inbox.
 
 `host` is the customer's site, taken from `document.referrer` inside the iframe. Empty
 `allowedDomains` means anywhere, a domain also covers its subdomains, and the app's own host
