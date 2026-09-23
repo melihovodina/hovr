@@ -40,9 +40,10 @@ client:
 client-build:
 	cd client && pnpm build
 
-# ESLint plus a TypeScript check.
+# ESLint plus a TypeScript check. next typegen writes the route types (LayoutProps and the like)
+# that next dev and next build would, so the check also works on a fresh checkout such as CI.
 client-lint:
-	cd client && pnpm lint && pnpm exec tsc --noEmit
+	cd client && pnpm lint && pnpm exec next typegen && pnpm exec tsc --noEmit
 
 # Frontend unit and component tests (Vitest, jsdom).
 client-test:
