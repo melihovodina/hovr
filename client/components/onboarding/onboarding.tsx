@@ -1,14 +1,15 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { cn } from "cn";
 import { Notice } from "@/components/auth/fields";
 import { ArrowBadge, Logo } from "@/components/brand";
 import { draftProblem, draftSize, EMPTY_DRAFT, KnowledgeDraft, saveDraft, type Draft, type Failure } from "@/components/knowledge/knowledge-draft";
 import { buttonVariants } from "@/components/ui/button";
-import { api, errorMessage } from "@/lib/api";
+import { api, ApiError, errorMessage } from "@/lib/api";
 import { useAccount, useSignOut } from "@/lib/session";
 import type { Bot } from "@/lib/types";
 
@@ -44,6 +45,8 @@ function Stepper() {
 // First bot setup: a name and something to read. Accounts that already have a bot skip it.
 export function Onboarding() {
   const router = useRouter();
+  // "Add a bot" from the app: the same form, for an account that already has one.
+  const another = useSearchParams().get("new") === "1";
   const signOut = useSignOut();
   const { account, error: loadError } = useAccount();
   const [name, setName] = useState("");
@@ -51,11 +54,13 @@ export function Onboarding() {
   const [bot, setBot] = useState<Bot | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  // The plan doesn't allow another bot: point to the plans.
+  const [upgrade, setUpgrade] = useState(false);
   const [failures, setFailures] = useState<Failure[]>([]);
 
   useEffect(() => {
-    if (account && account.bots.length > 0 && !bot) router.replace("/app");
-  }, [account, bot, router]);
+    if (account && account.bots.length > 0 && !bot && !another) router.replace("/app");
+  }, [account, another, bot, router]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -72,17 +77,18 @@ export function Onboarding() {
       setBot(created);
       const failed = await saveDraft(created.id, draft);
       if (failed.length === 0) {
-        router.replace("/app");
+        router.replace(`/app?bot=${created.id}`);
         return;
       }
       setFailures(failed);
     } catch (err) {
       setError(errorMessage(err));
+      setUpgrade(err instanceof ApiError && err.upgradeRequired);
     }
     setPending(false);
   }
 
-  const ready = account && (account.bots.length === 0 || bot);
+  const ready = account && (account.bots.length === 0 || bot || another);
 
   return (
     <div className="flex min-h-dvh flex-col bg-app text-ink">
@@ -90,8 +96,13 @@ export function Onboarding() {
         <div className="flex flex-1">
           <Logo />
         </div>
-        <Stepper />
-        <div className="flex flex-1 justify-end">
+        {!another && <Stepper />}
+        <div className="flex flex-1 items-center justify-end gap-5">
+          {another && (
+            <Link href="/app" className="text-sm font-bold text-subtle hover:text-ink">
+              Back to the app
+            </Link>
+          )}
           <button type="button" onClick={signOut} className="text-sm font-bold text-subtle hover:text-ink">
             Sign out
           </button>
@@ -103,12 +114,14 @@ export function Onboarding() {
         {ready && (
           <div className="flex w-full max-w-145 flex-col gap-6 rounded-[32px] bg-surface p-6 shadow-[0_0_0_1px_var(--line)] sm:p-10">
             <div className="flex flex-col gap-2">
-              <h1 className="text-[30px] leading-[1.1] font-extrabold tracking-[-0.04em] sm:text-[34px]">Let’s set up your first bot</h1>
+              <h1 className="text-[30px] leading-[1.1] font-extrabold tracking-[-0.04em] sm:text-[34px]">
+                {another ? "Set up another bot" : "Let’s set up your first bot"}
+              </h1>
               <p className="text-base leading-normal text-subtle">Give it a name and something to read. You can add more later.</p>
             </div>
 
             {failures.length > 0 ? (
-              <Failures failures={failures} onContinue={() => router.replace("/app")} />
+              <Failures failures={failures} onContinue={() => router.replace(`/app?bot=${bot?.id}`)} />
             ) : (
               <form onSubmit={submit} className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
@@ -137,7 +150,16 @@ export function Onboarding() {
                     disabled={pending}
                   />
                 </div>
-                {error && <Notice tone="bad">{error}</Notice>}
+                {error && (
+                  <Notice tone="bad">
+                    {error}{" "}
+                    {upgrade && (
+                      <Link href="/app/billing" className="underline">
+                        See plans
+                      </Link>
+                    )}
+                  </Notice>
+                )}
                 <button type="submit" disabled={pending} className={cn(buttonVariants({ size: "lg" }), "w-full pr-2.5 disabled:opacity-60")}>
                   {pending ? "Setting it up…" : draftSize(draft) > 0 ? "Create bot and start reading" : "Create bot"}
                   {!pending && <ArrowBadge size={32} />}

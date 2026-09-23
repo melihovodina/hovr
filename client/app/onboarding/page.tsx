@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Onboarding } from "@/components/onboarding/onboarding";
 
 export const metadata: Metadata = {
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function OnboardingPage() {
-  return <Onboarding />;
+  // Onboarding reads ?new=, which only exists in the browser.
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-app" />}>
+      <Onboarding />
+    </Suspense>
+  );
 }

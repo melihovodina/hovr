@@ -7,6 +7,7 @@ import { useSources } from "@/components/knowledge/use-sources";
 import { WidgetPanel } from "@/components/widget-panel";
 import { api } from "@/lib/api";
 import type { Bot, Conversation } from "@/lib/types";
+import { useApp } from "./app-context";
 import { KnowledgeStep, Step, StepLink } from "./welcome-steps";
 
 // Whether the owner has tried the bot in the Playground yet.
@@ -24,6 +25,7 @@ function useHasTried(botId: string): boolean {
 
 // The first screen of a new bot: three steps to go live, and the widget as visitors will see it.
 export function Welcome({ bot }: { bot: Bot }) {
+  const { href } = useApp();
   const { sources, error, reload } = useSources(bot.id);
   const tried = useHasTried(bot.id);
   const live = bot.lastSeenAt !== null;
@@ -46,7 +48,7 @@ export function Welcome({ bot }: { bot: Bot }) {
           title="Ask it a few questions"
           body="Try it in the Playground before your visitors do."
           action={
-            <StepLink href="/app/playground" strong={active === 2}>
+            <StepLink href={href("/app/playground")} strong={active === 2}>
               Open Playground
             </StepLink>
           }
@@ -58,7 +60,7 @@ export function Welcome({ bot }: { bot: Bot }) {
           title="Put it on your site"
           body={live ? `It’s live on ${bot.lastSeenHost}.` : "One line of code. We’ll show you exactly where it goes."}
           action={
-            <StepLink href="/app/widget?tab=install" strong={active === 3}>
+            <StepLink href={`${href("/app/widget")}&tab=install`} strong={active === 3}>
               Get the code
             </StepLink>
           }

@@ -34,7 +34,7 @@ export function Step({
       className={cn(
         "flex gap-4.5 rounded-3xl p-5.5",
         active ? "shadow-[0_0_0_2px_var(--ink)]" : "shadow-[0_0_0_1px_var(--line)]",
-        !children && "items-center",
+        !children && "sm:items-center",
       )}
     >
       <span

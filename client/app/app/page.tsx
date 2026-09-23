@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
-import { AppHome } from "@/components/app/app-home";
+import { HomeScreen } from "@/components/app/home-screen";
 
-export const metadata: Metadata = {
-  title: "Your bot",
-  robots: { index: false },
-};
+export const metadata: Metadata = { title: "Overview" };
 
 export default function AppPage() {
-  return <AppHome />;
+  return <HomeScreen />;
 }
