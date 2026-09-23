@@ -103,9 +103,7 @@ HOVR_EVAL=1 make test                                       # real answers for a
 ```
 
 CI (GitHub Actions) runs gofmt, vet and the Go tests with `-race` against a Postgres started
-by the Supabase CLI, and builds the Docker image. The client's own lint and type check come
-back once the frontend is finished; until then the Docker build is what catches a client
-that doesn't compile.
+by the Supabase CLI, lints, type checks and tests the client, and builds the Docker image.
 
 ## Layout
 
