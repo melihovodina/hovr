@@ -1,97 +1,786 @@
 <!doctype html>
-<!--
-  A plain page on another origin with the hovr widget on it, to check embedding outside the app.
-
-  Run it (from the repo root):
-    python3 -m http.server 8000 --bind 127.0.0.1
-  Then open, with your bot's public key from the app (Widget → Install):
-    http://127.0.0.1:8000/demo.html?bot=pub_...
-  Add &app=https://your-hovr-address when hovr isn't on http://localhost:3000.
-
-  Use 127.0.0.1 rather than localhost: localhost is the app's own host, which the server treats as
-  an app preview (allowed everywhere, not recorded as "last seen on").
--->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Harbor Books · embed demo</title>
+    <title>Harbor Books · Independent bookshop in Port Alder</title>
     <style>
       :root {
         color-scheme: light;
-        font-family: Georgia, "Times New Roman", serif;
-        color: #2b2620;
-        background: #fbf7f0;
+        --paper: #fbf7f0;
+        --paper-2: #f3ecdf;
+        --ink: #23201b;
+        --muted: #6b6356;
+        --line: #e4dccd;
+        --sea: #1f4a44;
+        --sea-2: #2d6159;
+        --clay: #c0643a;
+        --sun: #e9b949;
+        --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+        --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
       }
       body {
         margin: 0;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 32px;
-        border-bottom: 1px solid #e7dfd1;
-      }
-      header strong {
-        font-size: 22px;
-      }
-      nav a {
-        margin-left: 20px;
-        color: inherit;
-      }
-      main {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 56px 24px 120px;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 16px;
         line-height: 1.6;
       }
-      h1 {
-        font-size: 44px;
-        line-height: 1.1;
-        margin: 0 0 16px;
+      a {
+        color: inherit;
       }
-      .note {
-        margin-top: 40px;
-        padding: 16px 20px;
-        border-radius: 12px;
-        background: #efe8dc;
-        font-family: system-ui, sans-serif;
+      img,
+      svg {
+        display: block;
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        font-weight: 700;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .eyebrow {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--clay);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 48px;
+        padding: 0 22px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 15px;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: transform 0.15s, background 0.15s;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+      .btn-primary {
+        background: var(--sea);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--sea-2);
+      }
+      .btn-ghost {
+        box-shadow: inset 0 0 0 1.5px var(--ink);
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      section,
+      .newsletter {
+        /* Anchor links land below the sticky header. */
+        scroll-margin-top: 72px;
+      }
+      section {
+        padding: 88px 0;
+      }
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 36px;
+      }
+      .section-head h2 {
+        font-size: clamp(30px, 4vw, 42px);
+        margin-top: 8px;
+      }
+      /* Shown only when the address has no ?bot= key. */
+      .dev-strip {
+        padding: 10px 24px;
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 13px;
+        text-align: center;
+      }
+      .dev-strip code {
+        padding: 1px 6px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.14);
+      }
+
+      .top-bar {
+        background: var(--sea);
+        color: #e8efe9;
+        font-size: 13px;
+        text-align: center;
+        padding: 8px 16px;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(251, 247, 240, 0.92);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        height: 72px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--serif);
+        font-size: 22px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .nav-links {
+        display: flex;
+        gap: 28px;
+        margin-left: auto;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .nav-links a {
+        text-decoration: none;
+        color: var(--muted);
+      }
+      .nav-links a:hover {
+        color: var(--ink);
+      }
+      .nav .btn {
+        height: 40px;
+        padding: 0 18px;
         font-size: 14px;
       }
-      code {
-        font-family: ui-monospace, monospace;
+
+      .hero {
+        padding: 72px 0 96px;
+      }
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        align-items: center;
+        gap: 56px;
+      }
+      .hero h1 {
+        font-size: clamp(40px, 6vw, 68px);
+        letter-spacing: -0.02em;
+        margin: 14px 0 20px;
+      }
+      .hero h1 em {
+        color: var(--sea);
+      }
+      .hero p {
+        max-width: 480px;
+        font-size: 18px;
+        color: var(--muted);
+        margin: 0 0 32px;
+      }
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .hero-facts {
+        display: flex;
+        gap: 32px;
+        margin-top: 40px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .hero-facts strong {
+        display: block;
+        font-family: var(--serif);
+        font-size: 26px;
+        color: var(--ink);
+      }
+      .hero-art {
+        position: relative;
+        aspect-ratio: 1 / 1.02;
+        border-radius: 32px;
+        background: var(--sea);
+        overflow: hidden;
+      }
+      .hero-art .badge {
+        position: absolute;
+        left: 24px;
+        bottom: 24px;
+        padding: 14px 18px;
+        border-radius: 18px;
+        background: var(--paper);
+        font-size: 14px;
+        box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.35);
+      }
+      .hero-art .badge strong {
+        display: block;
+        font-family: var(--serif);
+        font-size: 17px;
+      }
+
+      .picks {
+        background: var(--paper-2);
+      }
+      .books {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+      }
+      .book-cover {
+        aspect-ratio: 2 / 3;
+        border-radius: 6px 14px 14px 6px;
+        padding: 22px 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        color: #fff;
+        box-shadow: inset 8px 0 0 rgba(0, 0, 0, 0.12), 0 18px 30px -18px rgba(0, 0, 0, 0.5);
+        transition: transform 0.2s;
+      }
+      .book:hover .book-cover {
+        transform: translateY(-4px) rotate(-1deg);
+      }
+      .book-cover span {
+        font-family: var(--serif);
+        font-size: 22px;
+        line-height: 1.15;
+      }
+      .book-cover small {
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+      .book h3 {
+        font-size: 18px;
+        margin-top: 16px;
+      }
+      .book p {
+        margin: 4px 0 0;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .book .price {
+        margin-top: 8px;
+        font-weight: 700;
+      }
+      .events-list {
+        display: grid;
+        gap: 14px;
+      }
+      .event {
+        display: grid;
+        grid-template-columns: 88px 1fr auto;
+        align-items: center;
+        gap: 24px;
+        padding: 22px 24px;
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: 0 0 0 1px var(--line);
+      }
+      .event-date {
+        text-align: center;
+        font-weight: 700;
+        color: var(--clay);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .event-date strong {
+        display: block;
+        font-family: var(--serif);
+        font-size: 34px;
+        line-height: 1;
+        color: var(--ink);
+        letter-spacing: 0;
+      }
+      .event h3 {
+        font-size: 20px;
+      }
+      .event p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .event .tag {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--paper-2);
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .visit-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      .card {
+        padding: 32px;
+        border-radius: 28px;
+        background: #fff;
+        box-shadow: 0 0 0 1px var(--line);
+      }
+      .card h3 {
+        font-size: 24px;
+        margin-bottom: 16px;
+      }
+      .hours {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+      }
+      .hours td {
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--line);
+      }
+      .hours td:last-child {
+        text-align: right;
+        font-weight: 600;
+      }
+      .map {
+        position: relative;
+        height: 220px;
+        margin-top: 20px;
+        border-radius: 20px;
+        background: #dfe8e2;
+        overflow: hidden;
+      }
+      .perks {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-top: 24px;
+      }
+      .perk {
+        padding: 26px;
+        border-radius: 24px;
+        background: var(--paper-2);
+      }
+      .perk h3 {
+        font-size: 19px;
+        margin: 14px 0 6px;
+      }
+      .perk p {
+        margin: 0;
+        font-size: 15px;
+        color: var(--muted);
+      }
+      .perk-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: var(--sea);
+        color: #fff;
+      }
+
+      .newsletter {
+        padding: 0 0 88px;
+      }
+      .newsletter-box {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        align-items: center;
+        gap: 32px;
+        padding: 48px;
+        border-radius: 32px;
+        background: var(--clay);
+        color: #fff;
+      }
+      .newsletter-box h2 {
+        font-size: clamp(28px, 3.5vw, 38px);
+      }
+      .newsletter-box p {
+        margin: 12px 0 0;
+        opacity: 0.9;
+      }
+      .newsletter form {
+        display: flex;
+        gap: 8px;
+        padding: 6px;
+        border-radius: 999px;
+        background: #fff;
+      }
+      .newsletter input {
+        min-width: 0;
+        flex: 1;
+        border: 0;
+        padding: 0 16px;
+        font: inherit;
+        background: transparent;
+        outline: none;
+      }
+      .newsletter button {
+        height: 44px;
+        padding: 0 20px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--ink);
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      footer {
+        padding: 48px 0 110px;
+        border-top: 1px solid var(--line);
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .footer-grid {
+        display: grid;
+        grid-template-columns: 1.5fr repeat(3, 1fr);
+        gap: 32px;
+      }
+      footer h4 {
+        margin: 0 0 12px;
+        color: var(--ink);
+        font-size: 14px;
+      }
+      footer ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      footer a {
+        text-decoration: none;
+      }
+      footer a:hover {
+        color: var(--ink);
+      }
+
+      @media (max-width: 880px) {
+        .nav-links {
+          display: none;
+        }
+        .brand {
+          font-size: 19px;
+        }
+        .hero-facts {
+          gap: 20px;
+        }
+        .hero-facts strong {
+          font-size: 21px;
+          white-space: nowrap;
+        }
+        .book-cover span {
+          font-size: 18px;
+        }
+        .nav .btn {
+          margin-left: auto;
+        }
+        .hero-grid,
+        .visit-grid,
+        .newsletter-box {
+          grid-template-columns: 1fr;
+        }
+        .books {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .perks {
+          grid-template-columns: 1fr;
+        }
+        .footer-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .event {
+          grid-template-columns: 64px 1fr;
+        }
+        .event .tag {
+          display: none;
+        }
+        .newsletter-box {
+          padding: 32px 24px;
+        }
+        section {
+          padding: 64px 0;
+        }
       }
     </style>
   </head>
   <body>
+    <div class="top-bar">Free delivery on orders over $35 in Port Alder and nearby · Gift wrapping is always free</div>
+
     <header>
-      <strong>Harbor Books</strong>
-      <nav><a href="#">Shop</a><a href="#">Events</a><a href="#">Visit</a></nav>
+      <div class="wrap nav">
+        <a class="brand" href="#top">
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+            <rect x="3" y="5" width="7" height="21" rx="1.5" fill="#1f4a44" />
+            <rect x="11.5" y="3" width="6" height="23" rx="1.5" fill="#c0643a" />
+            <rect x="19" y="7" width="8" height="19" rx="1.5" fill="#e9b949" transform="rotate(8 23 16)" />
+          </svg>
+          Harbor Books
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="#picks">Staff picks</a>
+          <a href="#events">Events</a>
+          <a href="#visit">Visit</a>
+          <a href="#newsletter">Newsletter</a>
+        </nav>
+        <a class="btn btn-primary" href="#picks">Shop books</a>
+      </div>
     </header>
-    <main>
-      <h1>An independent bookshop by the water</h1>
-      <p>
-        This page stands in for a customer's website. It knows nothing about hovr except the one script line below, the
-        same line owners copy from Widget → Install.
-      </p>
-      <p>Open the chat bubble in the corner and ask something your bot's knowledge covers.</p>
-      <div class="note" id="note"></div>
+
+    <main id="top">
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div>
+            <span class="eyebrow">Independent since 1998</span>
+            <h1>A little bookshop <em>by the water</em></h1>
+            <p>
+              New and second-hand books, handpicked by people who read them first. Come browse, stay for a coffee, or
+              order online and we'll post it the same day.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#picks">See this month's picks</a>
+              <a class="btn btn-ghost" href="#visit">Plan a visit</a>
+            </div>
+            <div class="hero-facts">
+              <div><strong>12,000+</strong>books on our shelves</div>
+              <div><strong>4</strong>events every month</div>
+              <div><strong>7 days</strong>a week, open</div>
+            </div>
+          </div>
+
+          <div class="hero-art" aria-hidden="true">
+            <svg viewBox="0 0 400 408" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+              <circle cx="320" cy="84" r="46" fill="#e9b949" />
+              <path d="M0 300 C 80 280, 140 320, 220 300 S 340 280, 400 300 V408 H0Z" fill="#2d6159" />
+              <path d="M0 330 C 90 312, 150 350, 230 332 S 350 314, 400 332 V408 H0Z" fill="#173b36" />
+              <g transform="translate(60 118)">
+                <rect x="0" y="0" width="280" height="12" rx="3" fill="#fbf7f0" opacity=".9" />
+                <rect x="10" y="-86" width="26" height="86" rx="3" fill="#c0643a" />
+                <rect x="40" y="-104" width="20" height="104" rx="3" fill="#fbf7f0" />
+                <rect x="64" y="-74" width="30" height="74" rx="3" fill="#e9b949" />
+                <rect x="98" y="-96" width="22" height="96" rx="3" fill="#8fb3a9" />
+                <rect x="124" y="-80" width="28" height="80" rx="3" fill="#c0643a" />
+                <rect x="170" y="-92" width="24" height="92" rx="3" fill="#fbf7f0" transform="rotate(-12 194 0)" />
+                <rect x="206" y="-70" width="30" height="70" rx="3" fill="#e9b949" />
+                <rect x="240" y="-100" width="22" height="100" rx="3" fill="#8fb3a9" />
+              </g>
+              <g transform="translate(60 222)">
+                <rect x="0" y="0" width="280" height="12" rx="3" fill="#fbf7f0" opacity=".9" />
+                <rect x="12" y="-78" width="30" height="78" rx="3" fill="#e9b949" />
+                <rect x="46" y="-92" width="22" height="92" rx="3" fill="#8fb3a9" />
+                <rect x="72" y="-70" width="26" height="70" rx="3" fill="#fbf7f0" />
+                <rect x="126" y="-30" width="96" height="30" rx="3" fill="#c0643a" />
+                <rect x="132" y="-52" width="84" height="22" rx="3" fill="#fbf7f0" />
+                <rect x="232" y="-86" width="28" height="86" rx="3" fill="#c0643a" />
+              </g>
+            </svg>
+            <div class="badge"><strong>Book of the month</strong>Salt on the Windowsill</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="picks" id="picks">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Staff picks</span>
+              <h2>What we can't stop talking about</h2>
+            </div>
+            <a class="btn btn-ghost" href="#picks">All books</a>
+          </div>
+          <div class="books">
+            <article class="book">
+              <div class="book-cover" style="background: #1f4a44"><small>Mara Quill</small><span>Salt on the Windowsill</span></div>
+              <h3>Salt on the Windowsill</h3>
+              <p>A quiet novel about a fishing town and the summer everything changed.</p>
+              <div class="price">$18</div>
+            </article>
+            <article class="book">
+              <div class="book-cover" style="background: #c0643a"><small>Idris Vale</small><span>The Cartographer's Tea</span></div>
+              <h3>The Cartographer's Tea</h3>
+              <p>Maps, letters and one very long kettle. Our most gifted book this year.</p>
+              <div class="price">$22</div>
+            </article>
+            <article class="book">
+              <div class="book-cover" style="background: #e9b949; color: #23201b"><small>Oona Brask</small><span>Nine Small Tides</span></div>
+              <h3>Nine Small Tides</h3>
+              <p>Short stories to read in one sitting, ideally with your feet up.</p>
+              <div class="price">$16</div>
+            </article>
+            <article class="book">
+              <div class="book-cover" style="background: #6d7fa3"><small>Teo Lindgard</small><span>Paper Boats for Grown-Ups</span></div>
+              <h3>Paper Boats for Grown-Ups</h3>
+              <p>A folding book for rainy afternoons. Ages 8 to 80, honestly.</p>
+              <div class="price">$14</div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="events">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Events</span>
+              <h2>Come for a book, stay for the evening</h2>
+            </div>
+          </div>
+          <div class="events-list">
+            <div class="event">
+              <div class="event-date">Oct<strong>03</strong></div>
+              <div>
+                <h3>Author evening with Mara Quill</h3>
+                <p>A reading from Salt on the Windowsill, then questions and signing. 7 pm, free.</p>
+              </div>
+              <span class="tag">Free</span>
+            </div>
+            <div class="event">
+              <div class="event-date">Oct<strong>11</strong></div>
+              <div>
+                <h3>Saturday story hour</h3>
+                <p>Picture books and paper boats for ages 3 to 7. 10:30 am in the kids' corner.</p>
+              </div>
+              <span class="tag">Kids</span>
+            </div>
+            <div class="event">
+              <div class="event-date">Oct<strong>24</strong></div>
+              <div>
+                <h3>Harbor book club: Nine Small Tides</h3>
+                <p>Our monthly book club meets upstairs. Members get 10% off the book.</p>
+              </div>
+              <span class="tag">Book club</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="visit" style="padding-top: 0">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Visit us</span>
+              <h2>On the corner of Quay Street</h2>
+            </div>
+          </div>
+          <div class="visit-grid">
+            <div class="card">
+              <h3>Opening hours</h3>
+              <table class="hours">
+                <tr><td>Monday to Friday</td><td>9:00 – 19:00</td></tr>
+                <tr><td>Saturday</td><td>10:00 – 18:00</td></tr>
+                <tr><td>Sunday</td><td>11:00 – 16:00</td></tr>
+                <tr><td>Public holidays</td><td>11:00 – 15:00</td></tr>
+              </table>
+            </div>
+            <div class="card">
+              <h3>Find us</h3>
+              <p style="margin: 0; color: var(--muted)">14 Quay Street, Port Alder · (555) 014-2290 · hello@harborbooks.example</p>
+              <div class="map" aria-hidden="true">
+                <svg viewBox="0 0 400 220" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+                  <path d="M0 150 C 90 130, 170 170, 260 150 S 360 130, 400 140 V220 H0Z" fill="#9fc2d6" />
+                  <path d="M40 0 V150 M0 70 H400 M200 0 V160 M320 0 V145" stroke="#fbf7f0" stroke-width="10" />
+                  <circle cx="200" cy="70" r="16" fill="#c0643a" />
+                  <circle cx="200" cy="70" r="6" fill="#fbf7f0" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="perks">
+            <div class="perk">
+              <span class="perk-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13v10H3zM16 10h4l1 3v4h-5" /><circle cx="7" cy="18" r="2" /><circle cx="18" cy="18" r="2" /></svg>
+              </span>
+              <h3>Same-day posting</h3>
+              <p>Order online before 2 pm and your books leave the shop that afternoon.</p>
+            </div>
+            <div class="perk">
+              <span class="perk-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7C10 3 6 4 7 7M12 7c2-4 6-3 5 0" /></svg>
+              </span>
+              <h3>Free gift wrapping</h3>
+              <p>Brown paper, string and a handwritten card, on every book you ask for.</p>
+            </div>
+            <div class="perk">
+              <span class="perk-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM8 7h7" /></svg>
+              </span>
+              <h3>Special orders</h3>
+              <p>Can't see it on the shelf? We can usually get any book in print within a week.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="newsletter" id="newsletter">
+        <div class="wrap">
+          <div class="newsletter-box">
+            <div>
+              <h2>One letter a month, never more</h2>
+              <p>New arrivals, staff picks and first dibs on event seats.</p>
+            </div>
+            <form onsubmit="event.preventDefault(); this.querySelector('button').textContent = 'Thanks!'">
+              <label for="nl-email" style="position: absolute; left: -9999px">Email</label>
+              <input id="nl-email" type="email" placeholder="you@example.com" required />
+              <button type="submit">Subscribe</button>
+            </form>
+          </div>
+        </div>
+      </div>
     </main>
+
+    <footer>
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand" href="#top" style="font-size: 19px; color: var(--ink)">Harbor Books</a>
+          <p style="margin: 10px 0 0; max-width: 280px">An independent bookshop in Port Alder. Harbor Books and this page are made up, for trying out the hovr widget.</p>
+        </div>
+        <div>
+          <h4>Shop</h4>
+          <ul><li><a href="#picks">Staff picks</a></li><li><a href="#picks">New arrivals</a></li><li><a href="#picks">Gift cards</a></li></ul>
+        </div>
+        <div>
+          <h4>Visit</h4>
+          <ul><li><a href="#visit">Hours</a></li><li><a href="#events">Events</a></li><li><a href="#visit">Find us</a></li></ul>
+        </div>
+        <div>
+          <h4>Help</h4>
+          <ul><li><a href="#visit">Delivery</a></li><li><a href="#visit">Returns</a></li><li><a href="#newsletter">Newsletter</a></li></ul>
+        </div>
+      </div>
+    </footer>
 
     <script>
       (function () {
         var params = new URLSearchParams(location.search);
         var bot = params.get("bot");
         var app = (params.get("app") || "http://localhost:3000").replace(/\/$/, "");
-        var note = document.getElementById("note");
 
         if (!bot) {
-          note.innerHTML =
-            "Add your bot's public key to the address: <code>?bot=pub_...</code> (find it in the app under Widget → Install).";
+          // Not part of the made-up shop: a strip telling the developer how to load their widget.
+          var strip = document.createElement("div");
+          strip.className = "dev-strip";
+          strip.innerHTML =
+            "hovr demo: add your bot's public key to the address, <code>?bot=pub_...</code> (it's in the app under Widget → Install).";
+          document.body.prepend(strip);
           return;
         }
-        note.textContent = "Loading the widget for " + bot + " from " + app + "/widget.js";
 
         // The line an owner pastes, added here so the key can come from the address.
         var script = document.createElement("script");
