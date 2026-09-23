@@ -8,54 +8,19 @@ on:
 jobs:
   server:
     runs-on: ubuntu-latest
-    # For signing in to ghcr.io below.
-    permissions:
-      contents: read
-      packages: read
-    env:
-      CI: "true"
-      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
-      # The Postgres image comes from ghcr.io, where anonymous pulls share a quota
-      # the runners exhaust; the job's own token lifts it and needs no secret set.
-      - name: Sign in to ghcr.io
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      - uses: supabase/setup-cli@v3
-        with:
-          # Pinned: a new CLI can switch to a Postgres image from another registry,
-          # and this is the version the project is developed against.
-          version: 2.117.0
-      # Postgres only (migrations applied): the schema needs auth.users,
-      # storage.buckets and the extensions schema, so plain Postgres won't do.
-      # The registry throttles ("toomanyrequests"), which fails the pull part way.
-      - name: Start Postgres
-        run: |
-          set -u
-          exclude=gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
-          delay=15
-          for attempt in 1 2 3 4 5; do
-            if supabase start -x "$exclude"; then
-              exit 0
-            fi
-            if [ "$attempt" = 5 ]; then
-              echo "supabase start failed after $attempt attempts"
-              exit 1
-            fi
-            echo "attempt $attempt failed, retrying in ${delay}s"
-            supabase stop --no-backup || true
-            sleep "$delay"
-            delay=$((delay * 2))
-          done
       - run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
         working-directory: server
       - run: go vet ./...
         working-directory: server
-      - run: go test ./... -race -cover -coverpkg=./...
+      # No Postgres here: its image comes from a registry that throttles the
+      # runners. Tests needing a database skip themselves; run `make test` locally.
+      - run: go test ./... -race
         working-directory: server
 
   # The docker job builds the static export; this one checks the code and runs the tests.
