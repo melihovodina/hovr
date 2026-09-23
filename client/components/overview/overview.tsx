@@ -83,7 +83,7 @@ export function Overview() {
         ) : !stats ? (
           <OverviewSkeleton />
         ) : (
-          <>
+          <div className="flex grow animate-rise flex-col gap-4">
             <Metrics stats={stats} />
             <div className="flex grow flex-col gap-4 lg:flex-row">
               <Chart stats={stats} />
@@ -92,7 +92,7 @@ export function Overview() {
                 <TopQuestions questions={stats.topQuestions} />
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </>

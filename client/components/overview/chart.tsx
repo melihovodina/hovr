@@ -62,7 +62,10 @@ export function Chart({ stats }: { stats: Stats }) {
                   {total === 0 ? (
                     <div className="h-0.75 rounded-full bg-surface-2" />
                   ) : (
-                    <div className="flex min-h-1.5 flex-col gap-0.75" style={{ height: `${(total / max) * 100}%` }}>
+                    <div
+                      className="flex min-h-1.5 origin-bottom animate-grow-up flex-col gap-0.75"
+                      style={{ height: `${(total / max) * 100}%`, animationDelay: `${i * (week ? 50 : 15)}ms` }}
+                    >
                       {d.missed > 0 && <div className={cn("min-h-0.75 bg-lime", round)} style={{ flex: `${d.missed} 1 0` }} />}
                       {d.answered > 0 && <div className={cn("min-h-0.75 bg-ink", round)} style={{ flex: `${d.answered} 1 0` }} />}
                     </div>

@@ -3,7 +3,8 @@
 import { ArrowUp, FileText, MessageSquare } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { AnswerText } from "@/components/playground/parts";
+import { cn } from "cn";
+import { AnswerText, Caret } from "@/components/playground/parts";
 import { PANEL, PoweredBy, WidgetFirstScreen, WidgetHeader } from "@/components/widget-panel";
 import { ApiError } from "@/lib/api";
 import { streamChat } from "@/lib/chat";
@@ -11,6 +12,8 @@ import { onColor } from "@/lib/format";
 import type { Message, WidgetConfig } from "@/lib/types";
 import { chatPath, getConfig, recall, remember, restoreConversation, visitorId, type WidgetEvent } from "@/lib/widget";
 import { LeadForm } from "./lead-form";
+
+const CLOSE_MS = 180;
 
 function tell(event: WidgetEvent) {
   if (window.parent !== window) window.parent.postMessage(event, "*");
@@ -41,6 +44,8 @@ export function ChatWidget() {
   const [streaming, setStreaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  // The answer that just finished streaming replaces the streamed bubble without rising in again.
+  const [settled, setSettled] = useState<number | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const convKey = `hovr:conv:${key}`;
 
@@ -80,12 +85,22 @@ export function ChatWidget() {
     tell({ type: next ? "hovr:open" : "hovr:close" });
   }, []);
 
+  // The panel shrinks away first; only then does widget.js shrink the iframe back to the launcher.
+  const [closing, setClosing] = useState(false);
+  const close = useCallback(() => {
+    setClosing(true);
+    setTimeout(() => {
+      setClosing(false);
+      show(false);
+    }, CLOSE_MS);
+  }, [show]);
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && show(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, show]);
+  }, [open, close]);
 
   async function send(text: string) {
     const message = text.trim();
@@ -106,6 +121,7 @@ export function ChatWidget() {
           onText: (t) => setStreaming((s) => (s ?? "") + t),
         },
       );
+      setSettled(saved.id);
       setMessages((list) => [...list, saved]);
     } catch (err) {
       setError(visitorError(err));
@@ -127,7 +143,7 @@ export function ChatWidget() {
           type="button"
           onClick={() => show(true)}
           aria-label={`Open chat with ${config.name}`}
-          className="flex size-15 items-center justify-center rounded-full shadow-[0_6px_16px_-6px_rgba(0,0,0,0.45)] transition-transform hover:scale-105"
+          className="flex size-15 animate-in items-center justify-center rounded-full shadow-[0_6px_16px_-6px_rgba(0,0,0,0.45)] transition-transform duration-300 zoom-in-50 fade-in-0 hover:scale-105"
           style={{ background: config.color, color: onAccent }}
         >
           <MessageSquare className="size-6.5" strokeWidth={2} />
@@ -141,8 +157,16 @@ export function ChatWidget() {
 
   return (
     <div className="h-dvh p-2">
-      <div className={PANEL} role="dialog" aria-label={`Chat with ${config.name}`}>
-        <WidgetHeader name={config.name} avatar={avatar} avatarUrl={config.avatarUrl} color={config.color} onClose={() => show(false)} />
+      <div
+        className={cn(
+          PANEL,
+          config.position === "left" ? "origin-bottom-left" : "origin-bottom-right",
+          closing ? "animate-out fill-mode-forwards duration-180 fade-out-0 zoom-out-95" : "animate-in duration-250 fade-in-0 zoom-in-95 slide-in-from-bottom-3",
+        )}
+        role="dialog"
+        aria-label={`Chat with ${config.name}`}
+      >
+        <WidgetHeader name={config.name} avatar={avatar} avatarUrl={config.avatarUrl} color={config.color} onClose={close} />
 
         {messages.length === 0 && streaming === null ? (
           <WidgetFirstScreen greeting={config.greeting} suggestions={config.suggestedQuestions} onPick={send} />
@@ -152,13 +176,13 @@ export function ChatWidget() {
               m.role === "user" ? (
                 <div
                   key={m.id}
-                  className="max-w-[78%] self-end rounded-[20px_20px_6px_20px] px-3.5 py-2.5 text-sm leading-[1.45] font-medium whitespace-pre-wrap"
+                  className="max-w-[78%] animate-rise self-end rounded-[20px_20px_6px_20px] px-3.5 py-2.5 text-sm leading-[1.45] font-medium whitespace-pre-wrap"
                   style={{ background: config.color, color: onAccent }}
                 >
                   {m.content}
                 </div>
               ) : (
-                <div key={m.id} className="flex max-w-[88%] flex-col gap-1.5 self-start">
+                <div key={m.id} className={cn("flex max-w-[88%] flex-col gap-1.5 self-start", m.id !== settled && "animate-rise")}>
                   <div className="rounded-[20px_20px_20px_6px] bg-(--w-soft) px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap">
                     <AnswerText text={m.content} />
                   </div>
@@ -167,8 +191,15 @@ export function ChatWidget() {
               ),
             )}
             {streaming !== null && (
-              <div className="max-w-[88%] self-start rounded-[20px_20px_20px_6px] bg-(--w-soft) px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap">
-                {streaming ? <AnswerText text={streaming} /> : <span className="animate-pulse text-(--w-muted)">Thinking…</span>}
+              <div className="max-w-[88%] animate-rise self-start rounded-[20px_20px_20px_6px] bg-(--w-soft) px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap">
+                {streaming ? (
+                  <>
+                    <AnswerText text={streaming} />
+                    <Caret />
+                  </>
+                ) : (
+                  <span className="animate-pulse text-(--w-muted)">Thinking…</span>
+                )}
               </div>
             )}
             {missed && streaming === null && conversation && (

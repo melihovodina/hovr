@@ -101,7 +101,7 @@ export function InboxScreen() {
                   aria-selected={t.value === tab}
                   onClick={() => go({ tab: t.value, item: null })}
                   className={cn(
-                    "flex h-8 items-center rounded-full px-3 text-[13px]",
+                    "flex h-8 items-center rounded-full px-3 text-[13px] transition-colors duration-200",
                     t.value === tab ? "bg-ink font-extrabold text-page" : "bg-app font-bold text-ink hover:bg-surface-2",
                   )}
                 >
@@ -165,7 +165,7 @@ function Row({ active, unread, title, meta, onClick }: { active: boolean; unread
         type="button"
         aria-current={active || undefined}
         onClick={onClick}
-        className={cn("flex w-full gap-2.5 rounded-2xl p-3 text-left transition-colors", active ? "bg-app" : "hover:bg-app")}
+        className={cn("flex w-full animate-rise gap-2.5 rounded-2xl p-3 text-left transition-colors", active ? "bg-app" : "hover:bg-app")}
       >
         <span
           className={cn("mt-1.5 size-2 shrink-0 rounded-full", unread && "bg-lime shadow-[0_0_0_1px_var(--ink)]")}

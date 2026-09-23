@@ -72,7 +72,8 @@ test("opens, answers a suggested question with its sources, and closes", async (
   expect(screen.queryByText(/Leave your email/)).toBeNull();
 
   await user.click(screen.getByRole("button", { name: "Close chat" }));
-  expect(posted).toContainEqual({ type: "hovr:close" });
+  // The panel shrinks away before the iframe is told to close.
+  await vi.waitFor(() => expect(posted).toContainEqual({ type: "hovr:close" }));
 });
 
 test("after an answer it didn't know, the visitor can leave an email once", async () => {
@@ -109,4 +110,23 @@ test("brings back the visitor's conversation after a reload", async () => {
 
   await user.click(await screen.findByRole("button", { name: "Open chat with Northwind Coffee" }));
   expect(await screen.findByText("Earlier question")).toBeTruthy();
+});
+
+test("an answer still being written ends in a blinking caret", async () => {
+  // A stream that sends its first words and then stays open.
+  const encoder = new TextEncoder();
+  const open = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode('event:conversation\ndata:{"id":"c1"}\n\nevent:text\ndata:{"text":"Yes, we"}\n\n'));
+    },
+  });
+  mockFetch(json(200, config), new Response(open, { status: 200, headers: { "Content-Type": "text/event-stream" } }));
+  const user = userEvent.setup();
+  const { container } = render(<ChatWidget />);
+
+  await user.click(await screen.findByRole("button", { name: "Open chat with Northwind Coffee" }));
+  await user.click(screen.getByRole("button", { name: "Do you ship to Canada?" }));
+
+  expect(await screen.findByText("Yes, we")).toBeTruthy();
+  expect(container.querySelector(".animate-caret")).not.toBeNull();
 });

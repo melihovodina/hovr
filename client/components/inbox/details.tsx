@@ -34,14 +34,17 @@ function useMessages(load: (signal: AbortSignal) => Promise<Message[] | null>, k
 function Layout({ onBack, thread, actions }: { onBack: () => void; thread: ReactNode; actions: ReactNode }) {
   return (
     <div className="flex min-h-0 grow flex-col overflow-y-auto xl:flex-row xl:overflow-hidden">
-      <div className="flex min-w-0 grow flex-col gap-4 px-5 py-5 sm:px-8 sm:py-6 xl:overflow-y-auto">
+      <div className="flex min-w-0 grow animate-rise flex-col gap-4 px-5 py-5 sm:px-8 sm:py-6 xl:overflow-y-auto">
         <button type="button" onClick={onBack} className="flex h-9 items-center gap-1.5 self-start text-sm font-bold text-subtle hover:text-ink lg:hidden">
           <ArrowLeft className="size-4" strokeWidth={2.2} aria-hidden="true" />
           Back to the list
         </button>
         {thread}
       </div>
-      <aside className="flex shrink-0 flex-col gap-4 border-t border-line bg-app p-5 xl:w-85 xl:overflow-y-auto xl:border-t-0 xl:border-l">{actions}</aside>
+      <aside className="flex shrink-0 flex-col gap-4 border-t border-line bg-app p-5 xl:w-85 xl:overflow-y-auto xl:border-t-0 xl:border-l">
+        {/* The actions ease in a moment after the chat, so the eye goes to the chat first. */}
+        <div className="flex animate-rise flex-col gap-4 [animation-delay:80ms]">{actions}</div>
+      </aside>
     </div>
   );
 }

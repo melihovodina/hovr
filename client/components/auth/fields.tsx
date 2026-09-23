@@ -48,7 +48,7 @@ const TONES = {
 
 export function Notice({ tone, children }: { tone: keyof typeof TONES; children: ReactNode }) {
   return (
-    <p role={tone === "bad" ? "alert" : "status"} className={cn("rounded-[18px] px-4.5 py-3.5 text-sm leading-normal font-semibold", TONES[tone])}>
+    <p role={tone === "bad" ? "alert" : "status"} className={cn("animate-rise rounded-[18px] px-4.5 py-3.5 text-sm leading-normal font-semibold", TONES[tone])}>
       {children}
     </p>
   );

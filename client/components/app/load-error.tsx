@@ -3,7 +3,7 @@ import { RotateCw } from "lucide-react";
 // A screen's data didn't load: the reason, and a way to ask again.
 export function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div role="alert" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[18px] bg-bad-soft px-4.5 py-3 text-sm font-semibold text-bad">
+    <div role="alert" className="flex animate-rise flex-wrap items-center gap-x-4 gap-y-2 rounded-[18px] bg-bad-soft px-4.5 py-3 text-sm font-semibold text-bad">
       <span className="min-w-0 grow leading-normal">{message}</span>
       <button
         type="button"

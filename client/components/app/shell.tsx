@@ -1,7 +1,8 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { cn } from "cn";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,13 +26,15 @@ function rememberedBot(): string | null {
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const params = useSearchParams();
+  const pathname = usePathname();
   const [me, setMe] = useState<Me | null>(null);
   const [bots, setBots] = useState<Bot[] | null>(null);
   const [billing, setBilling] = useState<Billing | null>(null);
   const [inboxOpen, setInboxOpen] = useState(0);
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menu, setMenu] = useState<"closed" | "open" | "closing">("closed");
+  const closeMenu = useCallback(() => setMenu((m) => (m === "open" ? "closing" : m)), []);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -111,13 +114,26 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Sidebar />
         </aside>
 
-        {/* Phones and tablets: a top bar, and the same sidebar in a sheet. */}
-        {menuOpen && (
-          <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-            <div className="flex w-72 max-w-[85vw] bg-app p-3 shadow-[0_0_60px_rgba(0,0,0,0.35)]">
-              <Sidebar onNavigate={() => setMenuOpen(false)} />
+        {/* Phones and tablets: a top bar, and the same sidebar in a sheet that slides in from the left. */}
+        {menu !== "closed" && (
+          <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+            <button
+              type="button"
+              aria-label="Close menu"
+              className={cn("absolute inset-0 bg-black/30 duration-300", menu === "closing" ? "animate-out fade-out-0" : "animate-in fade-in-0")}
+              onClick={closeMenu}
+            />
+            <div
+              className={cn(
+                "relative flex h-full w-72 max-w-[85vw] bg-app p-3 shadow-[0_0_60px_rgba(0,0,0,0.35)] duration-300 ease-out",
+                menu === "closing" ? "animate-out slide-out-to-left" : "animate-in slide-in-from-left",
+              )}
+              onAnimationEnd={(e) => {
+                if (e.target === e.currentTarget && menu === "closing") setMenu("closed");
+              }}
+            >
+              <Sidebar onNavigate={closeMenu} />
             </div>
-            <button type="button" aria-label="Close menu" className="grow bg-black/30" onClick={() => setMenuOpen(false)} />
           </div>
         )}
 
@@ -126,15 +142,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Logo href={state.href("/app")} />
             <button
               type="button"
-              onClick={() => setMenuOpen(true)}
+              onClick={() => setMenu("open")}
               aria-label="Open menu"
               className="flex size-11 items-center justify-center rounded-full bg-ink text-page"
             >
-              {menuOpen ? <X className="size-5" /> : <Menu className="size-5" strokeWidth={2.2} />}
+              {menu === "open" ? <X className="size-5" /> : <Menu className="size-5" strokeWidth={2.2} />}
             </button>
           </div>
           <main className="mx-3 mb-3 flex min-h-0 grow flex-col overflow-hidden rounded-[26px] bg-surface shadow-[0_0_0_1px_var(--line)] lg:m-0">
-            {children}
+            {/* Keyed by screen and bot, so each one rises in when it opens. */}
+            <div key={`${pathname}:${state.bot.id}`} className="flex min-h-0 grow animate-rise flex-col">
+              {children}
+            </div>
           </main>
         </div>
       </div>

@@ -13,7 +13,7 @@ import { errorMessage } from "@/lib/api";
 import { deleteConversation, getConversation, listConversations, streamChat } from "@/lib/chat";
 import { shortDate } from "@/lib/format";
 import type { Conversation, Message } from "@/lib/types";
-import { AnswerText, Composer, SourceChips, WhyItSaidThat } from "./parts";
+import { AnswerText, Caret, Composer, SourceChips, WhyItSaidThat } from "./parts";
 
 // Test chats with the bot: history on the left, the chat, and why each answer said what it said.
 // Keyed by bot, so switching bots starts clean.
@@ -32,6 +32,8 @@ function Playground() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  // The answer that just finished streaming takes the streamed bubble's place without rising in again.
+  const [settled, setSettled] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const abort = useRef<AbortController | null>(null);
@@ -103,6 +105,7 @@ function Playground() {
         { onConversation: setCurrent, onText: (t) => setStreaming((s) => (s ?? "") + t) },
         ctrl.signal,
       );
+      setSettled(saved.id);
       setMessages((list) => [...list, saved]);
       setSelected(saved.id);
       loadHistory();
@@ -153,7 +156,7 @@ function Playground() {
           {history === null && !historyError && [0, 1, 2].map((i) => <Skeleton key={i} className="h-14 shrink-0 rounded-[14px]" />)}
           {history?.length === 0 && <p className="px-3 py-2 text-xs leading-normal text-subtle">Your test chats show up here.</p>}
           {history?.map((c) => (
-            <div key={c.id} className={cn("group flex items-center rounded-[14px]", c.id === current ? "bg-app" : "hover:bg-app/60")}>
+            <div key={c.id} className={cn("group flex shrink-0 animate-rise items-center rounded-[14px] transition-colors", c.id === current ? "bg-app" : "hover:bg-app/60")}>
               <button type="button" onClick={() => open(c.id)} className="flex min-w-0 grow flex-col gap-0.5 px-3 py-2.5 text-left">
                 <span className="truncate text-sm font-bold">{c.title || "Untitled chat"}</span>
                 <span className="text-xs text-subtle">{shortDate(c.lastMessageAt)}</span>
@@ -197,11 +200,11 @@ function Playground() {
             )}
             {messages.map((m) =>
               m.role === "user" ? (
-                <div key={m.id} className="max-w-[80%] self-end rounded-[22px_22px_6px_22px] bg-ink px-4 py-2.75 text-[15px] leading-normal whitespace-pre-wrap text-page">
+                <div key={m.id} className="max-w-[80%] animate-rise self-end rounded-[22px_22px_6px_22px] bg-ink px-4 py-2.75 text-[15px] leading-normal whitespace-pre-wrap text-page">
                   {m.content}
                 </div>
               ) : (
-                <div key={m.id} className="flex max-w-[85%] flex-col gap-2 self-start">
+                <div key={m.id} className={cn("flex max-w-[85%] flex-col gap-2 self-start", m.id !== settled && "animate-rise")}>
                   <button
                     type="button"
                     onClick={() => setSelected(m.id)}
@@ -215,7 +218,7 @@ function Playground() {
                   </button>
                   <SourceChips citations={m.citations} />
                   {m.id === selected && (
-                    <div className="flex flex-col gap-3 rounded-[18px] bg-app p-3.5 xl:hidden">
+                    <div className="flex animate-rise flex-col gap-3 rounded-[18px] bg-app p-3.5 xl:hidden">
                       <WhyItSaidThat message={m} />
                     </div>
                   )}
@@ -223,8 +226,15 @@ function Playground() {
               ),
             )}
             {streaming !== null && (
-              <div className="max-w-[85%] self-start rounded-[22px_22px_22px_6px] bg-app px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap">
-                {streaming ? <AnswerText text={streaming} /> : <span className="animate-pulse text-subtle">Thinking…</span>}
+              <div className="max-w-[85%] animate-rise self-start rounded-[22px_22px_22px_6px] bg-app px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap">
+                {streaming ? (
+                  <>
+                    <AnswerText text={streaming} />
+                    <Caret />
+                  </>
+                ) : (
+                  <span className="animate-pulse text-subtle">Thinking…</span>
+                )}
               </div>
             )}
             {error && <Notice tone="bad">{error}</Notice>}
@@ -240,7 +250,10 @@ function Playground() {
             <h2 className="text-base font-extrabold">Why it said that</h2>
             <p className="text-[13px] leading-normal text-subtle">For the highlighted answer, these are the bits of your content it used.</p>
           </div>
-          <WhyItSaidThat message={selectedMessage} />
+          {/* Keyed by the answer, so picking another one eases its details in. */}
+          <div key={selectedMessage?.id ?? "none"} className="flex animate-rise flex-col gap-3.5">
+            <WhyItSaidThat message={selectedMessage} />
+          </div>
           <p className="mt-auto pt-2 text-xs leading-normal text-subtle">Test chats are free and don’t count toward your messages.</p>
         </aside>
       </div>

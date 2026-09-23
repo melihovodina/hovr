@@ -17,6 +17,8 @@ import type { Source } from "@/lib/types";
 import { StatusPill } from "./status-pill";
 import { useSources } from "./use-sources";
 
+const LEAVE_MS = 200;
+
 const tile = "flex items-center gap-3.5 rounded-[20px] p-4.5 text-left transition-opacity hover:opacity-90";
 const tileIcon = "flex size-11 shrink-0 items-center justify-center rounded-[14px]";
 const field =
@@ -66,11 +68,15 @@ export function KnowledgeScreen() {
     changed();
   }
 
+  const [leaving, setLeaving] = useState<string[]>([]);
+
   async function remove(s: Source) {
     if (!window.confirm(`Delete “${s.title}”? The bot stops answering from it.`)) return;
     try {
       await deleteSource(bot.id, s.id);
-      changed();
+      // The row slides out before the list reloads without it.
+      setLeaving((ids) => [...ids, s.id]);
+      setTimeout(changed, LEAVE_MS);
     } catch (err) {
       setProblems([errorMessage(err)]);
     }
@@ -190,7 +196,14 @@ export function KnowledgeScreen() {
             )}
             <ul>
               {shown.map((s) => (
-                <li key={s.id} className={cn("flex items-center gap-3 border-t border-line px-4.5 py-2.5 text-sm md:min-h-14 md:py-0", cols)}>
+                <li
+                  key={s.id}
+                  className={cn(
+                    "flex items-center gap-3 border-t border-line px-4.5 py-2.5 text-sm md:min-h-14 md:py-0",
+                    leaving.includes(s.id) ? "animate-out fill-mode-forwards duration-200 fade-out-0 slide-out-to-right-6" : "animate-rise",
+                    cols,
+                  )}
+                >
                   <span className="flex min-w-0 grow flex-col gap-0.5 md:pr-3">
                     <span className="truncate font-bold" title={s.title}>
                       {s.title}

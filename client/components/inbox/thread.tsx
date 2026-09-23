@@ -16,11 +16,11 @@ export function Thread({ title, meta, messages, email }: { title: string; meta: 
       ) : (
         messages.map((m) =>
           m.role === "user" ? (
-            <div key={m.id} className="max-w-[80%] self-end rounded-[22px_22px_6px_22px] bg-app px-4 py-2.75 text-[15px] leading-normal break-words whitespace-pre-wrap">
+            <div key={m.id} className="max-w-[80%] animate-rise self-end rounded-[22px_22px_6px_22px] bg-app px-4 py-2.75 text-[15px] leading-normal break-words whitespace-pre-wrap">
               {m.content}
             </div>
           ) : (
-            <div key={m.id} className="flex max-w-[85%] flex-col items-start gap-1.5 self-start">
+            <div key={m.id} className="flex max-w-[85%] animate-rise flex-col items-start gap-1.5 self-start">
               <div className="rounded-[22px_22px_22px_6px] px-4 py-2.75 text-[15px] leading-normal break-words whitespace-pre-wrap shadow-[0_0_0_1px_var(--line)]">
                 <AnswerText text={m.content} />
               </div>
@@ -32,7 +32,7 @@ export function Thread({ title, meta, messages, email }: { title: string; meta: 
         )
       )}
       {email && (
-        <div className="flex h-8 max-w-full items-center gap-2 self-center rounded-full bg-ok-soft px-3.5 text-[13px] font-extrabold text-ok">
+        <div className="flex h-8 max-w-full animate-rise items-center gap-2 self-center rounded-full bg-ok-soft px-3.5 text-[13px] font-extrabold text-ok">
           <Mail className="size-3.5 shrink-0" strokeWidth={2.2} aria-hidden="true" />
           <span className="truncate">Left an email: {email}</span>
         </div>

@@ -23,6 +23,11 @@ export function AnswerText({ text }: { text: string }) {
   );
 }
 
+// A blinking bar after text that is still being written.
+export function Caret() {
+  return <span aria-hidden="true" className="ml-0.5 inline-block h-[1.1em] w-0.5 translate-y-[0.2em] animate-caret rounded-full bg-current" />;
+}
+
 // One chip per source the answer used, in the order they were cited.
 export function SourceChips({ citations }: { citations: Citation[] }) {
   const titles = [...new Set(citations.map((c) => c.sourceTitle))];

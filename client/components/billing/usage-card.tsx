@@ -22,7 +22,7 @@ function Ring({ label, used, limit, percent }: { label: string; used: number; li
               strokeWidth="3.2"
               strokeLinecap="round"
               strokeDasharray={`${share * 2 * Math.PI * RADIUS} 100`}
-              className={full ? "stroke-bad" : "stroke-ink"}
+              className={cn("animate-ring", full ? "stroke-bad" : "stroke-ink")}
             />
           )}
         </svg>

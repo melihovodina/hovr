@@ -94,7 +94,7 @@ function PlanCard({ billing, onNavigate }: { billing: Billing; onNavigate?: () =
         </span>
       </span>
       <span className="h-1.5 overflow-hidden rounded-full bg-page/20">
-        <span className="block h-full rounded-full bg-lime" style={{ width: `${share}%` }} />
+        <span className="block h-full origin-left animate-grow-right rounded-full bg-lime transition-[width] duration-500" style={{ width: `${share}%` }} />
       </span>
       <span className="text-[13px] leading-snug opacity-80">
         Messages reset on {resetDate()}. {NEXT_PLAN[billing.plan] ?? ""}
@@ -131,15 +131,25 @@ function UserRow() {
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { href, inboxOpen, billing } = useApp();
   const pathname = usePathname();
+  const current = NAV.findIndex(({ path }) => pathname === path || pathname === `${path}/`);
   return (
     <div className="flex w-full flex-col gap-5.5 px-1.5 py-3">
       <div className="px-2.5">
         <Logo href={href("/app")} />
       </div>
       <BotSwitcher onNavigate={onNavigate} />
-      <nav className="flex flex-col gap-0.5" aria-label="App">
-        {NAV.map(({ path, label, icon: Icon }) => {
-          const active = pathname === path || pathname === `${path}/`;
+      <nav className="relative flex flex-col gap-0.5" aria-label="App">
+        {/* One highlight for the current screen that glides between items (each 2.625rem + a 0.125rem gap). */}
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-x-0 top-0 h-10.5 rounded-full bg-surface shadow-[0_0_0_1px_var(--line)] transition-[transform,opacity] duration-300 ease-out",
+            current < 0 && "opacity-0",
+          )}
+          style={{ transform: `translateY(${Math.max(current, 0) * 2.75}rem)` }}
+        />
+        {NAV.map(({ path, label, icon: Icon }, i) => {
+          const active = i === current;
           return (
             <Link
               key={path}
@@ -148,14 +158,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               aria-current={active ? "page" : undefined}
               aria-label={label === "Inbox" && inboxOpen > 0 ? `Inbox, ${inboxOpen} open` : undefined}
               className={cn(
-                "flex h-10.5 items-center gap-3 rounded-full px-3.5 text-sm font-bold transition-colors",
-                active ? "bg-surface text-ink shadow-[0_0_0_1px_var(--line)]" : "text-subtle hover:text-ink",
+                "relative flex h-10.5 items-center gap-3 rounded-full px-3.5 text-sm font-bold transition-colors duration-300",
+                active ? "text-ink" : "text-subtle hover:text-ink",
               )}
             >
               <Icon className="size-4.5" strokeWidth={1.9} aria-hidden="true" />
               <span className="grow">{label}</span>
               {label === "Inbox" && inboxOpen > 0 && (
-                <span className="flex h-5.5 min-w-5.5 items-center justify-center rounded-full bg-lime px-1.75 text-xs font-extrabold text-on-lime">
+                <span className="flex h-5.5 min-w-5.5 animate-in items-center justify-center rounded-full bg-lime px-1.75 text-xs font-extrabold text-on-lime duration-300 zoom-in-50">
                   {inboxOpen}
                 </span>
               )}

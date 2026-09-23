@@ -79,7 +79,7 @@ export function TopQuestions({ questions }: { questions: Stats["topQuestions"] }
                 </span>
               </div>
               <div className="h-1.5 rounded-full bg-surface-2" aria-hidden="true">
-                <div className="h-full rounded-full bg-ink" style={{ width: `${(q.count / max) * 100}%` }} />
+                <div className="h-full origin-left animate-grow-right rounded-full bg-ink" style={{ width: `${(q.count / max) * 100}%` }} />
               </div>
             </li>
           ))}

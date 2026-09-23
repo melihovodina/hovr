@@ -17,9 +17,18 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="grid gap-1 rounded-full bg-app p-1"
+      className="relative grid gap-1 rounded-full bg-app p-1"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
+      {/* The white thumb under the picked option slides over; columns are equal, 0.25rem apart. */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-1 left-1 rounded-full bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out"
+        style={{
+          width: `calc((100% - 0.5rem - ${options.length - 1} * 0.25rem) / ${options.length})`,
+          transform: `translateX(calc(${Math.max(0, options.findIndex((o) => o.value === value))} * (100% + 0.25rem)))`,
+        }}
+      />
       {options.map((o) => (
         <button
           key={o.value}
@@ -28,8 +37,8 @@ export function Segmented<T extends string>({
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-9 rounded-full text-[13px] transition-colors",
-            o.value === value ? "bg-surface font-extrabold text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : "font-bold text-subtle hover:text-ink",
+            "relative h-9 rounded-full text-[13px] transition-colors duration-300",
+            o.value === value ? "font-extrabold text-ink" : "font-bold text-subtle hover:text-ink",
           )}
         >
           {o.label}

@@ -50,7 +50,7 @@ export function Welcome({ bot }: { bot: Bot }) {
   const active = !knows ? 1 : !tried ? 2 : !live ? 3 : 0;
 
   return (
-    <div className="flex flex-col gap-5 lg:flex-row">
+    <div className="flex animate-rise flex-col gap-5 lg:flex-row">
       <div className="flex min-w-0 grow flex-col gap-3">
         <KnowledgeStep botId={bot.id} sources={sources} active={active === 1} onAdded={reload} />
         <Step
