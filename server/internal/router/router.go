@@ -77,7 +77,7 @@ func New(d Deps) (*gin.Engine, error) {
 // what the widget rate limits count per.
 func newEngine(cfg config.Config) (*gin.Engine, error) {
 	r := gin.New()
-	r.Use(gin.Recovery(), gin.Logger())
+	r.Use(gin.Recovery(), gin.Logger(), securityHeaders(cfg.SupabaseURL, cfg.CSPReportOnly))
 
 	// Gin reads the client IP from X-Forwarded-For, which anyone can send. Only the
 	// proxies named here may set it; with none configured the address the connection

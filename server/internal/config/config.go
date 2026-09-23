@@ -32,6 +32,10 @@ type Config struct {
 	// Empty means trust none: the client IP is the address the connection came from.
 	TrustedProxies []string
 
+	// CSPReportOnly sends the content security policy as Report-Only: violations are
+	// reported but nothing is blocked, for watching a policy on a real deployment.
+	CSPReportOnly bool
+
 	// ClientIPHeader is a header the host fills with the real visitor and always
 	// overwrites, such as Cloudflare's CF-Connecting-IP. Set, it is used instead of
 	// walking the forwarded chain; empty, the chain is used.
@@ -60,6 +64,7 @@ func Load() (Config, error) {
 		StripePriceBusiness:    os.Getenv("STRIPE_PRICE_BUSINESS"),
 		TrustedProxies:         splitList(os.Getenv("TRUSTED_PROXIES")),
 		ClientIPHeader:         strings.TrimSpace(os.Getenv("CLIENT_IP_HEADER")),
+		CSPReportOnly:          os.Getenv("CSP_REPORT_ONLY") == "true",
 		StaticDir:              os.Getenv("STATIC_DIR"),
 	}
 

@@ -19,6 +19,7 @@ is missing, so the server never runs half-configured. `.env.example` lists every
 | `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` | yes | the monthly prices |
 | `TRUSTED_PROXIES` | no | comma-separated proxy addresses or CIDRs allowed to set `X-Forwarded-For`; empty trusts none |
 | `CLIENT_IP_HEADER` | no | a header the host fills with the real visitor and always overwrites, used instead of the forwarded chain; `CF-Connecting-IP` on Render |
+| `CSP_REPORT_ONLY` | no | `true` sends the content security policy as Report-Only: violations are reported, nothing is blocked |
 | `STATIC_DIR` | no | folder with the client export; empty means API only |
 
 The client needs `NEXT_PUBLIC_SITE_URL` at build time, which the Dockerfile takes as a
@@ -86,6 +87,35 @@ The header wins over the chain, and Cloudflare overwrites it, so a visitor canno
 themselves. Only name a header the host is known to overwrite: it is trusted as it arrives.
 Another host will need different values, which is why this is measured rather than guessed —
 send a request and compare the address in the logs with the one you sent from.
+
+## Security headers
+
+One middleware sets them, and what it sends depends on what is being served:
+
+- Everything gets `X-Content-Type-Options: nosniff`.
+- `/api/*` gets nothing else. A policy written for documents says nothing useful about
+  JSON read by our own code.
+- Every page gets `Referrer-Policy: strict-origin-when-cross-origin` and a content
+  security policy: `default-src 'self'`, no objects, and images from `'self'`, `data:`,
+  `blob:` and the Supabase origin, which is where uploaded logos are served from.
+- Pages other than the widget also get `frame-ancestors 'none'` and, for browsers that
+  predate it, `X-Frame-Options: DENY`. Nobody can frame the dashboard or the landing page.
+- `/widget` is the exception: it exists to be framed on customers' sites, so it gets
+  `frame-ancestors *` and no `X-Frame-Options`, which has no "some origins" value. Where
+  it answers is decided by the bot's allowed domains, not by this header.
+
+`script-src` and `style-src` allow `'unsafe-inline'`, which is not a preference. The
+client is a static export and ships inline scripts (Next's bootstrap, the theme script
+that runs before paint, the JSON-LD block); their hashes change on every build, and a
+nonce needs a server rendering the page.
+
+Stripe Checkout and the billing portal are full-page navigations, so the policy does not
+reach them.
+
+`CSP_REPORT_ONLY=true` switches the policy to `Content-Security-Policy-Report-Only`:
+violations are reported and nothing is blocked. `X-Frame-Options` stays enforced either
+way, so clickjacking is still covered while a policy is being watched. Use it if a page
+breaks after a client change rather than dropping the header.
 
 ## Watching it
 

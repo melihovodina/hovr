@@ -137,3 +137,76 @@ func TestServeClient(t *testing.T) {
 		t.Errorf("no 404.html: %d", w.Code)
 	}
 }
+
+// The dashboard must not be embeddable anywhere, and the widget must be embeddable
+// everywhere: the two policies are opposites, so both are checked here.
+func TestSecurityHeaders(t *testing.T) {
+	const storage = "https://project.supabase.co"
+	r, err := newEngine(config.Config{SupabaseURL: storage})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok := func(c *gin.Context) { c.String(http.StatusOK, "hi") }
+	r.GET("/app", ok)
+	r.GET("/widget", ok)
+	r.GET("/api/me", ok)
+
+	cases := []struct {
+		name, path       string
+		frameAncestors   string
+		wantFrameOptions string
+		wantPolicy       bool
+	}{
+		{"app page", "/app", "frame-ancestors 'none'", "DENY", true},
+		{"widget page", "/widget", "frame-ancestors *", "", true},
+		{"api", "/api/me", "", "", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, tc.path, nil))
+
+			if got := w.Header().Get("X-Content-Type-Options"); got != "nosniff" {
+				t.Errorf("X-Content-Type-Options = %q", got)
+			}
+			policy := w.Header().Get("Content-Security-Policy")
+			if !tc.wantPolicy {
+				if policy != "" {
+					t.Errorf("API answered with a page policy: %q", policy)
+				}
+				return
+			}
+			if !strings.Contains(policy, tc.frameAncestors) {
+				t.Errorf("policy %q does not contain %q", policy, tc.frameAncestors)
+			}
+			if !strings.Contains(policy, "img-src 'self' data: blob: "+storage) {
+				t.Errorf("policy %q does not allow logos from storage", policy)
+			}
+			if got := w.Header().Get("X-Frame-Options"); got != tc.wantFrameOptions {
+				t.Errorf("X-Frame-Options = %q, want %q", got, tc.wantFrameOptions)
+			}
+			if got := w.Header().Get("Referrer-Policy"); got != "strict-origin-when-cross-origin" {
+				t.Errorf("Referrer-Policy = %q", got)
+			}
+		})
+	}
+}
+
+// Report-only is how a policy is watched before it starts blocking, so it must land
+// in the other header and leave the enforcing one unset.
+func TestSecurityHeadersReportOnly(t *testing.T) {
+	r, err := newEngine(config.Config{CSPReportOnly: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.GET("/app", func(c *gin.Context) { c.String(http.StatusOK, "hi") })
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/app", nil))
+	if got := w.Header().Get("Content-Security-Policy-Report-Only"); !strings.Contains(got, "frame-ancestors 'none'") {
+		t.Errorf("report-only header = %q", got)
+	}
+	if got := w.Header().Get("Content-Security-Policy"); got != "" {
+		t.Errorf("enforcing header also set: %q", got)
+	}
+}
