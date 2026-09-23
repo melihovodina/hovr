@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import { Lock } from "lucide-react";
 import { ArrowLink } from "./arrow-link";
-import { WidgetPanel, type PreviewMessage } from "./widget-panel";
+import { WidgetPanel, type PreviewMessage } from "@/components/widget-panel";
 import { GUTTERS } from "./section";
 
 const HERO_CHAT: PreviewMessage[] = [

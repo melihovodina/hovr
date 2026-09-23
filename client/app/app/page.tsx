@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { AuthShell } from "@/components/auth/shell";
-import { AppStub } from "./stub";
+import { AppHome } from "@/components/app/app-home";
 
 export const metadata: Metadata = {
-  title: "Your bots",
+  title: "Your bot",
   robots: { index: false },
 };
 
-// Placeholder until the app shell (sidebar and screens) lands.
 export default function AppPage() {
-  return (
-    <AuthShell>
-      <AppStub />
-    </AuthShell>
-  );
+  return <AppHome />;
 }
