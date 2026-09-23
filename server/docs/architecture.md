@@ -59,6 +59,10 @@ Everything under `/api` checks the Origin header on writes. Signed-in routes the
 Two routes are deliberately outside that: the widget API (public, identified by the bot's
 public key) and the Stripe webhook (another server, proven by its signature).
 
+The widget's rate limits count per client IP, which behind a proxy comes from a header the
+caller can write, so only the proxies in `TRUSTED_PROXIES` are believed; see
+[operations.md](operations.md).
+
 Handlers stay thin: read input, call a store or service, and answer with `httpx.Write`,
 which turns an `*apperr.Error` into its status and message and anything else into a logged
 500.

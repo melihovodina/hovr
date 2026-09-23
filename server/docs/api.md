@@ -27,11 +27,11 @@ is the one exception and is verified by its signature.
 
 | Endpoint | Notes |
 | --- | --- |
-| `POST /signup {email, password}` | `{"status":"check_email"}`; the same answer for an existing address, so accounts can't be probed |
+| `POST /signup {email, password}` | `{"status":"check_email"}`; the same answer for an existing address, so accounts can't be probed; its link lands on `/onboarding` |
 | `POST /signin {email, password}` | sets the cookies, returns `{user:{id,email}}` |
-| `POST /signout` | 204 |
-| `POST /recover {email}` | `{"status":"check_email"}` |
-| `POST /resend {email}` | sends the confirmation email again, same answer for any address |
+| `POST /signout` | 204; clears the cookies and ends the session at Supabase, so the refresh token stops working |
+| `POST /recover {email}` | `{"status":"check_email"}`; its link lands on `/reset-password` |
+| `POST /resend {email}` | sends the confirmation email again, same answer for any address; its link lands on `/onboarding`, like the sign-up one |
 | `POST /password {password}` | signed in, at least 8 characters, 204 |
 | `GET /callback?code&next` | the link in emails; redirects to `next`, or `/signin?confirmed=1`, `?error=link_invalid`, `?error=link_expired` |
 
