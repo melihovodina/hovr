@@ -59,14 +59,37 @@ func (s *Service) signin(c *gin.Context) {
 }
 
 func (s *Service) signout(c *gin.Context) {
-	if raw, err := c.Cookie(accessCookie); err == nil && raw != "" {
-		// Best effort: the cookies are cleared either way.
-		if err := s.supabase.SignOut(c.Request.Context(), raw); err != nil {
-			slog.Warn("supabase sign-out failed", "err", err)
-		}
+	// Best effort: the cookies are cleared either way.
+	if err := s.revoke(c); err != nil {
+		slog.Warn("supabase sign-out failed", "err", err)
 	}
 	s.cookies.clearSession(c)
 	c.Status(http.StatusNoContent)
+}
+
+// revoke ends the session at Supabase, so the refresh token can't be used again.
+// The access cookie is only an hour old at most, so after an idle spell the browser
+// no longer has one; the refresh cookie (30 days) then buys a fresh access token.
+// Refreshing rotates the refresh token, so the one we were sent dies with it.
+func (s *Service) revoke(c *gin.Context) error {
+	ctx := c.Request.Context()
+	var failed error
+	if access, err := c.Cookie(accessCookie); err == nil && access != "" {
+		if failed = s.supabase.SignOut(ctx, access); failed == nil {
+			return nil
+		}
+		// Expired or refused; the refresh token below can still end the session.
+	}
+	refresh, err := c.Cookie(refreshCookie)
+	if err != nil || refresh == "" {
+		return failed
+	}
+	// Refreshing rotates the token, so the one we were sent dies here either way.
+	session, err := s.supabase.Refresh(ctx, refresh)
+	if err != nil {
+		return nil // already expired or revoked: nothing left to end
+	}
+	return s.supabase.SignOut(ctx, session.AccessToken)
 }
 
 func (s *Service) recover(c *gin.Context) {
@@ -101,7 +124,9 @@ func (s *Service) resend(c *gin.Context) {
 		httpx.Error(c, http.StatusBadRequest, "Enter a valid email address.")
 		return
 	}
-	if err := s.supabase.Resend(c.Request.Context(), email, s.startPKCE(c, "/signin")); err != nil {
+	// Same destination as the original sign-up link, so confirming through
+	// "Send it again" doesn't skip onboarding.
+	if err := s.supabase.Resend(c.Request.Context(), email, s.startPKCE(c, "/onboarding")); err != nil {
 		if supabase.IsCode(err, "over_email_send_rate_limit") {
 			s.fail(c, err)
 			return

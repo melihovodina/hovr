@@ -6,8 +6,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -34,6 +36,7 @@ type fakeSupabase struct {
 	lastSignup map[string]string
 	lastQuery  map[string]string
 	lastResend string
+	logouts    []string // access tokens the service asked it to revoke
 }
 
 func newFakeSupabase(t *testing.T) *fakeSupabase {
@@ -49,7 +52,7 @@ func newFakeSupabase(t *testing.T) *fakeSupabase {
 		f.lastResend = r.URL.Query().Get("redirect_to")
 		w.WriteHeader(http.StatusOK)
 	})
-	mux.HandleFunc("POST /auth/v1/logout", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
+	mux.HandleFunc("POST /auth/v1/logout", f.logout)
 	mux.HandleFunc("PUT /auth/v1/user", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	f.srv = httptest.NewServer(mux)
 	t.Cleanup(f.srv.Close)
@@ -144,6 +147,37 @@ func (f *fakeSupabase) token(w http.ResponseWriter, r *http.Request) {
 		"expires_in":    3600,
 		"user":          map[string]string{"id": testUserID, "email": testEmail},
 	})
+}
+
+// logout records the token it was asked to revoke. Like Supabase, it refuses an
+// expired or unsigned one, so a stale access token doesn't count as a sign-out.
+func (f *fakeSupabase) logout(w http.ResponseWriter, r *http.Request) {
+	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	_, err := jwt.NewParser(jwt.WithExpirationRequired()).Parse(token, func(t *jwt.Token) (any, error) {
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		kid, _ := t.Header["kid"].(string)
+		key, ok := f.keys[kid]
+		if !ok {
+			return nil, errors.New("unknown kid")
+		}
+		return &key.PublicKey, nil
+	})
+	if err != nil {
+		authError(w, "bad_jwt")
+		return
+	}
+	f.mu.Lock()
+	f.logouts = append(f.logouts, token)
+	f.mu.Unlock()
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// revoked is how many sign-outs Supabase accepted.
+func (f *fakeSupabase) revoked() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return len(f.logouts)
 }
 
 func (f *fakeSupabase) signup(w http.ResponseWriter, r *http.Request) {

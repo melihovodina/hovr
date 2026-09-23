@@ -166,8 +166,10 @@ func TestResendConfirmation(t *testing.T) {
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "check_email") {
 		t.Fatalf("resend: %d %s", w.Code, w.Body)
 	}
-	if !strings.Contains(f.lastResend, "/api/auth/callback") {
-		t.Errorf("redirect_to = %q, want the callback", f.lastResend)
+	// The same destination as the sign-up link: confirming through "Send it again"
+	// must not skip onboarding.
+	if got, want := f.lastResend, appURL+"/api/auth/callback?next="+url.QueryEscape("/onboarding"); got != want {
+		t.Errorf("redirect_to = %q, want %q", got, want)
 	}
 	if cookie(w, pkceCookie) == nil {
 		t.Error("no PKCE cookie for the new link")
@@ -207,18 +209,73 @@ func TestCallback(t *testing.T) {
 	}
 }
 
-func TestSignOutClearsCookies(t *testing.T) {
-	r, f := newTestApp(t)
-	w := send(r, http.MethodPost, "/api/auth/signout", "",
-		&http.Cookie{Name: accessCookie, Value: f.signed(time.Now().Add(time.Hour))},
-		&http.Cookie{Name: refreshCookie, Value: validRefresh})
-	if w.Code != http.StatusNoContent {
-		t.Fatalf("status = %d", w.Code)
+// Signing out must also end the session at Supabase, or the refresh token stays
+// usable for its full 30 days. The access cookie only lasts an hour, so the cases
+// below are what a browser actually sends after sitting idle.
+func TestSignOut(t *testing.T) {
+	cases := []struct {
+		name    string
+		cookies func(f *fakeSupabase) []*http.Cookie
+		revoked int
+	}{
+		{
+			name: "fresh session",
+			cookies: func(f *fakeSupabase) []*http.Cookie {
+				return []*http.Cookie{
+					{Name: accessCookie, Value: f.signed(time.Now().Add(time.Hour))},
+					{Name: refreshCookie, Value: validRefresh},
+				}
+			},
+			revoked: 1,
+		},
+		{
+			// An hour idle: the browser dropped the access cookie by itself.
+			name: "access cookie gone",
+			cookies: func(*fakeSupabase) []*http.Cookie {
+				return []*http.Cookie{{Name: refreshCookie, Value: validRefresh}}
+			},
+			revoked: 1,
+		},
+		{
+			name: "access token expired",
+			cookies: func(f *fakeSupabase) []*http.Cookie {
+				return []*http.Cookie{
+					{Name: accessCookie, Value: f.signed(time.Now().Add(-time.Minute))},
+					{Name: refreshCookie, Value: validRefresh},
+				}
+			},
+			revoked: 1,
+		},
+		{
+			name: "refresh token no longer valid",
+			cookies: func(*fakeSupabase) []*http.Cookie {
+				return []*http.Cookie{{Name: refreshCookie, Value: "rt-revoked"}}
+			},
+			revoked: 0,
+		},
+		{
+			name:    "no session at all",
+			cookies: func(*fakeSupabase) []*http.Cookie { return nil },
+			revoked: 0,
+		},
 	}
-	for _, name := range []string{accessCookie, refreshCookie} {
-		if c := cookie(w, name); c == nil || c.MaxAge >= 0 {
-			t.Errorf("%s not cleared", name)
-		}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r, f := newTestApp(t)
+			w := send(r, http.MethodPost, "/api/auth/signout", "", tc.cookies(f)...)
+			if w.Code != http.StatusNoContent {
+				t.Fatalf("status = %d", w.Code)
+			}
+			// The browser is signed out whatever Supabase answered.
+			for _, name := range []string{accessCookie, refreshCookie} {
+				if c := cookie(w, name); c == nil || c.MaxAge >= 0 {
+					t.Errorf("%s not cleared", name)
+				}
+			}
+			if got := f.revoked(); got != tc.revoked {
+				t.Errorf("sessions revoked at supabase = %d, want %d", got, tc.revoked)
+			}
+		})
 	}
 }
 
