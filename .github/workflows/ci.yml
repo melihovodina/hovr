@@ -30,6 +30,20 @@ jobs:
       - run: go test ./... -race -cover -coverpkg=./...
         working-directory: server
 
+  # The docker job builds the static export; this one checks the code and runs the tests.
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # pnpm at the version in package.json ("packageManager"); with CI set it keeps the lockfile frozen.
+      - run: corepack enable
+      - run: make client-install
+      - run: make client-lint
+      - run: make client-test
+
   docker:
     runs-on: ubuntu-latest
     steps:
