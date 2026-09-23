@@ -31,6 +31,8 @@
   --color-info-soft: var(--info-soft);
   --color-idle: var(--idle);
   --color-idle-soft: var(--idle-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
   --color-online: #22a55b;
   /* Always-dark panels (the stats card, code) and the light text on them, in both themes. */
   --color-paper: #f3f2ee;
@@ -71,6 +73,8 @@
   --info-soft: #e3ecfb;
   --idle: #55555d;
   --idle-soft: #e9e8e3;
+  --bad: #a6261b;
+  --bad-soft: #fbe7e4;
   --nav-shadow: rgba(20, 20, 23, 0.18);
   /* Height of the landing header; sections scroll to just below it. */
   --header-h: 5rem;
@@ -98,6 +102,8 @@
   --info-soft: #14233a;
   --idle: #b4b4bc;
   --idle-soft: #23252b;
+  --bad: #ff9b91;
+  --bad-soft: #2e1714;
   --nav-shadow: rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
