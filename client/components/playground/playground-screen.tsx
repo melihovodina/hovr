@@ -8,6 +8,7 @@ import { useApp } from "@/components/app/app-context";
 import { PageHeader } from "@/components/app/page-header";
 import { Notice } from "@/components/auth/fields";
 import { useSources } from "@/components/knowledge/use-sources";
+import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/api";
 import { deleteConversation, getConversation, listConversations, streamChat } from "@/lib/chat";
 import { shortDate } from "@/lib/format";
@@ -24,7 +25,9 @@ export function PlaygroundScreen() {
 function Playground() {
   const { bot, href } = useApp();
   const { sources } = useSources(bot.id);
-  const [history, setHistory] = useState<Conversation[]>([]);
+  // null while loading.
+  const [history, setHistory] = useState<Conversation[] | null>(null);
+  const [historyError, setHistoryError] = useState(false);
   const [current, setCurrent] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState<string | null>(null);
@@ -36,8 +39,11 @@ function Playground() {
 
   const loadHistory = useCallback(() => {
     listConversations(bot.id)
-      .then((list) => setHistory(list.filter((c) => c.channel === "playground")))
-      .catch(() => {});
+      .then((list) => {
+        setHistory(list.filter((c) => c.channel === "playground"));
+        setHistoryError(false);
+      })
+      .catch(() => setHistoryError(true));
   }, [bot.id]);
 
   useEffect(() => {
@@ -136,7 +142,17 @@ function Playground() {
             <Plus className="size-4" strokeWidth={2.4} />
             New test chat
           </button>
-          {history.map((c) => (
+          {historyError && (
+            <p className="px-3 py-2 text-xs leading-normal text-subtle">
+              Past chats didn’t load.{" "}
+              <button type="button" onClick={loadHistory} className="font-bold text-ink underline">
+                Try again
+              </button>
+            </p>
+          )}
+          {history === null && !historyError && [0, 1, 2].map((i) => <Skeleton key={i} className="h-14 shrink-0 rounded-[14px]" />)}
+          {history?.length === 0 && <p className="px-3 py-2 text-xs leading-normal text-subtle">Your test chats show up here.</p>}
+          {history?.map((c) => (
             <div key={c.id} className={cn("group flex items-center rounded-[14px]", c.id === current ? "bg-app" : "hover:bg-app/60")}>
               <button type="button" onClick={() => open(c.id)} className="flex min-w-0 grow flex-col gap-0.5 px-3 py-2.5 text-left">
                 <span className="truncate text-sm font-bold">{c.title || "Untitled chat"}</span>

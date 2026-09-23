@@ -5,6 +5,7 @@ import { useApp } from "@/components/app/app-context";
 import { PageHeader } from "@/components/app/page-header";
 import { Notice } from "@/components/auth/fields";
 import { useSources } from "@/components/knowledge/use-sources";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Segmented } from "@/components/widget-editor/controls";
 import { errorMessage } from "@/lib/api";
 import { getStats } from "@/lib/inbox";
@@ -34,15 +35,15 @@ function useStats(botId: string, days: number) {
   return result?.key === key ? result : null;
 }
 
-function Skeleton() {
+function OverviewSkeleton() {
   return (
     <div className="flex grow flex-col gap-4" aria-busy="true" aria-label="Loading">
-      <div className="h-38 rounded-[22px] bg-skel" />
+      <Skeleton className="h-38 rounded-[22px]" />
       <div className="flex grow flex-col gap-4 lg:flex-row">
-        <div className="min-h-80 grow rounded-[22px] bg-skel" />
+        <Skeleton className="min-h-80 grow rounded-[22px]" />
         <div className="flex flex-col gap-4 lg:w-95">
-          <div className="h-40 rounded-[22px] bg-skel" />
-          <div className="h-56 rounded-[22px] bg-skel" />
+          <Skeleton className="h-40 rounded-[22px]" />
+          <Skeleton className="h-56 rounded-[22px]" />
         </div>
       </div>
     </div>
@@ -80,7 +81,7 @@ export function Overview() {
         {result?.error ? (
           <Notice tone="bad">{result.error}</Notice>
         ) : !stats ? (
-          <Skeleton />
+          <OverviewSkeleton />
         ) : (
           <>
             <Metrics stats={stats} />

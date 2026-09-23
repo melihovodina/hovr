@@ -4,10 +4,12 @@ import { AlignLeft, MoreHorizontal, Trash2, Upload } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import { cn } from "cn";
 import { useApp } from "@/components/app/app-context";
+import { LoadError } from "@/components/app/load-error";
 import { PageHeader } from "@/components/app/page-header";
 import { Notice } from "@/components/auth/fields";
 import { buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/api";
 import { shortDate } from "@/lib/format";
 import { addText, checkFile, deleteSource, FILE_ACCEPT, formatSize, MAX_TEXT, MAX_TITLE, sourceKind, uploadFile } from "@/lib/sources";
@@ -141,7 +143,15 @@ export function KnowledgeScreen() {
             ))}
           </Notice>
         )}
-        {loadError && <Notice tone="bad">{loadError}</Notice>}
+        {loadError && <LoadError message={loadError} onRetry={reload} />}
+        {!sources && !loadError && (
+          <div className="flex flex-col gap-2" aria-busy="true" aria-label="Loading">
+            <Skeleton className="h-14 rounded-[22px]" />
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-12" />
+            ))}
+          </div>
+        )}
 
         {sources && (
           <div className="flex flex-col overflow-hidden rounded-[22px] shadow-[0_0_0_1px_var(--line)]">

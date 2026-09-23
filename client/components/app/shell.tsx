@@ -4,10 +4,11 @@ import { Menu, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand";
-import { Notice } from "@/components/auth/fields";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import type { Billing, Bot, InboxItem, Me } from "@/lib/types";
 import { AppContext, type AppState } from "./app-context";
+import { LoadError } from "./load-error";
 import { Sidebar } from "./sidebar";
 
 const LAST_BOT_KEY = "hovr-bot";
@@ -87,12 +88,21 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (error) {
     return (
-      <div className="min-h-dvh bg-app p-6">
-        <Notice tone="bad">{error}</Notice>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-app p-6">
+        <Logo href="/" />
+        <div className="w-full max-w-110">
+          <LoadError
+            message={error}
+            onRetry={() => {
+              setError("");
+              reload();
+            }}
+          />
+        </div>
       </div>
     );
   }
-  if (!state) return <div className="min-h-dvh bg-app" />;
+  if (!state) return <ShellSkeleton />;
 
   return (
     <AppContext.Provider value={state}>
@@ -129,5 +139,29 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
     </AppContext.Provider>
+  );
+}
+
+// The shell's outline while the account loads, so the page doesn't flash empty.
+function ShellSkeleton() {
+  return (
+    <div className="flex h-dvh bg-app lg:gap-3 lg:p-3" aria-busy="true" aria-label="Loading">
+      <div className="hidden w-58 shrink-0 flex-col gap-3 py-1 lg:flex">
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="mt-3 h-12 rounded-full" />
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-10 rounded-full" />
+        ))}
+        <Skeleton className="mt-auto h-28 rounded-[22px]" />
+      </div>
+      <div className="flex min-w-0 grow flex-col pt-16 lg:pt-0">
+        <div className="mx-3 mb-3 flex grow flex-col gap-4 rounded-[26px] bg-surface p-5 shadow-[0_0_0_1px_var(--line)] sm:p-7 lg:m-0">
+          <Skeleton className="h-7 w-48 rounded-lg" />
+          <Skeleton className="h-4 w-72 max-w-full rounded-lg" />
+          <Skeleton className="mt-3 h-40 rounded-[22px]" />
+          <Skeleton className="grow rounded-[22px]" />
+        </div>
+      </div>
+    </div>
   );
 }

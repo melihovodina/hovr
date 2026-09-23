@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "@/components/app/app-context";
 import { Notice } from "@/components/auth/fields";
+import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/api";
 import { getConversation } from "@/lib/chat";
 import { timeAgo } from "@/lib/format";
@@ -48,9 +49,9 @@ function Layout({ onBack, thread, actions }: { onBack: () => void; thread: React
 function Loading() {
   return (
     <div className="flex flex-col gap-3.5" aria-busy="true" aria-label="Loading">
-      <div className="h-7 w-2/3 rounded-lg bg-skel" />
-      <div className="h-11 w-1/2 self-end rounded-[22px] bg-skel" />
-      <div className="h-16 w-3/4 rounded-[22px] bg-skel" />
+      <Skeleton className="h-7 w-2/3 rounded-lg" />
+      <Skeleton className="h-11 w-1/2 self-end rounded-[22px]" />
+      <Skeleton className="h-16 w-3/4 rounded-[22px]" />
     </div>
   );
 }

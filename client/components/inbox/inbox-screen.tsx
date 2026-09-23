@@ -6,8 +6,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { cn } from "cn";
 import { useApp } from "@/components/app/app-context";
+import { LoadError } from "@/components/app/load-error";
 import { PageHeader } from "@/components/app/page-header";
 import { Notice } from "@/components/auth/fields";
+import { Skeleton } from "@/components/ui/skeleton";
 import { timeAgo } from "@/lib/format";
 import { leadsCsvUrl } from "@/lib/inbox";
 import type { InboxItem } from "@/lib/types";
@@ -85,7 +87,7 @@ export function InboxScreen() {
       )}
       {error ? (
         <div className="px-5 sm:px-7">
-          <Notice tone="bad">{error}</Notice>
+          <LoadError message={error} onRetry={reload} />
         </div>
       ) : (
         <div className="flex min-h-0 grow border-t border-line">
@@ -150,7 +152,7 @@ function ListSkeleton() {
   return (
     <div className="flex flex-col gap-1.5" aria-busy="true" aria-label="Loading">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="h-16 rounded-2xl bg-skel" />
+        <Skeleton key={i} className="h-16 rounded-2xl" />
       ))}
     </div>
   );

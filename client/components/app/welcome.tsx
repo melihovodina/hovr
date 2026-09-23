@@ -2,12 +2,13 @@
 
 import { BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Notice } from "@/components/auth/fields";
 import { useSources } from "@/components/knowledge/use-sources";
+import { Skeleton } from "@/components/ui/skeleton";
 import { WidgetPanel } from "@/components/widget-panel";
 import { listConversations } from "@/lib/chat";
 import type { Bot } from "@/lib/types";
 import { useApp } from "./app-context";
+import { LoadError } from "./load-error";
 import { KnowledgeStep, Step, StepLink } from "./welcome-steps";
 
 // Whether the owner has tried the bot in the Playground yet.
@@ -30,8 +31,19 @@ export function Welcome({ bot }: { bot: Bot }) {
   const tried = useHasTried(bot.id);
   const live = bot.lastSeenAt !== null;
 
-  if (error) return <Notice tone="bad">{error}</Notice>;
-  if (!sources) return null;
+  if (error) return <LoadError message={error} onRetry={reload} />;
+  if (!sources) {
+    return (
+      <div className="flex flex-col gap-5 lg:flex-row" aria-busy="true" aria-label="Loading">
+        <div className="flex grow flex-col gap-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-3xl" />
+          ))}
+        </div>
+        <Skeleton className="h-150 rounded-3xl lg:w-100" />
+      </div>
+    );
+  }
 
   const knows = sources.some((s) => s.status === "ready") && !sources.some((s) => s.status === "queued" || s.status === "processing");
   // The first step that isn't done yet is the one to do now.
