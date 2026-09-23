@@ -36,7 +36,9 @@ counts in memory and would only count per instance.
 
 ## Deploying
 
-1. Create the Supabase project and apply `supabase/migrations` to it.
+1. Create the Supabase project and apply `supabase/migrations` to it. Later migrations go
+   out with `supabase db push` before the code that needs them: added columns are
+   invisible to the running build, so schema first is the order that never breaks.
 2. Set the environment values above, with `APP_URL` as the public address.
 3. Build with `NEXT_PUBLIC_SITE_URL` set to that same address.
 4. Point a Stripe webhook at `https://<host>/api/billing/webhook` for
@@ -99,3 +101,11 @@ send a request and compare the address in the logs with the one you sent from.
 Supabase Studio http://127.0.0.1:54323, Mailpit (all local email) http://127.0.0.1:54324,
 database `postgresql://postgres:postgres@127.0.0.1:54322/postgres`.
 `make db-reset` rebuilds the local database from the migrations and deletes local data.
+
+`make db-start` and `make db-reset` also run `db-fix-storage`. storage-api v1.72.1 runs a
+migration that drops the unique index on `(bucket_id, name)`, then still uploads with
+`on conflict (name, bucket_id)`; the indexes it leaves are partial, which Postgres won't
+use as an arbiter, so every upload fails with `42P10` — avatars, uploaded files and inbox
+answers alike. A database migrated incrementally kept the old index, so this only shows up
+on a fresh one. Putting the index back is local only; the hosted project runs Supabase's
+own storage.
