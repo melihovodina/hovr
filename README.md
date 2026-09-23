@@ -15,47 +15,6 @@ visitors get grounded answers through an in-app playground or a widget on their 
   for the owner to answer.
 - **Stripe** subscriptions kept in sync by webhooks, with plan limits enforced server-side.
 
-## How it works
-
-```mermaid
-flowchart LR
-    Visitor[Visitor on a customer site] --> Widget[widget.js + iframe]
-    Owner[Site owner] --> App[Next.js app]
-    Widget --> API
-    App --> API[Go API]
-
-    subgraph Container[One container]
-        API --> Static[Exported client]
-    end
-
-    API --> DB[(Postgres + pgvector)]
-    API --> Storage[(Supabase Storage)]
-    API --> Auth[Supabase Auth]
-    API --> Gemini[Gemini: embeddings + chat]
-    API --> Stripe[Stripe]
-```
-
-Answering a question:
-
-```mermaid
-sequenceDiagram
-    participant V as Visitor
-    participant S as Server
-    participant D as Postgres
-    participant G as Gemini
-    V->>S: question
-    S->>G: embed the question
-    S->>D: nearest chunks of this bot, by cosine distance
-    alt best match below the threshold
-        S->>G: answer with no knowledge, for small talk or off-topic
-    else
-        S->>G: answer using only these passages, cite them
-    end
-    G-->>S: streamed answer
-    S-->>V: text chunks, then the saved message with citations
-    S->>D: save the message, and unanswered widget questions go to the inbox
-```
-
 ## Run it locally
 
 Needs Docker, Go 1.26, Node 22 with pnpm, the Supabase CLI and a Gemini API key.
