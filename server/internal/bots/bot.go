@@ -87,10 +87,11 @@ func (p Patch) apply(b *Bot) error {
 		b.Name = name
 	}
 	if p.Color != nil {
-		if !colorRe.MatchString(*p.Color) {
-			return apperr.BadRequest("Pick a color like #2F6B4F.")
+		color, err := cleanColor(*p.Color)
+		if err != nil {
+			return err
 		}
-		b.Color = strings.ToUpper(*p.Color)
+		b.Color = color
 	}
 	for _, f := range []struct {
 		in  Optional[string]
@@ -140,16 +141,28 @@ func (p Patch) apply(b *Bot) error {
 	return nil
 }
 
+// cleanColor validates one colour and returns it the way it is stored.
+func cleanColor(value string) (string, error) {
+	if !colorRe.MatchString(value) {
+		return "", apperr.BadRequest("Pick a color like #2F6B4F.")
+	}
+	return strings.ToUpper(value), nil
+}
+
 // applyColor writes a colour that always has a value: a field that wasn't sent
 // leaves the current one, and null has nothing to fall back to, so it is refused.
 func applyColor(in Optional[string], out *string) error {
 	if !in.Sent {
 		return nil
 	}
-	if in.Value == nil || !colorRe.MatchString(*in.Value) {
+	if in.Value == nil {
 		return apperr.BadRequest("Pick a color like #2F6B4F.")
 	}
-	*out = strings.ToUpper(*in.Value)
+	color, err := cleanColor(*in.Value)
+	if err != nil {
+		return err
+	}
+	*out = color
 	return nil
 }
 
@@ -163,11 +176,11 @@ func applyOptionalColor(in Optional[string], out **string) error {
 		*out = nil
 		return nil
 	}
-	if !colorRe.MatchString(*in.Value) {
-		return apperr.BadRequest("Pick a color like #2F6B4F.")
+	color, err := cleanColor(*in.Value)
+	if err != nil {
+		return err
 	}
-	upper := strings.ToUpper(*in.Value)
-	*out = &upper
+	*out = &color
 	return nil
 }
 
