@@ -21,7 +21,7 @@ export function HomeScreen() {
           )
         }
       />
-      <div className="flex grow flex-col overflow-y-auto px-5 pt-1 pb-5 sm:px-7 sm:pb-7">
+      <div className="flex min-h-0 grow flex-col overflow-y-auto px-5 pt-1 pb-5 sm:px-7 sm:pb-7">
         <Welcome key={bot.id} bot={bot} />
       </div>
     </>

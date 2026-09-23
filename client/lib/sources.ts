@@ -42,3 +42,23 @@ export async function listSources(botId: string, signal?: AbortSignal): Promise<
 export function isPending(status: SourceStatus): boolean {
   return status === "queued" || status === "processing";
 }
+
+// What kind of source it is, as people call it.
+export function sourceKind(s: Source): string {
+  if (s.type === "inbox") return "From inbox";
+  if (s.type === "text") return "Text";
+  switch (s.contentType) {
+    case "application/pdf":
+      return "PDF";
+    case "text/markdown":
+      return "Markdown";
+    case "text/plain":
+      return "Text file";
+    default:
+      return "Word";
+  }
+}
+
+export function deleteSource(botId: string, id: string): Promise<void> {
+  return api(`/bots/${botId}/sources/${id}`, { method: "DELETE" });
+}

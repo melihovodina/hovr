@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { NotYet } from "@/components/app/page-header";
+import { KnowledgeScreen } from "@/components/knowledge/knowledge-screen";
 
 export const metadata: Metadata = { title: "Knowledge" };
 
 export default function KnowledgePage() {
-  return <NotYet title="Knowledge" sub="Everything the bot is allowed to answer from." />;
+  return <KnowledgeScreen />;
 }

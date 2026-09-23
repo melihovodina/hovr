@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { Notice } from "@/components/auth/fields";
 import { useSources } from "@/components/knowledge/use-sources";
 import { WidgetPanel } from "@/components/widget-panel";
-import { api } from "@/lib/api";
-import type { Bot, Conversation } from "@/lib/types";
+import { listConversations } from "@/lib/chat";
+import type { Bot } from "@/lib/types";
 import { useApp } from "./app-context";
 import { KnowledgeStep, Step, StepLink } from "./welcome-steps";
 
@@ -15,8 +15,8 @@ function useHasTried(botId: string): boolean {
   const [tried, setTried] = useState(false);
   useEffect(() => {
     const ctrl = new AbortController();
-    api<{ conversations: Conversation[] }>(`/bots/${botId}/conversations`, { signal: ctrl.signal })
-      .then(({ conversations }) => setTried(conversations.some((c) => c.channel === "playground")))
+    listConversations(botId, ctrl.signal)
+      .then((list) => setTried(list.some((c) => c.channel === "playground")))
       .catch(() => {});
     return () => ctrl.abort();
   }, [botId]);

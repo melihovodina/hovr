@@ -11,3 +11,12 @@ export function onColor(hex: string): string {
   return lum > 0.4 ? "#0D0E11" : "#FFFFFF";
 }
 
+
+// "Just now", "Today", "Sep 19" (with the year when it isn't this one).
+export function shortDate(iso: string, now = new Date()): string {
+  const d = new Date(iso);
+  if (now.getTime() - d.getTime() < 60_000) return "Just now";
+  if (d.toDateString() === now.toDateString()) return "Today";
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+}

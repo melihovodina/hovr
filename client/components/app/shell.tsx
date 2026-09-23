@@ -96,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={state}>
-      <div className="flex min-h-dvh bg-app text-ink lg:h-dvh lg:gap-3 lg:p-3">
+      <div className="flex h-dvh bg-app text-ink lg:gap-3 lg:p-3">
         <aside className="hidden w-58 shrink-0 lg:flex">
           <Sidebar />
         </aside>
@@ -111,8 +111,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        <div className="flex min-w-0 grow flex-col">
-          <div className="flex h-16 items-center justify-between px-4 lg:hidden">
+        <div className="flex min-h-0 min-w-0 grow flex-col">
+          <div className="flex h-16 shrink-0 items-center justify-between px-4 lg:hidden">
             <Logo href={state.href("/app")} />
             <button
               type="button"
