@@ -1,0 +1,19 @@
+import { expect, test } from "vitest";
+import { onColor, shortDate } from "./format";
+
+test("onColor picks readable text for a background", () => {
+  expect(onColor("#C8F547")).toBe("#0D0E11"); // lime: dark text
+  expect(onColor("#FFFFFF")).toBe("#0D0E11");
+  expect(onColor("#2F6B4F")).toBe("#FFFFFF"); // forest: white text
+  expect(onColor("#141417")).toBe("#FFFFFF");
+  expect(onColor("c8f547")).toBe("#0D0E11"); // without the #
+  expect(onColor("green")).toBe("#FFFFFF"); // not a hex colour: fall back to white
+});
+
+test("shortDate", () => {
+  const now = new Date(2026, 8, 23, 15, 0, 0);
+  expect(shortDate(new Date(2026, 8, 23, 14, 59, 30).toISOString(), now)).toBe("Just now");
+  expect(shortDate(new Date(2026, 8, 23, 9, 0).toISOString(), now)).toBe("Today");
+  expect(shortDate(new Date(2026, 8, 19, 9, 0).toISOString(), now)).toBe("Sep 19");
+  expect(shortDate(new Date(2025, 11, 31, 9, 0).toISOString(), now)).toBe("Dec 31, 2025");
+});

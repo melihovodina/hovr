@@ -1,4 +1,4 @@
-.PHONY: db-start db-stop db-reset db-status server build test vet client-install client client-build client-lint
+.PHONY: db-start db-stop db-reset db-status server build test vet client-install client client-build client-lint client-test
 
 # Local Supabase (Postgres, Auth, Storage, Studio, Mailpit) in Docker.
 db-start:
@@ -43,3 +43,7 @@ client-build:
 # ESLint plus a TypeScript check.
 client-lint:
 	cd client && pnpm lint && pnpm exec tsc --noEmit
+
+# Frontend unit and component tests (Vitest, jsdom).
+client-test:
+	cd client && pnpm test

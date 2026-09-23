@@ -41,7 +41,7 @@ export async function request(path: string, { method = "GET", body, signal }: Re
   try {
     res = await fetch(`/api${path}`, init);
   } catch (err) {
-    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    if ((err as Error | null)?.name === "AbortError") throw err;
     throw new ApiError(0, NETWORK_ERROR);
   }
   if (!res.ok) throw await toError(res);

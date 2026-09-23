@@ -29,6 +29,7 @@ export function BotAvatar({ bot, size = 32 }: { bot: Bot; size?: number }) {
     <span
       style={{ width: size, height: size, background: bot.color, color: onColor(bot.color) }}
       className="flex shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold"
+      aria-hidden="true"
     >
       {bot.name.charAt(0).toUpperCase()}
     </span>
@@ -87,7 +88,12 @@ function PlanCard({ billing, onNavigate }: { billing: Billing; onNavigate?: () =
   const limit = billing.limits.messagesPerMonth;
   const share = Math.min(100, Math.round((used / limit) * 100));
   return (
-    <Link href={href("/app/billing")} onClick={onNavigate} className="flex flex-col gap-2.5 rounded-[22px] bg-ink p-4 text-page transition-opacity hover:opacity-95">
+    <Link
+      href={href("/app/billing")}
+      onClick={onNavigate}
+      aria-label={`${billing.planName} plan: ${used.toLocaleString("en-US")} of ${limit.toLocaleString("en-US")} messages used this month. Open billing`}
+      className="flex flex-col gap-2.5 rounded-[22px] bg-ink p-4 text-page transition-opacity hover:opacity-95"
+    >
       <span className="flex justify-between text-[13px] font-bold">
         <span>{billing.planName} plan</span>
         <span className="opacity-70">
@@ -147,6 +153,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               href={href(path)}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
+              aria-label={label === "Inbox" && inboxOpen > 0 ? `Inbox, ${inboxOpen} open` : undefined}
               className={cn(
                 "flex h-10.5 items-center gap-3 rounded-full px-3.5 text-sm font-bold transition-colors",
                 active ? "bg-surface text-ink shadow-[0_0_0_1px_var(--line)]" : "text-subtle hover:text-ink",
