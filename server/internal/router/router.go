@@ -3,6 +3,7 @@ package router
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -41,9 +42,16 @@ type Deps struct {
 }
 
 // New builds the Gin engine: API under /api, the exported client for everything else.
-func New(d Deps) *gin.Engine {
+func New(d Deps) (*gin.Engine, error) {
 	r := gin.New()
 	r.Use(gin.Recovery(), gin.Logger())
+
+	// The widget rate limits count per client IP, and Gin reads that from
+	// X-Forwarded-For, which anyone can send. Only the proxies we name here may set
+	// it; with none configured the address the connection came from is used instead.
+	if err := r.SetTrustedProxies(d.Config.TrustedProxies); err != nil {
+		return nil, fmt.Errorf("TRUSTED_PROXIES: %w", err)
+	}
 
 	r.GET("/healthz", health(d.DB))
 
@@ -67,7 +75,7 @@ func New(d Deps) *gin.Engine {
 	if d.Config.StaticDir != "" {
 		serveClient(r, d.Config.StaticDir)
 	}
-	return r
+	return r, nil
 }
 
 func health(db *pgxpool.Pool) gin.HandlerFunc {

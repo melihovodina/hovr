@@ -17,6 +17,7 @@ is missing, so the server never runs half-configured. `.env.example` lists every
 | `STRIPE_SECRET_KEY` | yes | test or live key |
 | `STRIPE_WEBHOOK_SECRET` | yes | `whsec_...`, verifies webhook calls |
 | `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` | yes | the monthly prices |
+| `TRUSTED_PROXIES` | no | comma-separated proxy addresses or CIDRs allowed to set `X-Forwarded-For`; empty trusts none |
 | `STATIC_DIR` | no | folder with the client export; empty means API only |
 
 The client needs `NEXT_PUBLIC_SITE_URL` at build time, which the Dockerfile takes as a
@@ -44,9 +45,20 @@ counts in memory and would only count per instance.
 6. Ping `/healthz` from an uptime monitor; on a free host that also keeps the instance from
    sleeping.
 
-Behind a proxy, check that the client IP the server sees is the visitor's, otherwise the
-widget rate limits apply to everyone together. Gin trusts forwarded headers from any proxy
-by default.
+7. Set `TRUSTED_PROXIES` to the host's proxy addresses, then check what the server sees.
+
+The widget rate limits count per client IP, which Gin reads from `X-Forwarded-For` when the
+request comes from a trusted proxy. `TRUSTED_PROXIES` decides who that is, and the two ways
+to get it wrong pull in opposite directions:
+
+- Trusting everyone (Gin's own default, which is why the server sets this) means a visitor
+  can put any address in the header and get a fresh allowance for every message.
+- Trusting no one behind a proxy means every visitor arrives as the proxy's address and
+  shares one allowance.
+
+Empty is the default because the second failure is the safe one. Verify it against the real
+deployment rather than assuming: send a request and compare the address in the logs with
+the one you sent from.
 
 ## Watching it
 

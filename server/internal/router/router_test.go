@@ -9,9 +9,23 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/melihovodina/hovr/server/internal/config"
 )
 
 func init() { gin.SetMode(gin.TestMode) }
+
+// A bad proxy list must stop the server at startup, not leave the widget rate
+// limits reading a header anyone can send.
+func TestNewRejectsBadTrustedProxies(t *testing.T) {
+	_, err := New(Deps{Config: config.Config{TrustedProxies: []string{"not-an-address"}}})
+	if err == nil {
+		t.Fatal("invalid TRUSTED_PROXIES accepted")
+	}
+	if !strings.Contains(err.Error(), "TRUSTED_PROXIES") {
+		t.Errorf("error %q does not name the setting", err)
+	}
+}
 
 func TestServeClient(t *testing.T) {
 	dir := t.TempDir()

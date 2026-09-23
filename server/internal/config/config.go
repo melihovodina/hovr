@@ -28,6 +28,10 @@ type Config struct {
 	StripePricePro      string
 	StripePriceBusiness string
 
+	// TrustedProxies are the addresses whose forwarded headers may name the visitor.
+	// Empty means trust none: the client IP is the address the connection came from.
+	TrustedProxies []string
+
 	StaticDir string
 }
 
@@ -49,6 +53,7 @@ func Load() (Config, error) {
 		StripeWebhookSecret:    os.Getenv("STRIPE_WEBHOOK_SECRET"),
 		StripePricePro:         os.Getenv("STRIPE_PRICE_PRO"),
 		StripePriceBusiness:    os.Getenv("STRIPE_PRICE_BUSINESS"),
+		TrustedProxies:         splitList(os.Getenv("TRUSTED_PROXIES")),
 		StaticDir:              os.Getenv("STATIC_DIR"),
 	}
 
@@ -82,6 +87,17 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("missing required env: %s", strings.Join(missing, ", "))
 	}
 	return cfg, nil
+}
+
+// splitList reads a comma-separated value, ignoring spaces and empty entries.
+func splitList(value string) []string {
+	var out []string
+	for _, part := range strings.Split(value, ",") {
+		if part = strings.TrimSpace(part); part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }
 
 func getenv(key, fallback string) string {

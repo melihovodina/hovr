@@ -73,21 +73,26 @@ func run() error {
 	chatStore := chat.NewStore(pool)
 	chatService := chat.NewService(chatStore, rag.NewAnswerer(rag.New(pool, embedder), chatModel))
 
+	handler, err := router.New(router.Deps{
+		Config:  cfg,
+		DB:      pool,
+		Auth:    authService,
+		Files:   files,
+		Avatars: storage.New(cfg.SupabaseURL, cfg.SupabaseSecretKey, "avatars"),
+		Sources: sourcesHandler,
+		Chat:    chat.NewHandler(chatStore, chatService),
+		Widget:  widget.NewHandler(widget.NewStore(pool), chatService, cfg.AppURL),
+		Inbox:   inbox.NewHandler(inbox.NewStore(pool), chatStore, sourcesHandler),
+		Stats:   overview.NewHandler(overview.NewStore(pool)),
+		Billing: billingHandler,
+	})
+	if err != nil {
+		return err
+	}
+
 	srv := &http.Server{
-		Addr: ":" + cfg.Port,
-		Handler: router.New(router.Deps{
-			Config:  cfg,
-			DB:      pool,
-			Auth:    authService,
-			Files:   files,
-			Avatars: storage.New(cfg.SupabaseURL, cfg.SupabaseSecretKey, "avatars"),
-			Sources: sourcesHandler,
-			Chat:    chat.NewHandler(chatStore, chatService),
-			Widget:  widget.NewHandler(widget.NewStore(pool), chatService, cfg.AppURL),
-			Inbox:   inbox.NewHandler(inbox.NewStore(pool), chatStore, sourcesHandler),
-			Stats:   overview.NewHandler(overview.NewStore(pool)),
-			Billing: billingHandler,
-		}),
+		Addr:              ":" + cfg.Port,
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
