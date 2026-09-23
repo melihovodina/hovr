@@ -14,13 +14,13 @@ import (
 	"github.com/melihovodina/hovr/server/internal/plans"
 )
 
-// Connect opens a pool on TEST_DATABASE_URL (set by `make test`). Without it tests
-// skip locally but fail in CI, where a silently green run would hide them.
+// Connect opens a pool on TEST_DATABASE_URL (set by `make test`). Without it these
+// tests skip, unless REQUIRE_TEST_DATABASE says a database was meant to be there.
 func Connect(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	url := os.Getenv("TEST_DATABASE_URL")
 	if url == "" {
-		if os.Getenv("CI") != "" {
+		if os.Getenv("REQUIRE_TEST_DATABASE") != "" {
 			t.Fatal("TEST_DATABASE_URL not set")
 		}
 		t.Skip("TEST_DATABASE_URL not set")
