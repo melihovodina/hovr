@@ -36,9 +36,8 @@ type Config struct {
 	// reported but nothing is blocked, for watching a policy on a real deployment.
 	CSPReportOnly bool
 
-	// ClientIPHeader is a header the host fills with the real visitor and always
-	// overwrites, such as Cloudflare's CF-Connecting-IP. Set, it is used instead of
-	// walking the forwarded chain; empty, the chain is used.
+	// ClientIPHeader is a header the host always overwrites with the real visitor,
+	// such as Cloudflare's CF-Connecting-IP; empty walks the forwarded chain.
 	ClientIPHeader string
 
 	StaticDir string

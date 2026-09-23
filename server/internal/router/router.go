@@ -79,16 +79,13 @@ func newEngine(cfg config.Config) (*gin.Engine, error) {
 	r := gin.New()
 	r.Use(gin.Recovery(), gin.Logger(), securityHeaders(cfg.SupabaseURL, cfg.CSPReportOnly))
 
-	// Gin reads the client IP from X-Forwarded-For, which anyone can send. Only the
-	// proxies named here may set it; with none configured the address the connection
-	// came from is used instead.
+	// X-Forwarded-For is attacker-controlled, so only these proxies may set it;
+	// with none configured the connection's own address is used.
 	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
 		return nil, fmt.Errorf("TRUSTED_PROXIES: %w", err)
 	}
-	// A host that always overwrites a header with the real visitor (Cloudflare's
-	// CF-Connecting-IP) is more reliable than walking the forwarded chain, whose
-	// last hop can be a different edge address on every request. Only set this when
-	// the host is known to overwrite it, since the header is then trusted as is.
+	// Set only for a host that always overwrites this header, such as Cloudflare:
+	// it is then trusted as is, instead of walking the forwarded chain.
 	if cfg.ClientIPHeader != "" {
 		r.TrustedPlatform = cfg.ClientIPHeader
 	}

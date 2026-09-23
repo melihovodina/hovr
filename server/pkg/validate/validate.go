@@ -24,16 +24,11 @@ func Text(value string, min, max int, message string) (string, error) {
 // MaxEmailLen is the longest address a mailbox may have (RFC 5321).
 const MaxEmailLen = 254
 
-// emailExtras are characters that turn an address into something else once it is put
-// in a mailto: link or a CSV cell: "?" and "&" start mailto fields, "<" and ">" and
-// the quote open a display-name form.
+// emailExtras turn an address into something else in a mailto: link or a CSV cell.
 const emailExtras = "?&#<>\"',;:\\"
 
-// Email trims value and accepts only a bare address, the form a mailbox actually has.
-// The auth provider does its own check, but a visitor's address also reaches the owner
-// as a reply link and a CSV cell, where "maria@example.com?bcc=someone@else.example"
-// would quietly add a recipient. Display-name forms like "Maria <m@x.com>" are refused
-// for the same reason: what is stored should be what is written to.
+// Email accepts only a bare address, so what is stored is what gets written to:
+// it later becomes a reply link and a CSV cell. See docs/api.md.
 func Email(value string) (string, bool) {
 	value = strings.TrimSpace(value)
 	if value == "" || len(value) > MaxEmailLen || strings.ContainsAny(value, emailExtras) {

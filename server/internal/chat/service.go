@@ -133,9 +133,8 @@ func (s *Service) Respond(c *gin.Context, r Request) {
 	_ = send("done", gin.H{"message": forChannel(r.Channel, *saved)})
 }
 
-// forChannel hides the owner's knowledge from visitors: the widget gets the answer
-// without the citations or the [n] markers that point at them. The message is
-// stored whole, so the owner still sees both in the Playground and the Inbox.
+// forChannel hides the owner's knowledge from visitors. The message is stored
+// whole, so the playground and the inbox still show the citations.
 func forChannel(channel string, m Message) Message {
 	if channel != ChannelWidget {
 		return m

@@ -209,9 +209,8 @@ func TestCallback(t *testing.T) {
 	}
 }
 
-// Signing out must also end the session at Supabase, or the refresh token stays
-// usable for its full 30 days. The access cookie only lasts an hour, so the cases
-// below are what a browser actually sends after sitting idle.
+// Signing out must end the session at Supabase too, or the refresh token stays
+// usable for 30 days. The cases are what an idle browser actually sends.
 func TestSignOut(t *testing.T) {
 	cases := []struct {
 		name    string

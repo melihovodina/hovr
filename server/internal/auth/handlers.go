@@ -67,10 +67,8 @@ func (s *Service) signout(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// revoke ends the session at Supabase, so the refresh token can't be used again.
-// The access cookie is only an hour old at most, so after an idle spell the browser
-// no longer has one; the refresh cookie (30 days) then buys a fresh access token.
-// Refreshing rotates the refresh token, so the one we were sent dies with it.
+// revoke ends the session at Supabase so the refresh token can't be used again.
+// An idle browser may have no access cookie left, so the refresh one is tried too.
 func (s *Service) revoke(c *gin.Context) error {
 	ctx := c.Request.Context()
 	var failed error

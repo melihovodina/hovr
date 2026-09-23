@@ -67,9 +67,8 @@ func StripCitations(text string) string {
 // open bracket with the digits and commas so far, or the space before one.
 var citationHoldRe = regexp.MustCompile(`(?:[ \t]*\[[\d,\s]*|[ \t]+)$`)
 
-// CitationStripper removes citation markers from streamed text. A marker can be
-// split across chunks, so an end that might still become one is held back until
-// the next chunk settles it.
+// CitationStripper removes citation markers from streamed text, holding back an
+// end that might still grow into one.
 type CitationStripper struct {
 	out     func(string) error
 	pending string

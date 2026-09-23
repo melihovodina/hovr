@@ -10,13 +10,8 @@ import (
 // the only ones any origin may embed.
 var widgetPaths = map[string]bool{"/widget": true, "/widget/": true, "/widget.html": true}
 
-// securityHeaders sets the headers the browser needs to defend the pages we serve.
-// API responses only get nosniff: they are JSON read by our own code, and a policy
-// written for documents says nothing useful about them.
-//
-// reportOnly sends the policy as Content-Security-Policy-Report-Only, which reports
-// violations without blocking anything. It exists so a policy can be watched on a
-// real deployment before it starts refusing to render pages.
+// securityHeaders defends the pages we serve; API responses only get nosniff.
+// reportOnly reports violations without blocking. See docs/operations.md.
 func securityHeaders(storageOrigin string, reportOnly bool) gin.HandlerFunc {
 	page := policy(storageOrigin, "'none'")
 	embeddable := policy(storageOrigin, "*")
@@ -46,10 +41,8 @@ func securityHeaders(storageOrigin string, reportOnly bool) gin.HandlerFunc {
 	}
 }
 
-// policy builds the content security policy. Inline scripts are allowed because the
-// static export ships them (Next's bootstrap, the theme script that runs before paint,
-// the JSON-LD block); their hashes change every build, and a nonce needs a server
-// rendering the page, which an export does not have.
+// policy builds the content security policy; docs/operations.md says why
+// 'unsafe-inline' is unavoidable for a static export.
 func policy(storageOrigin, frameAncestors string) string {
 	img := "'self' data: blob:"
 	if storageOrigin != "" {

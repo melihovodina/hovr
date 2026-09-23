@@ -32,10 +32,8 @@ func TestClientIP(t *testing.T) {
 			want: "192.0.2.1",
 		},
 		{
-			// Behind a trusted proxy the chain is read, but it only gets as far as
-			// the first hop that isn't trusted. On Render that is a Cloudflare
-			// address which differs per request, so this is not the visitor and
-			// counting per it would never reach a limit.
+			// The chain stops at the first untrusted hop, which on Render is a
+			// per-request Cloudflare address, not the visitor.
 			name: "trusted proxy, chain only",
 			cfg:  config.Config{TrustedProxies: []string{"192.0.2.0/24"}},
 			want: "172.70.246.177",
