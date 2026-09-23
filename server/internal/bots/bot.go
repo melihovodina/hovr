@@ -171,5 +171,3 @@ func newPublicKey() string {
 	_, _ = rand.Read(b) // never fails; it crashes the program instead
 	return publicKeyPrefix + base64.RawURLEncoding.EncodeToString(b)
 }
-
-var errBotNotFound = ErrNotFound

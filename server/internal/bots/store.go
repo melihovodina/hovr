@@ -39,7 +39,7 @@ func scanBot(row pgx.Row) (*Bot, error) {
 func mapErr(err error) error {
 	err = apperr.Map(err)
 	if errors.Is(err, apperr.ErrNotFound) {
-		return errBotNotFound
+		return ErrNotFound
 	}
 	return err
 }
@@ -128,7 +128,7 @@ func (s *Store) Delete(ctx context.Context, accountID, id string) ([]string, *st
 		return nil, nil, mapErr(err)
 	}
 	if !deleted {
-		return nil, nil, errBotNotFound
+		return nil, nil, ErrNotFound
 	}
 	return paths, avatar, nil
 }

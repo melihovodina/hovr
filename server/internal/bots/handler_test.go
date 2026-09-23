@@ -170,8 +170,8 @@ func TestDatabaseErrorsAreTranslated(t *testing.T) {
 	}
 	// Someone else's bot: no rows → the bot-specific 404.
 	bob := e.newUser(plans.Free)
-	if _, err := store.Get(ctx, bob, first.ID); err != errBotNotFound {
-		t.Errorf("other account's bot: %v, want errBotNotFound", err)
+	if _, err := store.Get(ctx, bob, first.ID); err != ErrNotFound {
+		t.Errorf("other account's bot: %v, want ErrNotFound", err)
 	}
 }
 
