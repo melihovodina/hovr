@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { appState, billing, bot } from "@/test/fixtures";
 import { nav } from "@/test/navigation";
-import { AppContext, type AppState } from "./app-context";
-import { Sidebar } from "./sidebar";
+import { AppContext, type AppState } from "@/components/app/app-context";
+import { Sidebar } from "@/components/app/sidebar";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationMock);
 

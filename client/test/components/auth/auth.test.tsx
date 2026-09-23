@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { json, mockFetch } from "@/test/http";
 import { nav } from "@/test/navigation";
-import { CheckEmail } from "./check-email";
-import { ResetPasswordForm } from "./password-forms";
-import { SignInForm } from "./sign-in-form";
-import { SignUpForm } from "./sign-up-form";
+import { CheckEmail } from "@/components/auth/check-email";
+import { ResetPasswordForm } from "@/components/auth/password-forms";
+import { SignInForm } from "@/components/auth/sign-in-form";
+import { SignUpForm } from "@/components/auth/sign-up-form";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationMock);
 

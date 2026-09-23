@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { json, mockFetch } from "@/test/http";
-import { draftProblem, draftSize, EMPTY_DRAFT, KnowledgeDraft, saveDraft, type Draft } from "./knowledge-draft";
+import { draftProblem, draftSize, EMPTY_DRAFT, KnowledgeDraft, saveDraft, type Draft } from "@/components/knowledge/knowledge-draft";
 
 afterEach(() => vi.unstubAllGlobals());
 

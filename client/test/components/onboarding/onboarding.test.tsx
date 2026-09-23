@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { bot } from "@/test/fixtures";
 import { json, mockFetch } from "@/test/http";
 import { nav } from "@/test/navigation";
-import { Onboarding } from "./onboarding";
+import { Onboarding } from "@/components/onboarding/onboarding";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationMock);
 

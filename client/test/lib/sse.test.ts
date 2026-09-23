@@ -1,7 +1,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { json, mockFetch, sse } from "@/test/http";
-import { ApiError } from "./api";
-import { streamEvents } from "./sse";
+import { ApiError } from "@/lib/api";
+import { streamEvents } from "@/lib/sse";
 
 afterEach(() => vi.unstubAllGlobals());
 

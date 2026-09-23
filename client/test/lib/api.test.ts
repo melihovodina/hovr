@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { json, mockFetch } from "@/test/http";
-import { api, ApiError, errorMessage } from "./api";
+import { api, ApiError, errorMessage } from "@/lib/api";
 
 afterEach(() => vi.unstubAllGlobals());
 

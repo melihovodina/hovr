@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import { source } from "@/test/fixtures";
-import { KnowledgeStep } from "./welcome-steps";
+import { KnowledgeStep } from "@/components/app/welcome-steps";
 
 function renderStep(sources = [source()]) {
   return render(<KnowledgeStep botId="b1" sources={sources} active onAdded={() => {}} />);

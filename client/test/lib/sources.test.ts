@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { json, mockFetch } from "@/test/http";
-import { addText, checkFile, deleteSource, formatSize, isPending, MAX_FILE_SIZE, sourceKind, uploadFile } from "./sources";
-import type { Source } from "./types";
+import { addText, checkFile, deleteSource, formatSize, isPending, MAX_FILE_SIZE, sourceKind, uploadFile } from "@/lib/sources";
+import type { Source } from "@/lib/types";
 
 afterEach(() => vi.unstubAllGlobals());
 

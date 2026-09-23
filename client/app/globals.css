@@ -43,6 +43,12 @@
   --color-night-line: #2a2d34;
   --color-night-subtle: #b9b9c0;
   --color-code-ink: #e9e8e3;
+  /* The customer's page behind the widget preview: a warm, always-light site. */
+  --color-site: #fbf7f0;
+  --color-site-bar: #efe8dc;
+  --color-site-dot: #d6ccba;
+  --color-site-skel: #e7dfd1;
+  --color-site-ink: #6a6153;
 
   /* The names shadcn's base styles use. */
   --color-border: var(--line);

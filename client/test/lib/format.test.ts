@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { onColor, shortDate } from "./format";
+import { onColor, shortDate, timeAgo } from "@/lib/format";
 
 test("onColor picks readable text for a background", () => {
   expect(onColor("#C8F547")).toBe("#0D0E11"); // lime: dark text
@@ -16,4 +16,16 @@ test("shortDate", () => {
   expect(shortDate(new Date(2026, 8, 23, 9, 0).toISOString(), now)).toBe("Today");
   expect(shortDate(new Date(2026, 8, 19, 9, 0).toISOString(), now)).toBe("Sep 19");
   expect(shortDate(new Date(2025, 11, 31, 9, 0).toISOString(), now)).toBe("Dec 31, 2025");
+});
+
+test("timeAgo", () => {
+  const now = new Date("2026-09-23T12:00:00Z");
+  const ago = (ms: number) => timeAgo(new Date(now.getTime() - ms).toISOString(), now);
+  expect(ago(20_000)).toBe("just now");
+  expect(ago(60_000)).toBe("a minute ago");
+  expect(ago(2 * 60_000)).toBe("2 minutes ago");
+  expect(ago(60 * 60_000)).toBe("an hour ago");
+  expect(ago(5 * 3_600_000)).toBe("5 hours ago");
+  expect(ago(30 * 3_600_000)).toBe("yesterday");
+  expect(ago(4 * 86_400_000)).toBe("4 days ago");
 });
