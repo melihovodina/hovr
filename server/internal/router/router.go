@@ -43,14 +43,9 @@ type Deps struct {
 
 // New builds the Gin engine: API under /api, the exported client for everything else.
 func New(d Deps) (*gin.Engine, error) {
-	r := gin.New()
-	r.Use(gin.Recovery(), gin.Logger())
-
-	// The widget rate limits count per client IP, and Gin reads that from
-	// X-Forwarded-For, which anyone can send. Only the proxies we name here may set
-	// it; with none configured the address the connection came from is used instead.
-	if err := r.SetTrustedProxies(d.Config.TrustedProxies); err != nil {
-		return nil, fmt.Errorf("TRUSTED_PROXIES: %w", err)
+	r, err := newEngine(d.Config)
+	if err != nil {
+		return nil, err
 	}
 
 	r.GET("/healthz", health(d.DB))
@@ -74,6 +69,28 @@ func New(d Deps) (*gin.Engine, error) {
 
 	if d.Config.StaticDir != "" {
 		serveClient(r, d.Config.StaticDir)
+	}
+	return r, nil
+}
+
+// newEngine builds the engine and decides where the client IP comes from, which is
+// what the widget rate limits count per.
+func newEngine(cfg config.Config) (*gin.Engine, error) {
+	r := gin.New()
+	r.Use(gin.Recovery(), gin.Logger())
+
+	// Gin reads the client IP from X-Forwarded-For, which anyone can send. Only the
+	// proxies named here may set it; with none configured the address the connection
+	// came from is used instead.
+	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+		return nil, fmt.Errorf("TRUSTED_PROXIES: %w", err)
+	}
+	// A host that always overwrites a header with the real visitor (Cloudflare's
+	// CF-Connecting-IP) is more reliable than walking the forwarded chain, whose
+	// last hop can be a different edge address on every request. Only set this when
+	// the host is known to overwrite it, since the header is then trusted as is.
+	if cfg.ClientIPHeader != "" {
+		r.TrustedPlatform = cfg.ClientIPHeader
 	}
 	return r, nil
 }

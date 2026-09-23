@@ -18,6 +18,7 @@ is missing, so the server never runs half-configured. `.env.example` lists every
 | `STRIPE_WEBHOOK_SECRET` | yes | `whsec_...`, verifies webhook calls |
 | `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` | yes | the monthly prices |
 | `TRUSTED_PROXIES` | no | comma-separated proxy addresses or CIDRs allowed to set `X-Forwarded-For`; empty trusts none |
+| `CLIENT_IP_HEADER` | no | a header the host fills with the real visitor and always overwrites, used instead of the forwarded chain; `CF-Connecting-IP` on Render |
 | `STATIC_DIR` | no | folder with the client export; empty means API only |
 
 The client needs `NEXT_PUBLIC_SITE_URL` at build time, which the Dockerfile takes as a
@@ -55,7 +56,8 @@ counts in memory and would only count per instance.
    by the Site URL, which breaks every confirmation and reset link.
 7. Ping `/healthz` from an uptime monitor; on a free host that also keeps the instance from
    sleeping.
-8. Set `TRUSTED_PROXIES` to the host's proxy addresses, then check what the server sees.
+8. Set `TRUSTED_PROXIES`, and `CLIENT_IP_HEADER` if the host fills one, then check what the
+   server actually logs as the client IP.
 
 The widget rate limits count per client IP, which Gin reads from `X-Forwarded-For` when the
 request comes from a trusted proxy. `TRUSTED_PROXIES` decides who that is, and the two ways
@@ -70,11 +72,18 @@ Empty is the default because the second failure is the safe one. Verify it again
 deployment rather than assuming: send a request and compare the address in the logs with
 the one you sent from.
 
-On Render the proxy reaches the container over loopback, so every visitor arrives as `::1`
-and they all share one allowance — the second failure, and a stronger version of it than
-"per edge address". `TRUSTED_PROXIES=127.0.0.1,::1` makes Gin read the forwarded header
-instead. Another host will need different values, which is why this is checked and not
-guessed.
+On Render it took three measurements to get right, and the forwarded chain alone never
+does. The proxy reaches the container over loopback, so with nothing trusted every visitor
+arrives as `::1` and they all share one allowance. Trusting `127.0.0.1,::1` moves it one hop
+to Render's own `10.x` proxy, and trusting `10.0.0.0/8` as well moves it to Cloudflare —
+which answers from a different address on almost every request, so the limit never reaches
+its count. That is the fail-open direction.
+
+So on Render: `TRUSTED_PROXIES=127.0.0.1,::1,10.0.0.0/8` and `CLIENT_IP_HEADER=CF-Connecting-IP`.
+The header wins over the chain, and Cloudflare overwrites it, so a visitor cannot set it
+themselves. Only name a header the host is known to overwrite: it is trusted as it arrives.
+Another host will need different values, which is why this is measured rather than guessed —
+send a request and compare the address in the logs with the one you sent from.
 
 ## Watching it
 

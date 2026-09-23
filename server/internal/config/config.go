@@ -32,6 +32,11 @@ type Config struct {
 	// Empty means trust none: the client IP is the address the connection came from.
 	TrustedProxies []string
 
+	// ClientIPHeader is a header the host fills with the real visitor and always
+	// overwrites, such as Cloudflare's CF-Connecting-IP. Set, it is used instead of
+	// walking the forwarded chain; empty, the chain is used.
+	ClientIPHeader string
+
 	StaticDir string
 }
 
@@ -54,6 +59,7 @@ func Load() (Config, error) {
 		StripePricePro:         os.Getenv("STRIPE_PRICE_PRO"),
 		StripePriceBusiness:    os.Getenv("STRIPE_PRICE_BUSINESS"),
 		TrustedProxies:         splitList(os.Getenv("TRUSTED_PROXIES")),
+		ClientIPHeader:         strings.TrimSpace(os.Getenv("CLIENT_IP_HEADER")),
 		StaticDir:              os.Getenv("STATIC_DIR"),
 	}
 

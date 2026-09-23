@@ -15,6 +15,65 @@ import (
 
 func init() { gin.SetMode(gin.TestMode) }
 
+// The widget rate limits count per client IP, so where that comes from decides
+// whether one visitor can be told apart from the next.
+func TestClientIP(t *testing.T) {
+	const visitor = "203.0.113.7"
+	cases := []struct {
+		name string
+		cfg  config.Config
+		want string
+	}{
+		{
+			// No proxy trusted: the address the connection came from wins, so a
+			// forwarded header can't buy a fresh allowance.
+			name: "trust nothing",
+			cfg:  config.Config{},
+			want: "192.0.2.1",
+		},
+		{
+			// Behind a trusted proxy the chain is read, but it only gets as far as
+			// the first hop that isn't trusted. On Render that is a Cloudflare
+			// address which differs per request, so this is not the visitor and
+			// counting per it would never reach a limit.
+			name: "trusted proxy, chain only",
+			cfg:  config.Config{TrustedProxies: []string{"192.0.2.0/24"}},
+			want: "172.70.246.177",
+		},
+		{
+			// The host fills its own header, which beats the chain: on Render the
+			// last forwarded hop is a different Cloudflare address per request.
+			name: "platform header",
+			cfg: config.Config{
+				TrustedProxies: []string{"192.0.2.0/24"},
+				ClientIPHeader: "CF-Connecting-IP",
+			},
+			want: visitor,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r, err := newEngine(tc.cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r.GET("/ip", func(c *gin.Context) { c.String(http.StatusOK, c.ClientIP()) })
+
+			req := httptest.NewRequest(http.MethodGet, "/ip", nil)
+			req.RemoteAddr = "192.0.2.1:1234"
+			// A rotating edge address last in the chain, the visitor first.
+			req.Header.Set("X-Forwarded-For", visitor+", 172.70.246.177")
+			req.Header.Set("CF-Connecting-IP", visitor)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if got := w.Body.String(); got != tc.want {
+				t.Errorf("ClientIP = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 // A bad proxy list must stop the server at startup, not leave the widget rate
 // limits reading a header anyone can send.
 func TestNewRejectsBadTrustedProxies(t *testing.T) {
