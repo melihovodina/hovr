@@ -41,7 +41,7 @@ export const FAQS = [
   },
   {
     q: "How does it know what to say?",
-    a: "It only uses the files and text you gave it, and every answer shows which document it came from, so you can always check.",
+    a: "It only uses the files and text you gave it. If the answer isn’t there, it says so instead of guessing, and the question lands in your Inbox so you can teach it.",
   },
   {
     q: "What counts as a message?",

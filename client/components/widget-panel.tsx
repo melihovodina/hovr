@@ -1,10 +1,10 @@
-import { ArrowUp, ArrowUpRight, ChevronDown, FileText, MessageSquare } from "lucide-react";
+import { ArrowUp, ArrowUpRight, ChevronDown, MessageSquare } from "lucide-react";
 import type { CSSProperties } from "react";
 import { LogoMark } from "@/components/brand";
 import { botBubble, chatPalette, visitorBubble } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
 
-export type PreviewMessage = { kind: "user" | "bot" | "source"; text: string };
+export type PreviewMessage = { kind: "user" | "bot"; text: string };
 
 // The widget's outer box; `.wp` gives it its own palette that follows the page's theme.
 export const PANEL =
@@ -125,20 +125,10 @@ function Conversation({ messages, visitor, bot }: { messages: PreviewMessage[]; 
             >
               {m.text}
             </div>
-          ) : m.kind === "bot" ? (
+          ) : (
             <div key={i} className="max-w-[88%] self-start rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal" style={bot}>
               {m.text}
             </div>
-          ) : (
-            <span
-              key={i}
-              className="flex h-7 items-center gap-1.5 self-start rounded-full border border-(--w-border) pr-2.5 pl-1.5 text-xs font-bold"
-            >
-              <span className="flex size-4.5 items-center justify-center rounded-full bg-(--w-soft)">
-                <FileText className="size-2.75" strokeWidth={2.4} />
-              </span>
-              {m.text}
-            </span>
           ),
         )}
       </div>

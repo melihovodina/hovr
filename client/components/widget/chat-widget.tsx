@@ -7,7 +7,7 @@ import { cn } from "cn";
 import { Caret } from "@/components/playground/parts";
 import { PANEL, PoweredBy, WidgetFirstScreen, WidgetHeader, WidgetLauncher } from "@/components/widget-panel";
 import { ApiError } from "@/lib/api";
-import { streamChat, withoutCitations } from "@/lib/chat";
+import { streamChat } from "@/lib/chat";
 import { botBubble, chatColors, chatPalette, visitorBubble } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
 import type { Message, WidgetConfig } from "@/lib/types";
@@ -183,7 +183,7 @@ export function ChatWidget() {
                     className={cn("max-w-[88%] self-start rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap", m.id !== settled && "animate-rise")}
                     style={bot}
                   >
-                    {withoutCitations(m.content)}
+                    {m.content}
                   </div>
                   {m.id === missedId && conversation && <LeadForm widgetKey={key} conversationId={conversation} host={pageHost()} color={config.color} />}
                 </Fragment>
@@ -193,7 +193,7 @@ export function ChatWidget() {
               <div className="max-w-[88%] animate-rise self-start rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap" style={bot}>
                 {streaming ? (
                   <>
-                    {withoutCitations(streaming)}
+                    {streaming}
                     <Caret />
                   </>
                 ) : (

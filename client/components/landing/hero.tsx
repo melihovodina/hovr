@@ -7,10 +7,8 @@ import { GUTTERS } from "./section";
 const HERO_CHAT: PreviewMessage[] = [
   { kind: "user", text: "Can it learn from my help docs?" },
   { kind: "bot", text: "Yes. Upload your PDFs or Word files, or paste some text. It reads them and answers from them." },
-  { kind: "source", text: "Adding knowledge" },
   { kind: "user", text: "nice, how long does that take?" },
   { kind: "bot", text: "A minute or two for most files. You can start chatting with your bot as soon as the first ones are in." },
-  { kind: "source", text: "Getting started" },
 ];
 
 function Skel({ className }: { className: string }) {
@@ -32,8 +30,8 @@ export function Hero() {
             your business
           </h1>
           <p className="max-w-140 text-[17px] leading-relaxed text-subtle sm:text-lg">
-            Give hovr a few documents: PDFs, Word files or pasted text. It reads them and answers your visitors’ questions
-            in a little chat bubble.
+            Give hovr a few documents: PDFs, Word files or pasted text. It reads them and answers questions from your
+            visitors in a little chat bubble.
           </p>
           <ArrowLink href="/signup" size="lg" className="self-stretch sm:self-start">
             Build your bot

@@ -6,4 +6,4 @@ export const SITE_NAME = "hovr";
 export const SITE_TITLE = "hovr: a chat on your site that actually knows your business";
 
 export const SITE_DESCRIPTION =
-  "Give hovr your PDFs, Word files or a bit of text. It answers your visitors in a small chat bubble, day and night, and shows which document each answer came from.";
+  "Give hovr your PDFs, Word files or a bit of text. It answers your visitors in a small chat bubble, day and night, and tells you what it couldn’t answer.";

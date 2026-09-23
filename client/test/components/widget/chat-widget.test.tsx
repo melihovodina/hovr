@@ -35,8 +35,9 @@ afterEach(() => {
   for (const key of ["hovr:visitor", "hovr:conv:pub_k", "hovr:conv:k", "hovr:lead:c1"]) remember(key, null);
 });
 
+// The widget channel gets answers without the owner's sources or their [n] markers.
 function answer(content: string, answered: boolean) {
-  const message = { id: 2, role: "assistant", content, citations: answered ? [{ n: 1, sourceId: "s1", sourceTitle: "Shipping.md", score: 0.7, excerpt: "" }] : [], answered, createdAt: "" };
+  const message = { id: 2, role: "assistant", content, citations: [], answered, createdAt: "" };
   return sse(['event:conversation\ndata:{"id":"c1"}\n\n', `event:text\ndata:${JSON.stringify({ text: content })}\n\n`, `event:done\ndata:${JSON.stringify({ message })}\n\n`]);
 }
 
@@ -54,8 +55,8 @@ test("a site that isn't allowed hides the widget", async () => {
   expect(container.innerHTML).toBe("");
 });
 
-test("opens, answers a suggested question without the owner's sources, and closes", async () => {
-  const fetch = mockFetch(json(200, config), answer("We ship to Canada [1].", true));
+test("opens, answers a suggested question, and closes", async () => {
+  const fetch = mockFetch(json(200, config), answer("We ship to Canada.", true));
   const user = userEvent.setup();
   render(<ChatWidget />);
 
@@ -64,9 +65,7 @@ test("opens, answers a suggested question without the owner's sources, and close
   expect(screen.getByText("Ask me about orders.")).toBeTruthy();
 
   await user.click(screen.getByRole("button", { name: /Do you ship to Canada\?/ }));
-  // Visitors can't open the owner's files, so neither the source nor its [1] marker shows.
   expect(await screen.findByText("We ship to Canada.")).toBeTruthy();
-  expect(screen.queryByText("Shipping.md")).toBeNull();
   const body = JSON.parse(fetch.mock.calls[1][1]?.body as string);
   expect(body.message).toBe("Do you ship to Canada?");
   expect(body.visitorId).toBeTruthy();

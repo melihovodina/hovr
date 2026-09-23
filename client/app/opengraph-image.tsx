@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { SITE_NAME } from "@/lib/site";
 
 // The link preview for the landing page, drawn at build time. It mirrors the hero:
-// the headline with its lime highlight, and a small chat that cites its source.
+// the headline with its lime highlight, and a small chat.
 
 export const alt = "hovr: a chat on your site that actually knows your business";
 export const size = { width: 1200, height: 630 };
@@ -53,9 +53,6 @@ function Chat() {
       <div style={{ padding: "12px 18px", borderRadius: "22px 22px 22px 6px", background: PAGE, color: INK, fontSize: 21, lineHeight: 1.4 }}>
         Yes, orders to Canada arrive in 5 to 8 business days.
       </div>
-      <div style={{ display: "flex", alignSelf: "flex-start", padding: "6px 14px", borderRadius: 999, boxShadow: `0 0 0 1px ${LINE}`, fontSize: 16, color: SUBTLE }}>
-        Shipping &amp; delivery.pdf
-      </div>
     </div>
   );
 }
@@ -75,7 +72,7 @@ export default function OpenGraphImage() {
               </div>
               <span>your business</span>
             </div>
-            <span style={{ fontSize: 26, lineHeight: 1.45, color: SUBTLE }}>Answers your visitors from your own files, and shows where each answer came from.</span>
+            <span style={{ fontSize: 26, lineHeight: 1.45, color: SUBTLE }}>Answers your visitors from your own files, day and night.</span>
           </div>
           <Chat />
         </div>

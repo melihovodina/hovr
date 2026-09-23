@@ -19,18 +19,19 @@ export function Features() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div className={`${plain} md:col-span-2`}>
           <div className="flex flex-col gap-2.5">
+            <span className={sent}>Do you sell wholesale?</span>
             <div className="max-w-110 rounded-[20px_20px_20px_6px] bg-surface-2 px-4 py-3 text-base leading-normal">
-              Yes, you can send it back within 30 days. The return label is in your order email.
+              I don’t know that one, sorry. Leave your email and the team will get back to you.
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="flex h-7.5 items-center rounded-full border border-line px-3 text-[13px] font-bold">Return policy.docx</span>
-              <span className="flex h-7.5 items-center rounded-full border border-line px-3 text-[13px] font-bold">FAQ.pdf</span>
+            <div className="flex h-10 max-w-110 items-center gap-2 rounded-full border border-line pr-1 pl-4 text-sm">
+              <span className="grow text-subtle">anna@example.com</span>
+              <span className="flex h-8 items-center rounded-full bg-ink px-3.5 text-[13px] font-extrabold text-page">Send email</span>
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <h3 className={title}>It shows where the answer came from</h3>
+            <h3 className={title}>It doesn’t make things up</h3>
             <p className="text-base leading-[1.55] text-subtle">
-              Every answer names the document it used. That’s a lot easier to trust than a bot that just sounds confident.
+              If the answer isn’t in your files, it says so and offers to take the visitor’s email. The question lands in your Inbox, so you can teach it.
             </p>
           </div>
         </div>
