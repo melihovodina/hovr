@@ -1,8 +1,9 @@
-.PHONY: db-start db-stop db-reset db-status server build test vet client-install client client-build client-lint client-test
+.PHONY: db-start db-stop db-reset db-fix-storage db-status server build test vet client-install client client-build client-lint client-test
 
 # Local Supabase (Postgres, Auth, Storage, Studio, Mailpit) in Docker.
 db-start:
 	supabase start
+	$(MAKE) db-fix-storage
 
 db-stop:
 	supabase stop
@@ -10,6 +11,17 @@ db-stop:
 # Recreate the local database from supabase/migrations.
 db-reset:
 	supabase db reset
+	$(MAKE) db-fix-storage
+
+# storage-api v1.72.1 runs a migration that drops the unique index on
+# (bucket_id, name), but still uploads with "on conflict (name, bucket_id)".
+# The indexes it leaves are partial, so Postgres finds no arbiter and every
+# upload fails with 42P10. Putting the index back is local only: the hosted
+# project runs Supabase's own storage and is not affected.
+db-fix-storage:
+	docker exec supabase_db_hovr psql -U supabase_admin -d postgres -c \
+	  'create unique index if not exists objects_bucket_id_name_key \
+	  on storage.objects (bucket_id, name collate "C");'
 
 db-status:
 	supabase status
