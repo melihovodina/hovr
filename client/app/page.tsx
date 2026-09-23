@@ -8,6 +8,9 @@ import { Setup } from "@/components/landing/setup";
 import { FAQS, PLANS } from "@/lib/landing";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 
+// Our own bot, added with the same one line a customer pastes on their site.
+const BOT_KEY = "pub_jpVGjFg-i9-MOAYiDr3zwhrE";
+
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: {
@@ -67,6 +70,7 @@ export default function LandingPage() {
         <FinalCta />
       </main>
       <LandingFooter />
+      <script src="/widget.js" data-bot={BOT_KEY} defer />
     </>
   );
 }
