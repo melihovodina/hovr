@@ -4,6 +4,10 @@ import { onColor } from "@/lib/format";
 
 export type PreviewMessage = { kind: "user" | "bot" | "source"; text: string };
 
+// The widget's outer box; `.wp` gives it its own palette that follows the page's theme.
+export const PANEL =
+  "wp flex size-full max-w-full flex-col overflow-hidden rounded-[26px] bg-(--w-bg) text-(--w-ink) shadow-[0_16px_40px_-18px_var(--w-shadow),0_0_0_1px_var(--w-ring)]";
+
 interface WidgetPanelProps {
   name: string;
   // Letter in the avatar, shown when there is no logo.
@@ -31,36 +35,11 @@ export function WidgetPanel({
 }: WidgetPanelProps) {
   const onAccent = onColor(color);
   return (
-    <div className="wp flex size-full max-w-full flex-col overflow-hidden rounded-[26px] bg-(--w-bg) text-(--w-ink) shadow-[0_16px_40px_-18px_var(--w-shadow),0_0_0_1px_var(--w-ring)]">
-      <div className="flex items-center gap-2.5 pt-3.5 pr-3 pb-3 pl-4">
-        <div className="relative size-9 shrink-0">
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- a remote logo in a static export
-            <img src={avatarUrl} alt="" className="size-9 rounded-full object-cover" />
-          ) : (
-            <div
-              className="flex size-9 items-center justify-center rounded-full text-[15px] font-extrabold"
-              style={{ background: color, color: onAccent }}
-            >
-              {avatar}
-            </div>
-          )}
-          <span className="absolute -right-px -bottom-px size-2.75 rounded-full border-2 border-(--w-bg) bg-online" />
-        </div>
-        <div className="flex min-w-0 grow flex-col gap-px">
-          <div className="truncate text-[15px] font-extrabold tracking-[-0.01em]">{name}</div>
-          <div className="text-xs text-(--w-muted)">Online now</div>
-        </div>
-        <span className="flex size-9 items-center justify-center rounded-full text-(--w-muted)" aria-hidden="true">
-          <MoreHorizontal className="size-4.5" />
-        </span>
-        <span className="flex size-9 items-center justify-center rounded-full bg-(--w-soft)" aria-hidden="true">
-          <ChevronDown className="size-4.5" strokeWidth={2} />
-        </span>
-      </div>
+    <div className={PANEL}>
+      <WidgetHeader name={name} avatar={avatar} avatarUrl={avatarUrl} color={color} />
 
       {messages.length === 0 ? (
-        <FirstScreen greeting={greeting} suggestions={suggestions} />
+        <WidgetFirstScreen greeting={greeting} suggestions={suggestions} />
       ) : (
         <Conversation messages={messages} color={color} onAccent={onAccent} />
       )}
@@ -72,22 +51,24 @@ export function WidgetPanel({
             <ArrowUp className="size-4.5" strokeWidth={2.4} />
           </span>
         </div>
-        {showBadge && (
-          <div className="flex items-center justify-center gap-1.25 text-[11px] font-semibold text-(--w-muted)">
-            Powered by
-            <LogoMark size={14} shadow={false} />
-            <span className="font-extrabold text-(--w-ink)">hovr</span>
-          </div>
-        )}
+        {showBadge && <PoweredBy />}
       </div>
     </div>
   );
 }
 
-// Before the visitor asks anything: the greeting and suggested questions.
-function FirstScreen({ greeting, suggestions }: { greeting: string; suggestions: string[] }) {
+// Before the visitor asks anything: the greeting and suggested questions (buttons when onPick is given).
+export function WidgetFirstScreen({
+  greeting,
+  suggestions,
+  onPick,
+}: {
+  greeting: string;
+  suggestions: string[];
+  onPick?: (question: string) => void;
+}) {
   return (
-    <div className="flex min-h-0 grow flex-col gap-4.5 overflow-hidden px-4 pt-5.5 pb-3">
+    <div className="flex min-h-0 grow flex-col gap-4.5 overflow-y-auto px-4 pt-5.5 pb-3">
       <div className="flex flex-col gap-2 px-1">
         <div className="text-[26px] leading-[1.15] font-extrabold tracking-[-0.03em]">
           Hey there.
@@ -98,15 +79,24 @@ function FirstScreen({ greeting, suggestions }: { greeting: string; suggestions:
       </div>
       {suggestions.length > 0 && (
         <div className="flex flex-col gap-2">
-          {suggestions.map((q, i) => (
-            <div
-              key={`${q}-${i}`}
-              className="flex min-h-12 items-center gap-2.5 rounded-2xl bg-(--w-soft) py-2 pr-3.5 pl-4 text-sm font-semibold"
-            >
-              <span className="grow wrap-break-word">{q}</span>
-              <ArrowUpRight className="size-4 shrink-0 text-(--w-muted)" strokeWidth={2} />
-            </div>
-          ))}
+          {suggestions.map((q, i) => {
+            const body = (
+              <>
+                <span className="grow wrap-break-word">{q}</span>
+                <ArrowUpRight className="size-4 shrink-0 text-(--w-muted)" strokeWidth={2} />
+              </>
+            );
+            const className = "flex min-h-12 items-center gap-2.5 rounded-2xl bg-(--w-soft) py-2 pr-3.5 pl-4 text-left text-sm font-semibold";
+            return onPick ? (
+              <button key={`${q}-${i}`} type="button" onClick={() => onPick(q)} className={`${className} transition-opacity hover:opacity-80`}>
+                {body}
+              </button>
+            ) : (
+              <div key={`${q}-${i}`} className={className}>
+                {body}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -147,5 +137,82 @@ function Conversation({ messages, color, onAccent }: { messages: PreviewMessage[
         )}
       </div>
     </div>
+  );
+}
+
+// Avatar with the online dot, name, and the close button (a drawing in previews).
+export function WidgetHeader({
+  name,
+  avatar,
+  avatarUrl,
+  color,
+  onClose,
+}: {
+  name: string;
+  avatar: string;
+  avatarUrl?: string | null;
+  color: string;
+  onClose?: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-2.5 pt-3.5 pr-3 pb-3 pl-4">
+      <div className="relative size-9 shrink-0">
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- a remote logo in a static export
+          <img src={avatarUrl} alt="" className="size-9 rounded-full object-cover" />
+        ) : (
+          <div
+            className="flex size-9 items-center justify-center rounded-full text-[15px] font-extrabold"
+            style={{ background: color, color: onColor(color) }}
+            aria-hidden="true"
+          >
+            {avatar}
+          </div>
+        )}
+        <span className="absolute -right-px -bottom-px size-2.75 rounded-full border-2 border-(--w-bg) bg-online" />
+      </div>
+      <div className="flex min-w-0 grow flex-col gap-px">
+        <div className="truncate text-[15px] font-extrabold tracking-[-0.01em]">{name}</div>
+        <div className="text-xs text-(--w-muted)">Online now</div>
+      </div>
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close chat"
+          className="flex size-9 items-center justify-center rounded-full bg-(--w-soft) transition-opacity hover:opacity-80"
+        >
+          <ChevronDown className="size-4.5" strokeWidth={2} />
+        </button>
+      ) : (
+        <>
+          <span className="flex size-9 items-center justify-center rounded-full text-(--w-muted)" aria-hidden="true">
+            <MoreHorizontal className="size-4.5" />
+          </span>
+          <span className="flex size-9 items-center justify-center rounded-full bg-(--w-soft)" aria-hidden="true">
+            <ChevronDown className="size-4.5" strokeWidth={2} />
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+// A link to hovr in the live widget; plain text in the previews.
+export function PoweredBy({ href }: { href?: string }) {
+  const body = (
+    <>
+      Powered by
+      <LogoMark size={14} shadow={false} />
+      <span className="font-extrabold text-(--w-ink)">hovr</span>
+    </>
+  );
+  const className = "flex items-center justify-center gap-1.25 text-[11px] font-semibold text-(--w-muted)";
+  return href ? (
+    <a href={href} target="_blank" rel="noopener" className={`${className} hover:text-(--w-ink)`}>
+      {body}
+    </a>
+  ) : (
+    <div className={className}>{body}</div>
   );
 }

@@ -186,3 +186,14 @@
   --w-ring: rgba(255, 255, 255, 0.08);
   --w-shadow: rgba(0, 0, 0, 0.5);
 }
+
+/* The widget page inside the customer's iframe: see-through around the launcher and panel. The colour
+   scheme is left to the browser so the iframe isn't painted opaque when it differs from the host page. */
+html:has(.hovr-widget-root) {
+  color-scheme: normal;
+  background: transparent;
+}
+body:has(.hovr-widget-root) {
+  min-height: 0;
+  background: transparent;
+}

@@ -1,0 +1,105 @@
+<!doctype html>
+<!--
+  A plain page on another origin with the hovr widget on it, to check embedding outside the app.
+
+  Run it (from the repo root):
+    python3 -m http.server 8000 --bind 127.0.0.1
+  Then open, with your bot's public key from the app (Widget → Install):
+    http://127.0.0.1:8000/demo.html?bot=pub_...
+  Add &app=https://your-hovr-address when hovr isn't on http://localhost:3000.
+
+  Use 127.0.0.1 rather than localhost: localhost is the app's own host, which the server treats as
+  an app preview (allowed everywhere, not recorded as "last seen on").
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Harbor Books · embed demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Georgia, "Times New Roman", serif;
+        color: #2b2620;
+        background: #fbf7f0;
+      }
+      body {
+        margin: 0;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 32px;
+        border-bottom: 1px solid #e7dfd1;
+      }
+      header strong {
+        font-size: 22px;
+      }
+      nav a {
+        margin-left: 20px;
+        color: inherit;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 56px 24px 120px;
+        line-height: 1.6;
+      }
+      h1 {
+        font-size: 44px;
+        line-height: 1.1;
+        margin: 0 0 16px;
+      }
+      .note {
+        margin-top: 40px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        background: #efe8dc;
+        font-family: system-ui, sans-serif;
+        font-size: 14px;
+      }
+      code {
+        font-family: ui-monospace, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Harbor Books</strong>
+      <nav><a href="#">Shop</a><a href="#">Events</a><a href="#">Visit</a></nav>
+    </header>
+    <main>
+      <h1>An independent bookshop by the water</h1>
+      <p>
+        This page stands in for a customer's website. It knows nothing about hovr except the one script line below, the
+        same line owners copy from Widget → Install.
+      </p>
+      <p>Open the chat bubble in the corner and ask something your bot's knowledge covers.</p>
+      <div class="note" id="note"></div>
+    </main>
+
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var bot = params.get("bot");
+        var app = (params.get("app") || "http://localhost:3000").replace(/\/$/, "");
+        var note = document.getElementById("note");
+
+        if (!bot) {
+          note.innerHTML =
+            "Add your bot's public key to the address: <code>?bot=pub_...</code> (find it in the app under Widget → Install).";
+          return;
+        }
+        note.textContent = "Loading the widget for " + bot + " from " + app + "/widget.js";
+
+        // The line an owner pastes, added here so the key can come from the address.
+        var script = document.createElement("script");
+        script.src = app + "/widget.js";
+        script.setAttribute("data-bot", bot);
+        script.defer = true;
+        document.body.appendChild(script);
+      })();
+    </script>
+  </body>
+</html>
