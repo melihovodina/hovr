@@ -118,7 +118,6 @@ export function PlanPicker({ billing }: { billing: Billing }) {
           {pending ? "Opening Stripe…" : button}
         </button>
       </div>
-      <p className="text-xs text-subtle">Payments go through Stripe. This is test mode, so use card 4242 4242 4242 4242 with any future date.</p>
     </section>
   );
 }

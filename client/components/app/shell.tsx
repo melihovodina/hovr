@@ -4,9 +4,10 @@ import { Menu, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "cn";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Logo } from "@/components/brand";
+import { Wordmark } from "@/components/brand";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api, ApiError, errorMessage } from "@/lib/api";
+import { api, errorMessage } from "@/lib/api";
+import { isSignedOut } from "@/lib/session";
 import type { Billing, Bot, InboxItem, Me } from "@/lib/types";
 import { AppContext, type AppState } from "./app-context";
 import { LoadError } from "./load-error";
@@ -47,7 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       })
       .catch((err) => {
         if (signal.aborted) return;
-        if (err instanceof ApiError && err.status === 401) router.replace("/signin");
+        if (isSignedOut(err)) router.replace("/signin");
         else setError(errorMessage(err));
       });
     return () => ctrl.abort();
@@ -92,7 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (error) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-app p-6">
-        <Logo href="/" />
+        <Wordmark />
         <div className="w-full max-w-110">
           <LoadError
             message={error}
@@ -139,7 +140,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="flex min-h-0 min-w-0 grow flex-col">
           <div className="flex h-16 shrink-0 items-center justify-between px-4 lg:hidden">
-            <Logo href={state.href("/app")} />
+            <Wordmark />
             <button
               type="button"
               onClick={() => setMenu("open")}

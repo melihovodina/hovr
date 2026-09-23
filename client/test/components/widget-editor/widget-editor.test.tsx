@@ -9,6 +9,7 @@ import { nav } from "@/test/navigation";
 import { InstallTab } from "@/components/widget-editor/install-tab";
 import { MessagesTab } from "@/components/widget-editor/messages-tab";
 import { changes, type Draft } from "@/components/widget-editor/widget-screen";
+import { chatColors } from "@/lib/chat-colors";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationMock);
 
@@ -17,10 +18,33 @@ afterEach(() => vi.unstubAllGlobals());
 
 const draftOf = (over: Partial<Draft> = {}): Draft => {
   const b = bot();
-  return { name: b.name, color: b.color, position: b.position, greeting: b.greeting, suggestedQuestions: b.suggestedQuestions, showBadge: b.showBadge, ...over };
+  return {
+    name: b.name,
+    color: b.color,
+    position: b.position,
+    greeting: b.greeting,
+    suggestedQuestions: b.suggestedQuestions,
+    showBadge: b.showBadge,
+    ...chatColors(b),
+    visitorMessageColor: b.visitorMessageColor,
+    ...over,
+  };
 };
 
 describe("changes", () => {
+  test("a bot that never picked chat colours isn't changed by their defaults", () => {
+    expect(changes(bot({ chatBackground: null, botMessageColor: null }), draftOf())).toEqual({});
+  });
+
+  test("sends the chat colours, including a switch back to automatic", () => {
+    const saved = bot({ visitorMessageColor: "#F2C94C" });
+    expect(changes(saved, { ...draftOf(), chatBackground: "#16161A", visitorMessageColor: null, botMessageColor: "#FFFFFF" })).toEqual({
+      chatBackground: "#16161A",
+      visitorMessageColor: null,
+      botMessageColor: "#FFFFFF",
+    });
+  });
+
   test("nothing changed means nothing to save", () => {
     expect(changes(bot(), draftOf())).toEqual({});
   });
@@ -59,11 +83,6 @@ describe("MessagesTab", () => {
     const input = screen.getByLabelText("Suggested questions") as HTMLInputElement;
     expect(input.disabled).toBe(true);
     expect(input.placeholder).toBe("That’s the most you can add");
-  });
-
-  test("counts the hello message's characters", async () => {
-    render(<Messages initial={draftOf({ greeting: "Hi" })} />);
-    expect(screen.getByText("2 of 280 characters.")).toBeTruthy();
   });
 });
 

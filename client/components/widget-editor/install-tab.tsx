@@ -134,7 +134,6 @@ function AllowedSites() {
     <Group
       label="Allowed websites"
       htmlFor="allowed"
-      hint="The bot only answers on these sites and their subdomains, so nobody can copy your code and use up your messages. With none added, it works anywhere."
     >
       {bot.allowedDomains.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">

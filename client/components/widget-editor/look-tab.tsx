@@ -8,8 +8,9 @@ import { useApp } from "@/components/app/app-context";
 import { Notice } from "@/components/auth/fields";
 import { errorMessage } from "@/lib/api";
 import { AVATAR_ACCEPT, checkAvatar, removeAvatar, uploadAvatar } from "@/lib/bots";
+import { DEFAULT_BOT_MESSAGE } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
-import { Group, Segmented } from "./controls";
+import { ColorChoice, Group, Segmented, type ColorOption } from "./controls";
 import type { Draft } from "./widget-screen";
 
 export const SWATCHES = [
@@ -18,18 +19,36 @@ export const SWATCHES = [
   { hex: "#B4441F", name: "Rust" },
   { hex: "#7A3FC4", name: "Violet" },
   { hex: "#F2C94C", name: "Mustard" },
-  { hex: "#16161A", name: "Ink" },
 ];
+
+// White and black for the chat and the messages; "+" covers everything else.
+const BACKGROUNDS: ColorOption[] = [
+  { value: "#FFFFFF", label: "White" },
+  { value: "#16161A", label: "Black" },
+];
+
+// Gray (the default) instead of white, which would vanish on the default white chat.
+const BOT_MESSAGES: ColorOption[] = [{ value: DEFAULT_BOT_MESSAGE, label: "Gray" }, BACKGROUNDS[1]];
 
 const ring = "shadow-[0_0_0_3px_var(--surface),0_0_0_5px_var(--ink)]";
 
-export function LookTab({ draft, onChange }: { draft: Draft; onChange: (d: Partial<Draft>) => void }) {
+// `site` colours only the made-up website behind the preview; it isn't part of the widget.
+export function LookTab({
+  draft,
+  onChange,
+  site,
+  onSite,
+}: {
+  draft: Draft;
+  onChange: (d: Partial<Draft>) => void;
+  site: string;
+  onSite: (color: string) => void;
+}) {
   const { bot, billing, href, updateBot } = useApp();
   const picker = useRef<HTMLInputElement>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState("");
   const canHideBadge = billing?.limits.removeBadge ?? false;
-  const custom = !SWATCHES.some((s) => s.hex === draft.color);
 
   async function upload(file: File | undefined) {
     if (!file) return;
@@ -59,40 +78,41 @@ export function LookTab({ draft, onChange }: { draft: Draft; onChange: (d: Parti
   return (
     <>
       <Group label="Main color">
-        <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Main color">
-          {SWATCHES.map((s) => (
-            <button
-              key={s.hex}
-              type="button"
-              role="radio"
-              aria-checked={draft.color === s.hex}
-              aria-label={s.name}
-              onClick={() => onChange({ color: s.hex })}
-              className={cn("size-10 rounded-full ring-1 ring-black/10 ring-inset transition-shadow", draft.color === s.hex && ring)}
-              style={{ background: s.hex }}
-            />
-          ))}
-          <label
-            className={cn(
-              "relative flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full text-[11px] font-extrabold ring-1 ring-black/10 ring-inset",
-              custom ? ring : "bg-app text-subtle",
-            )}
-            style={custom ? { background: draft.color, color: onColor(draft.color) } : undefined}
-            title="Your own color"
-          >
-            <span aria-hidden="true">+</span>
-            <input
-              type="color"
-              aria-label="Your own color"
-              value={draft.color.toLowerCase()}
-              onChange={(e) => onChange({ color: e.target.value.toUpperCase() })}
-              className="absolute inset-0 cursor-pointer opacity-0"
-            />
-          </label>
-        </div>
+        <ColorChoice label="Main color" options={SWATCHES.map((s) => ({ value: s.hex, label: s.name }))} value={draft.color} onChange={(c) => c && onChange({ color: c })} />
       </Group>
 
-      <Group label="Avatar" hint="PNG, JPG or WebP, up to 1 MB. Without a logo it shows the first letter of the name.">
+      <Group label="Visitor’s messages">
+        <ColorChoice
+          label="Visitor’s messages"
+          options={[{ value: null, label: "Same as the main color", swatch: draft.color }, ...BACKGROUNDS]}
+          value={draft.visitorMessageColor}
+          onChange={(visitorMessageColor) => onChange({ visitorMessageColor })}
+        />
+      </Group>
+
+      <Group label="Bot’s messages">
+        <ColorChoice
+          label="Bot’s messages"
+          options={BOT_MESSAGES}
+          value={draft.botMessageColor}
+          onChange={(c) => c && onChange({ botMessageColor: c })}
+        />
+      </Group>
+
+      <Group label="Chat background">
+        <ColorChoice
+          label="Chat background"
+          options={BACKGROUNDS}
+          value={draft.chatBackground}
+          onChange={(c) => c && onChange({ chatBackground: c })}
+        />
+      </Group>
+
+      <Group label="Your site in the preview">
+        <ColorChoice label="Your site in the preview" options={BACKGROUNDS} value={site} onChange={(c) => c && onSite(c)} />
+      </Group>
+
+      <Group label="Avatar">
         <input
           ref={picker}
           type="file"
@@ -148,10 +168,7 @@ export function LookTab({ draft, onChange }: { draft: Draft; onChange: (d: Parti
 
       {canHideBadge ? (
         <label className="flex cursor-pointer items-center gap-3 rounded-[18px] bg-app px-4 py-3.5">
-          <span className="flex grow flex-col gap-0.5">
-            <span className="text-sm font-extrabold">Show “Powered by hovr”</span>
-            <span className="text-xs text-subtle">Your plan lets you hide it.</span>
-          </span>
+          <span className="grow text-sm font-extrabold">Show “Powered by hovr”</span>
           <input
             type="checkbox"
             checked={draft.showBadge}
@@ -162,10 +179,7 @@ export function LookTab({ draft, onChange }: { draft: Draft; onChange: (d: Parti
       ) : (
         <Link href={href("/app/billing")} className="flex items-center gap-3 rounded-[18px] bg-app px-4 py-3.5 hover:bg-surface-2">
           <Lock className="size-4.5 shrink-0 text-subtle" strokeWidth={2} aria-hidden="true" />
-          <span className="flex grow flex-col gap-0.5">
-            <span className="text-sm font-extrabold">Hide “Powered by hovr”</span>
-            <span className="text-xs text-subtle">Comes with Pro</span>
-          </span>
+          <span className="grow text-sm font-extrabold">Hide “Powered by hovr”</span>
           <span className="flex h-7 items-center rounded-full bg-lime px-2.5 text-xs font-extrabold text-on-lime">Pro</span>
         </Link>
       )}

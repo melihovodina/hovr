@@ -8,6 +8,7 @@ import { AnswerText, Caret } from "@/components/playground/parts";
 import { PANEL, PoweredBy, WidgetFirstScreen, WidgetHeader } from "@/components/widget-panel";
 import { ApiError } from "@/lib/api";
 import { streamChat } from "@/lib/chat";
+import { botBubble, chatColors, chatPalette, visitorBubble } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
 import type { Message, WidgetConfig } from "@/lib/types";
 import { chatPath, getConfig, recall, remember, restoreConversation, visitorId, type WidgetEvent } from "@/lib/widget";
@@ -134,6 +135,9 @@ export function ChatWidget() {
   const onAccent = onColor(config.color);
   const avatar = config.name.charAt(0).toUpperCase();
   const side = config.position === "left" ? "justify-start" : "justify-end";
+  const colors = chatColors(config);
+  const visitor = visitorBubble(config.color, config.visitorMessageColor);
+  const bot = botBubble(colors.botMessageColor);
 
   if (!open) {
     return (
@@ -163,6 +167,7 @@ export function ChatWidget() {
           config.position === "left" ? "origin-bottom-left" : "origin-bottom-right",
           closing ? "animate-out fill-mode-forwards duration-180 fade-out-0 zoom-out-95" : "animate-in duration-250 fade-in-0 zoom-in-95 slide-in-from-bottom-3",
         )}
+        style={chatPalette(colors.chatBackground)}
         role="dialog"
         aria-label={`Chat with ${config.name}`}
       >
@@ -177,13 +182,13 @@ export function ChatWidget() {
                 <div
                   key={m.id}
                   className="max-w-[78%] animate-rise self-end rounded-[20px_20px_6px_20px] px-3.5 py-2.5 text-sm leading-[1.45] font-medium whitespace-pre-wrap"
-                  style={{ background: config.color, color: onAccent }}
+                  style={visitor}
                 >
                   {m.content}
                 </div>
               ) : (
                 <div key={m.id} className={cn("flex max-w-[88%] flex-col gap-1.5 self-start", m.id !== settled && "animate-rise")}>
-                  <div className="rounded-[20px_20px_20px_6px] bg-(--w-soft) px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap">
+                  <div className="rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap" style={bot}>
                     <AnswerText text={m.content} />
                   </div>
                   <Sources message={m} />
@@ -191,14 +196,14 @@ export function ChatWidget() {
               ),
             )}
             {streaming !== null && (
-              <div className="max-w-[88%] animate-rise self-start rounded-[20px_20px_20px_6px] bg-(--w-soft) px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap">
+              <div className="max-w-[88%] animate-rise self-start rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap" style={bot}>
                 {streaming ? (
                   <>
                     <AnswerText text={streaming} />
                     <Caret />
                   </>
                 ) : (
-                  <span className="animate-pulse text-(--w-muted)">Thinking…</span>
+                  <span className="animate-pulse opacity-70">Thinking…</span>
                 )}
               </div>
             )}

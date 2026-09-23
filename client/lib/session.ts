@@ -10,6 +10,12 @@ export interface Account {
   bots: Bot[];
 }
 
+// Loading the account failed because there is no one to load: no session (401), or a session
+// whose account no longer exists (404, e.g. after the database was reset). Both mean sign in again.
+export function isSignedOut(err: unknown): boolean {
+  return err instanceof ApiError && (err.status === 401 || err.status === 404);
+}
+
 // The signed-in user with their bots, for pages behind sign-in. Signed out means back to /signin.
 export function useAccount(): { account: Account | null; error: string } {
   const router = useRouter();
@@ -22,7 +28,7 @@ export function useAccount(): { account: Account | null; error: string } {
       .then(([me, { bots }]) => setAccount({ me, bots }))
       .catch((err) => {
         if (ctrl.signal.aborted) return;
-        if (err instanceof ApiError && err.status === 401) router.replace("/signin");
+        if (isSignedOut(err)) router.replace("/signin");
         else setError(errorMessage(err));
       });
     return () => ctrl.abort();

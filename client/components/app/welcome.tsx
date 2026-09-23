@@ -6,6 +6,7 @@ import { useSources } from "@/components/knowledge/use-sources";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WidgetPanel } from "@/components/widget-panel";
 import { listConversations } from "@/lib/chat";
+import { chatColors } from "@/lib/chat-colors";
 import type { Bot } from "@/lib/types";
 import { useApp } from "./app-context";
 import { LoadError } from "./load-error";
@@ -40,7 +41,7 @@ export function Welcome({ bot }: { bot: Bot }) {
             <Skeleton key={i} className="h-24 rounded-3xl" />
           ))}
         </div>
-        <Skeleton className="h-150 rounded-3xl lg:w-100" />
+        <Skeleton className="h-171 rounded-3xl lg:w-105" />
       </div>
     );
   }
@@ -86,9 +87,10 @@ export function Welcome({ bot }: { bot: Bot }) {
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-center gap-3.5 rounded-3xl bg-app bg-[radial-gradient(var(--dot)_1px,transparent_1px)] bg-size-[18px_18px] p-5 lg:w-100">
+      <div className="flex shrink-0 flex-col items-center gap-3.5 rounded-3xl bg-app bg-[radial-gradient(var(--dot)_1px,transparent_1px)] bg-size-[18px_18px] p-5 lg:w-105">
         <span className="self-start text-sm font-extrabold">What visitors will see</span>
-        <div className="h-150 w-full max-w-90">
+        {/* The live panel's size (380×684), so this is exactly what visitors get. */}
+        <div className="h-171 w-full max-w-95">
           <WidgetPanel
             name={bot.name}
             avatar={bot.name.charAt(0).toUpperCase()}
@@ -97,6 +99,8 @@ export function Welcome({ bot }: { bot: Bot }) {
             greeting={bot.greeting}
             suggestions={bot.suggestedQuestions}
             showBadge={bot.showBadge}
+            {...chatColors(bot)}
+            visitorMessageColor={bot.visitorMessageColor}
           />
         </div>
       </div>

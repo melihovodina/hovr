@@ -1,5 +1,7 @@
-import { ArrowUp, ArrowUpRight, ChevronDown, FileText, MoreHorizontal } from "lucide-react";
+import { ArrowUp, ArrowUpRight, ChevronDown, FileText } from "lucide-react";
+import type { CSSProperties } from "react";
 import { LogoMark } from "@/components/brand";
+import { botBubble, chatPalette, visitorBubble } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
 
 export type PreviewMessage = { kind: "user" | "bot" | "source"; text: string };
@@ -19,6 +21,10 @@ interface WidgetPanelProps {
   greeting?: string;
   suggestions?: string[];
   showBadge?: boolean;
+  // The owner's colours. Without a background the panel follows the page's theme.
+  chatBackground?: string;
+  visitorMessageColor?: string | null;
+  botMessageColor?: string | null;
 }
 
 // A drawn copy of the embeddable widget, following the site's theme and filling its box.
@@ -32,22 +38,26 @@ export function WidgetPanel({
   greeting = "",
   suggestions = [],
   showBadge = true,
+  chatBackground,
+  visitorMessageColor = null,
+  botMessageColor = null,
 }: WidgetPanelProps) {
   const onAccent = onColor(color);
   return (
-    <div className={PANEL}>
+    <div className={PANEL} style={chatBackground ? chatPalette(chatBackground) : undefined}>
       <WidgetHeader name={name} avatar={avatar} avatarUrl={avatarUrl} color={color} />
 
       {messages.length === 0 ? (
         <WidgetFirstScreen greeting={greeting} suggestions={suggestions} />
       ) : (
-        <Conversation messages={messages} color={color} onAccent={onAccent} />
+        <Conversation messages={messages} visitor={visitorBubble(color, visitorMessageColor)} bot={botBubble(botMessageColor)} />
       )}
 
       <div className="flex flex-col gap-2 px-3 pb-2.5">
         <div className="flex h-13 items-center gap-1.5 rounded-full border border-(--w-border) bg-(--w-bg) pr-1.5 pl-4.5 shadow-[0_4px_14px_rgba(10,12,16,0.06)]">
           <span className="grow text-[15px] text-(--w-muted)">Type your question…</span>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full" style={{ background: color, color: onAccent }}>
+          {/* Faded like the live send button while nothing is typed. */}
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full opacity-40" style={{ background: color, color: onAccent }}>
             <ArrowUp className="size-4.5" strokeWidth={2.4} />
           </span>
         </div>
@@ -69,14 +79,8 @@ export function WidgetFirstScreen({
 }) {
   return (
     <div className="flex min-h-0 grow flex-col gap-4.5 overflow-y-auto px-4 pt-5.5 pb-3">
-      <div className="flex flex-col gap-2 px-1">
-        <div className="text-[26px] leading-[1.15] font-extrabold tracking-[-0.03em]">
-          Hey there.
-          <br />
-          <span className="text-(--w-muted)">What can I help with?</span>
-        </div>
-        {greeting && <div className="text-sm leading-normal wrap-break-word text-(--w-muted)">{greeting}</div>}
-      </div>
+      {/* Only the owner's own words: the greeting is the first thing visitors read. */}
+      {greeting && <div className="px-1 text-[19px] leading-snug font-extrabold tracking-[-0.02em] wrap-break-word whitespace-pre-line">{greeting}</div>}
       {suggestions.length > 0 && (
         <div className="flex flex-col gap-2">
           {suggestions.map((q, i) => {
@@ -105,22 +109,21 @@ export function WidgetFirstScreen({
 
 // Starts at the top while the messages fit; once the panel is shorter than them, the newest
 // stay in view and the oldest go under the header, as in a real chat.
-function Conversation({ messages, color, onAccent }: { messages: PreviewMessage[]; color: string; onAccent: string }) {
+function Conversation({ messages, visitor, bot }: { messages: PreviewMessage[]; visitor: CSSProperties; bot: CSSProperties }) {
   return (
     <div className="flex min-h-0 grow flex-col justify-end overflow-hidden">
       <div className="flex min-h-full shrink-0 flex-col gap-2.5 px-3.5 pt-1 pb-3">
-        <div className="self-center text-[11px] font-bold text-(--w-muted)">Today</div>
         {messages.map((m, i) =>
           m.kind === "user" ? (
             <div
               key={i}
               className="max-w-[78%] self-end rounded-[20px_20px_6px_20px] px-3.5 py-2.5 text-sm leading-[1.45] font-medium"
-              style={{ background: color, color: onAccent }}
+              style={visitor}
             >
               {m.text}
             </div>
           ) : m.kind === "bot" ? (
-            <div key={i} className="max-w-[88%] self-start rounded-[20px_20px_20px_6px] bg-(--w-soft) px-3.5 py-2.5 text-sm leading-normal">
+            <div key={i} className="max-w-[88%] self-start rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal" style={bot}>
               {m.text}
             </div>
           ) : (
@@ -185,14 +188,9 @@ export function WidgetHeader({
           <ChevronDown className="size-4.5" strokeWidth={2} />
         </button>
       ) : (
-        <>
-          <span className="flex size-9 items-center justify-center rounded-full text-(--w-muted)" aria-hidden="true">
-            <MoreHorizontal className="size-4.5" />
-          </span>
-          <span className="flex size-9 items-center justify-center rounded-full bg-(--w-soft)" aria-hidden="true">
-            <ChevronDown className="size-4.5" strokeWidth={2} />
-          </span>
-        </>
+        <span className="flex size-9 items-center justify-center rounded-full bg-(--w-soft)" aria-hidden="true">
+          <ChevronDown className="size-4.5" strokeWidth={2} />
+        </span>
       )}
     </div>
   );

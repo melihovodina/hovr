@@ -64,3 +64,17 @@ test("a signed-out visitor goes to sign in", async () => {
   );
   await vi.waitFor(() => expect(nav.router.replace).toHaveBeenCalledWith("/signin"));
 });
+
+test("a session whose account is gone goes to sign in too", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => json(404, { error: "Account not found." })),
+  );
+  render(
+    <AppShell>
+      <p>Screen</p>
+    </AppShell>,
+  );
+  await vi.waitFor(() => expect(nav.router.replace).toHaveBeenCalledWith("/signin"));
+  expect(screen.queryByRole("alert")).toBeNull();
+});

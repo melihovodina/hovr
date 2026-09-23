@@ -26,7 +26,7 @@ export function MessagesTab({ draft, onChange }: { draft: Draft; onChange: (d: P
 
   return (
     <>
-      <Group label="Name" htmlFor="widget-name" hint="Shown at the top of the chat.">
+      <Group label="Name" htmlFor="widget-name">
         <input
           id="widget-name"
           maxLength={MAX_NAME}
@@ -36,7 +36,7 @@ export function MessagesTab({ draft, onChange }: { draft: Draft; onChange: (d: P
         />
       </Group>
 
-      <Group label="Hello message" htmlFor="widget-greeting" hint={`${draft.greeting.length} of ${MAX_GREETING} characters.`}>
+      <Group label="Hello message" htmlFor="widget-greeting">
         <textarea
           id="widget-greeting"
           rows={3}
@@ -47,7 +47,7 @@ export function MessagesTab({ draft, onChange }: { draft: Draft; onChange: (d: P
         />
       </Group>
 
-      <Group label="Suggested questions" htmlFor="widget-question" hint={`Up to ${MAX_QUESTIONS}. Visitors can tap one to ask it.`}>
+      <Group label="Suggested questions" htmlFor="widget-question">
         {draft.suggestedQuestions.length > 0 && (
           <ul className="flex flex-col gap-1.5">
             {draft.suggestedQuestions.map((q, i) => (

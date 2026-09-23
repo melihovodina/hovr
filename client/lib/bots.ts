@@ -11,7 +11,21 @@ export const MAX_AVATAR_SIZE = 1 << 20;
 export const AVATAR_ACCEPT = "image/png,image/jpeg,image/webp";
 
 // The widget settings the editor changes; any subset can be sent.
-export type BotPatch = Partial<Pick<Bot, "name" | "allowedDomains" | "color" | "position" | "greeting" | "suggestedQuestions" | "showBadge">>;
+export type BotPatch = Partial<
+  Pick<
+    Bot,
+    | "name"
+    | "allowedDomains"
+    | "color"
+    | "position"
+    | "greeting"
+    | "suggestedQuestions"
+    | "showBadge"
+    | "chatBackground"
+    | "visitorMessageColor"
+    | "botMessageColor"
+  >
+>;
 
 export function updateBot(id: string, patch: BotPatch): Promise<Bot> {
   return api<Bot>(`/bots/${id}`, { method: "PATCH", body: patch });

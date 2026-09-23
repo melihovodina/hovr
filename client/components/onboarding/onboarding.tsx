@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { cn } from "cn";
 import { Notice } from "@/components/auth/fields";
-import { ArrowBadge, Logo } from "@/components/brand";
+import { ArrowBadge, Wordmark } from "@/components/brand";
 import { draftProblem, draftSize, EMPTY_DRAFT, KnowledgeDraft, saveDraft, type Draft, type Failure } from "@/components/knowledge/knowledge-draft";
 import { buttonVariants } from "@/components/ui/button";
 import { api, ApiError, errorMessage } from "@/lib/api";
@@ -94,7 +94,7 @@ export function Onboarding() {
     <div className="flex min-h-dvh flex-col bg-app text-ink">
       <header className="flex h-22 shrink-0 items-center px-4 sm:px-12">
         <div className="flex flex-1">
-          <Logo />
+          <Wordmark />
         </div>
         {!another && <Stepper />}
         <div className="flex flex-1 items-center justify-end gap-5">

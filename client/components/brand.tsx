@@ -13,11 +13,20 @@ export function LogoMark({ size = 28, shadow = true }: { size?: number; shadow?:
   );
 }
 
-export function Logo({ href = "/", className }: { href?: string; className?: string }) {
+// The mark and the name. Inside the app it's plain; on public pages Logo makes it a link home.
+export function Wordmark({ className }: { className?: string }) {
   return (
-    <Link href={href} className={cn("flex items-center gap-2 text-ink", className)} aria-label="hovr home">
+    <span className={cn("flex items-center gap-2 text-ink", className)}>
       <LogoMark />
       <span className="text-[22px] font-extrabold tracking-[-0.03em]">hovr</span>
+    </span>
+  );
+}
+
+export function Logo({ href = "/", className }: { href?: string; className?: string }) {
+  return (
+    <Link href={href} className={cn("flex", className)} aria-label="hovr home">
+      <Wordmark />
     </Link>
   );
 }

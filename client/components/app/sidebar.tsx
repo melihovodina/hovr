@@ -4,7 +4,7 @@ import { BookOpen, Check, ChevronDown, Home, Inbox, LogOut, MessageSquare, Palet
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
-import { Logo } from "@/components/brand";
+import { Wordmark } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { onColor, resetDate } from "@/lib/format";
@@ -41,10 +41,14 @@ function BotSwitcher({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className="flex h-12 w-full items-center gap-2.5 rounded-full bg-surface px-2 text-left shadow-[0_0_0_1px_var(--line)] outline-none focus-visible:ring-3 focus-visible:ring-ink/25">
+      <DropdownMenuTrigger className="group flex h-12 w-full items-center gap-2.5 rounded-full bg-surface px-2 text-left shadow-[0_0_0_1px_var(--line)] outline-none focus-visible:ring-3 focus-visible:ring-ink/25">
         <BotAvatar bot={bot} />
         <span className="min-w-0 grow truncate text-sm font-bold">{bot.name}</span>
-        <ChevronDown className="mr-1 size-4 shrink-0 text-subtle" strokeWidth={2} />
+        <ChevronDown
+          className="mr-1 size-4 shrink-0 text-subtle transition-transform duration-200 group-data-[state=open]:rotate-180"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) rounded-[20px]">
         {bots.map((b) => (
@@ -135,7 +139,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex w-full flex-col gap-5.5 px-1.5 py-3">
       <div className="px-2.5">
-        <Logo href={href("/app")} />
+        <Wordmark />
       </div>
       <BotSwitcher onNavigate={onNavigate} />
       <nav className="relative flex flex-col gap-0.5" aria-label="App">

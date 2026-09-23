@@ -19,6 +19,11 @@ export interface Bot {
   greeting: string;
   suggestedQuestions: string[];
   showBadge: boolean;
+  // The chat panel's background and the two kinds of message. A null visitor color means the main
+  // color; a null background or bot color means "not picked" (see chatColors for the defaults).
+  chatBackground: string | null;
+  visitorMessageColor: string | null;
+  botMessageColor: string | null;
   lastSeenHost: string | null;
   lastSeenAt: string | null;
   createdAt: string;
@@ -140,4 +145,7 @@ export interface WidgetConfig {
   greeting: string;
   suggestedQuestions: string[];
   showBadge: boolean;
+  chatBackground: string | null;
+  visitorMessageColor: string | null;
+  botMessageColor: string | null;
 }
