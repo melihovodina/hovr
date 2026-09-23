@@ -40,12 +40,22 @@ counts in memory and would only count per instance.
 3. Build with `NEXT_PUBLIC_SITE_URL` set to that same address.
 4. Point a Stripe webhook at `https://<host>/api/billing/webhook` for
    `customer.subscription.created`, `.updated` and `.deleted`, and use its signing secret.
-5. Supabase's built-in email sender only reaches project members, so set SMTP in the
-   Supabase dashboard for sign-up and password-reset emails.
-6. Ping `/healthz` from an uptime monitor; on a free host that also keeps the instance from
+5. Set up SMTP, or sign-up and password-reset emails only reach project members, two per
+   hour. Dashboard → Authentication → Emails → SMTP settings: host, port 587, the full
+   address as the user, and an app password. Then raise Authentication → Rate limits →
+   emails per hour, which stays at 2 even once SMTP is on.
+   - In the dashboard, not `[auth.email.smtp]` in `config.toml`: that section also applies
+     locally, where Mailpit should keep catching everything instead of sending real mail.
+   - Gmail needs 2-step verification on and an app password (Google Account → Security).
+     Its free limits are low and it can refuse mail from a new sender, so a transactional
+     sender is the fallback. Nothing in the server changes either way.
+6. Authentication → URL configuration: Site URL is the public address, and Redirect URLs
+   must include `<address>/**`. The server asks Supabase to send people back to
+   `APP_URL/api/auth/callback`, and an address that isn't on that list is silently replaced
+   by the Site URL, which breaks every confirmation and reset link.
+7. Ping `/healthz` from an uptime monitor; on a free host that also keeps the instance from
    sleeping.
-
-7. Set `TRUSTED_PROXIES` to the host's proxy addresses, then check what the server sees.
+8. Set `TRUSTED_PROXIES` to the host's proxy addresses, then check what the server sees.
 
 The widget rate limits count per client IP, which Gin reads from `X-Forwarded-For` when the
 request comes from a trusted proxy. `TRUSTED_PROXIES` decides who that is, and the two ways
