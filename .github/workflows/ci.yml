@@ -8,6 +8,10 @@ on:
 jobs:
   server:
     runs-on: ubuntu-latest
+    # For signing in to ghcr.io below.
+    permissions:
+      contents: read
+      packages: read
     env:
       CI: "true"
       TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
@@ -17,6 +21,10 @@ jobs:
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
+      # The Postgres image comes from ghcr.io, where anonymous pulls share a quota
+      # the runners exhaust; the job's own token lifts it and needs no secret set.
+      - name: Sign in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
       - uses: supabase/setup-cli@v3
         with:
           # Pinned: a new CLI can switch to a Postgres image from another registry,
