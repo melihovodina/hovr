@@ -31,15 +31,35 @@ func TestEmail(t *testing.T) {
 	valid := map[string]string{
 		"anna@northwind.example":    "anna@northwind.example",
 		"  anna@northwind.example ": "anna@northwind.example",
+		"a.b+tag@sub.example.co":    "a.b+tag@sub.example.co",
 	}
 	for in, want := range valid {
 		if got, ok := Email(in); !ok || got != want {
 			t.Errorf("Email(%q) = %q, %v; want %q", in, got, ok, want)
 		}
 	}
-	for _, in := range []string{"", "anna", "@northwind.example", "anna@", "an na@northwind.example"} {
+
+	// A visitor's address is written back to as a mailto: link and lands in a CSV,
+	// so anything that could carry a second recipient or a display name is refused.
+	invalid := []string{
+		"", "anna", "@northwind.example", "anna@", "an na@northwind.example",
+		"me@x.example?bcc=someone@else.example",
+		"me@x.example&subject=hi",
+		"Maria <m@x.example>",
+		"<script>@x.example",
+		`"quoted"@x.example`,
+		"me@x.example,other@x.example",
+		"me@x.example\r\nBcc: other@x.example",
+		strings.Repeat("a", 245) + "@x.example", // 255 characters
+	}
+	for _, in := range invalid {
 		if _, ok := Email(in); ok {
 			t.Errorf("Email(%q) accepted", in)
 		}
+	}
+
+	// The limit itself is not off by one.
+	if _, ok := Email(strings.Repeat("a", 244) + "@x.example"); !ok {
+		t.Error("a 254-character address was refused")
 	}
 }

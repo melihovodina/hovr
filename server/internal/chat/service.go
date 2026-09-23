@@ -161,7 +161,7 @@ func (s *Service) SaveLead(ctx context.Context, botID, visitorID, conversationID
 		return errConversationNotFound
 	}
 	email, ok := validate.Email(email)
-	if !ok || len(email) > 254 {
+	if !ok {
 		return apperr.BadRequest("Enter a valid email address.")
 	}
 	return s.store.setVisitorEmail(ctx, botID, visitorID, conversationID, email)

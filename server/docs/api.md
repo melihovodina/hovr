@@ -96,6 +96,10 @@ the model as memory. Playground chats don't count against the monthly limit.
 | `GET /leads` | `{leads, historyDays, canExport}`; a lead is `{conversationId, email, question, missed, createdAt, lastMessageAt}` |
 | `GET /leads.csv` | Business only, otherwise 402 |
 
+A visitor's address is written back to as a `mailto:` link and lands in that CSV, so only
+a bare mailbox is accepted: `Maria <m@x.example>` and anything carrying `?`, `&`, `<`, `>`
+or a quote is a 400, which keeps a left address from adding a recipient or a subject.
+
 ## Overview — `GET /api/bots/<bot>/stats?days=7&tz=Europe/Berlin`
 
 `days` is 1–90 (default 7) and `tz` any IANA name (unknown falls back to UTC). Returns
@@ -110,7 +114,7 @@ and `needsYou`. Widget conversations only.
 | `GET /config?host=` | `{name, color, chatBackground, visitorMessageColor, botMessageColor, avatarUrl, position, greeting, suggestedQuestions, showBadge}`; `visitorMessageColor` is null when it follows `color`; also records "last seen on" |
 | `POST /chat {message, conversationId?, visitorId, host}` | same events as the playground |
 | `GET /conversations/<id>?visitorId=&host=` | restore after a reload |
-| `POST /lead {conversationId, visitorId, email, host}` | 204 |
+| `POST /lead {conversationId, visitorId, email, host}` | 204; the address must be a bare mailbox, up to 254 characters |
 
 `host` is the customer's site, taken from `document.referrer` inside the iframe. Empty
 `allowedDomains` means anywhere, a domain also covers its subdomains, and the app's own host
