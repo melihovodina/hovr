@@ -70,6 +70,12 @@ Empty is the default because the second failure is the safe one. Verify it again
 deployment rather than assuming: send a request and compare the address in the logs with
 the one you sent from.
 
+On Render the proxy reaches the container over loopback, so every visitor arrives as `::1`
+and they all share one allowance — the second failure, and a stronger version of it than
+"per edge address". `TRUSTED_PROXIES=127.0.0.1,::1` makes Gin read the forwarded header
+instead. Another host will need different values, which is why this is checked and not
+guessed.
+
 ## Watching it
 
 - `/healthz` returns `{"status":"ok","db":"up"}`, or 503 when the database is unreachable.
