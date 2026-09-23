@@ -7,7 +7,7 @@ import { cn } from "cn";
 import { useApp } from "@/components/app/app-context";
 import { Notice } from "@/components/auth/fields";
 import { errorMessage } from "@/lib/api";
-import { AVATAR_ACCEPT, checkAvatar, removeAvatar, uploadAvatar } from "@/lib/bots";
+import { AVATAR_ACCEPT, checkAvatar, uploadAvatar } from "@/lib/bots";
 import { DEFAULT_BOT_MESSAGE } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
 import { ColorChoice, Group, Segmented, type ColorOption } from "./controls";
@@ -49,6 +49,7 @@ export function LookTab({
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState("");
   const canHideBadge = billing?.limits.removeBadge ?? false;
+  const logo = draft.useLogo && bot.avatarUrl !== null;
 
   async function upload(file: File | undefined) {
     if (!file) return;
@@ -58,17 +59,7 @@ export function LookTab({
     setAvatarBusy(true);
     try {
       updateBot(await uploadAvatar(bot.id, file));
-    } catch (err) {
-      setAvatarError(errorMessage(err));
-    }
-    setAvatarBusy(false);
-  }
-
-  async function useLetter() {
-    setAvatarBusy(true);
-    setAvatarError("");
-    try {
-      updateBot(await removeAvatar(bot.id));
+      onChange({ useLogo: true });
     } catch (err) {
       setAvatarError(errorMessage(err));
     }
@@ -124,23 +115,30 @@ export function LookTab({
           }}
         />
         <div className="flex flex-wrap items-center gap-2">
+          {/* Picking the letter only changes the draft; the logo stays until the changes are saved. */}
           <button
             type="button"
-            disabled={avatarBusy || !bot.avatarUrl}
-            onClick={useLetter}
-            aria-pressed={!bot.avatarUrl}
+            disabled={avatarBusy}
+            onClick={() => onChange({ useLogo: false })}
+            aria-pressed={!logo}
             aria-label="Use the first letter"
-            className={cn(
-              "flex size-12 items-center justify-center rounded-full text-lg font-extrabold",
-              !bot.avatarUrl && "shadow-[0_0_0_3px_var(--surface),0_0_0_5px_var(--ink)]",
-            )}
+            className={cn("flex size-12 items-center justify-center rounded-full text-lg font-extrabold transition-shadow", !logo && ring)}
             style={{ background: draft.color, color: onColor(draft.color) }}
           >
             {(draft.name || bot.name).charAt(0).toUpperCase()}
           </button>
           {bot.avatarUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- a remote logo in a static export
-            <img src={bot.avatarUrl} alt="Your logo" className={cn("size-12 rounded-full object-cover", ring)} />
+            <button
+              type="button"
+              disabled={avatarBusy}
+              onClick={() => onChange({ useLogo: true })}
+              aria-pressed={logo}
+              aria-label="Use your logo"
+              className={cn("size-12 overflow-hidden rounded-full transition-shadow", logo && ring)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- a remote logo in a static export */}
+              <img src={bot.avatarUrl} alt="" className="size-full object-cover" />
+            </button>
           )}
           <button
             type="button"

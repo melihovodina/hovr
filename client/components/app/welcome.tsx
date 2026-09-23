@@ -4,7 +4,7 @@ import { BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSources } from "@/components/knowledge/use-sources";
 import { Skeleton } from "@/components/ui/skeleton";
-import { WidgetPanel } from "@/components/widget-panel";
+import { WidgetPreview } from "@/components/widget-preview";
 import { listConversations } from "@/lib/chat";
 import { chatColors } from "@/lib/chat-colors";
 import type { Bot } from "@/lib/types";
@@ -91,7 +91,8 @@ export function Welcome({ bot }: { bot: Bot }) {
         <span className="self-start text-sm font-extrabold">What visitors will see</span>
         {/* The live panel's size (380×684), so this is exactly what visitors get. */}
         <div className="h-171 w-full max-w-95">
-          <WidgetPanel
+          <WidgetPreview
+            position={bot.position}
             name={bot.name}
             avatar={bot.name.charAt(0).toUpperCase()}
             avatarUrl={bot.avatarUrl}

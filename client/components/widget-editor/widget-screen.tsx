@@ -8,9 +8,10 @@ import { useApp } from "@/components/app/app-context";
 import { PageHeader } from "@/components/app/page-header";
 import { Notice } from "@/components/auth/fields";
 import { buttonVariants } from "@/components/ui/button";
-import { WidgetPanel, type PreviewMessage } from "@/components/widget-panel";
+import { type PreviewMessage } from "@/components/widget-panel";
+import { WidgetPreview } from "@/components/widget-preview";
 import { ApiError, errorMessage } from "@/lib/api";
-import { updateBot, type BotPatch } from "@/lib/bots";
+import { removeAvatar, updateBot, type BotPatch } from "@/lib/bots";
 import { chatColors } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
 import type { Bot } from "@/lib/types";
@@ -26,6 +27,8 @@ type Tab = "look" | "messages" | "install";
 export type Draft = Pick<Bot, "name" | "color" | "position" | "greeting" | "suggestedQuestions" | "showBadge" | "visitorMessageColor"> & {
   chatBackground: string;
   botMessageColor: string;
+  // The uploaded logo, or the first letter when false; the logo is only deleted on save.
+  useLogo: boolean;
 };
 
 function draftOf(bot: Bot): Draft {
@@ -38,7 +41,13 @@ function draftOf(bot: Bot): Draft {
     showBadge: bot.showBadge,
     ...chatColors(bot),
     visitorMessageColor: bot.visitorMessageColor,
+    useLogo: bot.avatarUrl !== null,
   };
+}
+
+// Saving with the letter picked deletes the uploaded logo.
+export function dropsLogo(bot: Bot, draft: Draft): boolean {
+  return bot.avatarUrl !== null && !draft.useLogo;
 }
 
 // Only the fields that differ from the saved bot.
@@ -92,7 +101,7 @@ function WidgetEditor() {
   }
 
   const patch = changes(bot, draft);
-  const dirty = Object.keys(patch).length > 0;
+  const dirty = Object.keys(patch).length > 0 || dropsLogo(bot, draft);
 
   function change(next: Partial<Draft>) {
     setDraft((d) => ({ ...d, ...next }));
@@ -110,7 +119,8 @@ function WidgetEditor() {
     setPending(true);
     setError("");
     try {
-      const next = await updateBot(bot.id, patch);
+      let next = Object.keys(patch).length > 0 ? await updateBot(bot.id, patch) : bot;
+      if (dropsLogo(bot, draft)) next = await removeAvatar(bot.id);
       setBot(next);
       setDraft(draftOf(next));
       setSaved(true);
@@ -128,7 +138,7 @@ function WidgetEditor() {
         sub={tab === "install" ? "Put it on your site. It takes about a minute." : "Change how it looks. What you see is what visitors get."}
       />
       <div className="flex min-h-0 grow border-t border-line">
-        <Preview draft={draft} avatarUrl={bot.avatarUrl} site={site} view={view} onView={setView} />
+        <Preview draft={draft} avatarUrl={draft.useLogo ? bot.avatarUrl : null} site={site} view={view} onView={setView} />
 
         <div className="flex w-full min-w-0 flex-col lg:w-90 lg:shrink-0 lg:border-l lg:border-line">
           <div className="flex min-h-0 grow flex-col gap-5 overflow-y-auto px-5 py-5 sm:px-5.5">
@@ -204,7 +214,6 @@ function siteColors(bg: string) {
 const SAMPLE: PreviewMessage[] = [
   { kind: "user", text: "Do you deliver on weekends?" },
   { kind: "bot", text: "Yes, every day of the week. Orders placed before noon go out the same day." },
-  { kind: "source", text: "Delivery.pdf" },
 ];
 
 type View = "start" | "chat";
@@ -231,7 +240,7 @@ function Preview({ draft, avatarUrl, site, view, onView }: { draft: Draft; avata
         className="relative min-h-0 grow overflow-hidden rounded-[20px] shadow-[0_0_0_1px_var(--line),0_20px_50px_-30px_rgba(0,0,0,0.4)] transition-colors duration-300"
         style={{ background: c.page }}
         aria-label="Preview"
-        role="img"
+        role="region"
       >
         <div className="flex h-9 items-center gap-1.5 px-3.5" style={{ background: c.bar }}>
           {[0, 1, 2].map((i) => (
@@ -248,7 +257,10 @@ function Preview({ draft, avatarUrl, site, view, onView }: { draft: Draft; avata
         </div>
         {/* The live panel's size: widget.js opens a 396×700 iframe with 8px around the panel. */}
         <div className={cn("absolute bottom-5 h-[min(42.75rem,calc(100%-5.5rem))] w-95 max-w-[calc(100%-2.5rem)]", draft.position === "left" ? "left-5" : "right-5")}>
-          <WidgetPanel
+          {/* Switching Start / Chat opens a closed preview again, so the switch shows something. */}
+          <WidgetPreview
+            key={view}
+            position={draft.position}
             name={draft.name || bot.name}
             avatar={(draft.name || bot.name).charAt(0).toUpperCase()}
             avatarUrl={avatarUrl}

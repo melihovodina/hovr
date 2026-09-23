@@ -1,4 +1,4 @@
-import { ArrowUp, ArrowUpRight, ChevronDown, FileText } from "lucide-react";
+import { ArrowUp, ArrowUpRight, ChevronDown, FileText, MessageSquare } from "lucide-react";
 import type { CSSProperties } from "react";
 import { LogoMark } from "@/components/brand";
 import { botBubble, chatPalette, visitorBubble } from "@/lib/chat-colors";
@@ -25,6 +25,8 @@ interface WidgetPanelProps {
   chatBackground?: string;
   visitorMessageColor?: string | null;
   botMessageColor?: string | null;
+  // Makes the header's close button work (the previews that can be closed).
+  onClose?: () => void;
 }
 
 // A drawn copy of the embeddable widget, following the site's theme and filling its box.
@@ -41,11 +43,12 @@ export function WidgetPanel({
   chatBackground,
   visitorMessageColor = null,
   botMessageColor = null,
+  onClose,
 }: WidgetPanelProps) {
   const onAccent = onColor(color);
   return (
     <div className={PANEL} style={chatBackground ? chatPalette(chatBackground) : undefined}>
-      <WidgetHeader name={name} avatar={avatar} avatarUrl={avatarUrl} color={color} />
+      <WidgetHeader name={name} avatar={avatar} avatarUrl={avatarUrl} color={color} onClose={onClose} />
 
       {messages.length === 0 ? (
         <WidgetFirstScreen greeting={greeting} suggestions={suggestions} />
@@ -193,6 +196,21 @@ export function WidgetHeader({
         </span>
       )}
     </div>
+  );
+}
+
+// The round button visitors click to open the chat, in the bot's main color.
+export function WidgetLauncher({ name, color, onOpen }: { name: string; color: string; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Open chat with ${name}`}
+      className="flex size-15 shrink-0 animate-in items-center justify-center rounded-full shadow-[0_6px_16px_-6px_rgba(0,0,0,0.45)] transition-transform duration-300 zoom-in-50 fade-in-0 hover:scale-105"
+      style={{ background: color, color: onColor(color) }}
+    >
+      <MessageSquare className="size-6.5" strokeWidth={2} />
+    </button>
   );
 }
 

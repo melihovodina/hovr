@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowUp, FileText, MessageSquare } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { cn } from "cn";
-import { AnswerText, Caret } from "@/components/playground/parts";
-import { PANEL, PoweredBy, WidgetFirstScreen, WidgetHeader } from "@/components/widget-panel";
+import { Caret } from "@/components/playground/parts";
+import { PANEL, PoweredBy, WidgetFirstScreen, WidgetHeader, WidgetLauncher } from "@/components/widget-panel";
 import { ApiError } from "@/lib/api";
-import { streamChat } from "@/lib/chat";
+import { streamChat, withoutCitations } from "@/lib/chat";
 import { botBubble, chatColors, chatPalette, visitorBubble } from "@/lib/chat-colors";
 import { onColor } from "@/lib/format";
 import type { Message, WidgetConfig } from "@/lib/types";
@@ -132,7 +132,6 @@ export function ChatWidget() {
   }
 
   if (!config) return null;
-  const onAccent = onColor(config.color);
   const avatar = config.name.charAt(0).toUpperCase();
   const side = config.position === "left" ? "justify-start" : "justify-end";
   const colors = chatColors(config);
@@ -143,21 +142,13 @@ export function ChatWidget() {
     return (
       // The padding leaves room for the shadow inside the iframe (widget.js sizes it to 92px).
       <div className={`flex h-dvh items-end p-4 ${side}`}>
-        <button
-          type="button"
-          onClick={() => show(true)}
-          aria-label={`Open chat with ${config.name}`}
-          className="flex size-15 animate-in items-center justify-center rounded-full shadow-[0_6px_16px_-6px_rgba(0,0,0,0.45)] transition-transform duration-300 zoom-in-50 fade-in-0 hover:scale-105"
-          style={{ background: config.color, color: onAccent }}
-        >
-          <MessageSquare className="size-6.5" strokeWidth={2} />
-        </button>
+        <WidgetLauncher name={config.name} color={config.color} onOpen={() => show(true)} />
       </div>
     );
   }
 
-  // Offer to leave an email once the bot has said it doesn't know something.
-  const missed = messages.some((m) => m.role === "assistant" && m.answered === false);
+  // The email offer sits under the first answer the bot didn't know, and stays there as the chat goes on.
+  const missedId = messages.find((m) => m.role === "assistant" && m.answered === false)?.id;
 
   return (
     <div className="h-dvh p-2">
@@ -187,28 +178,28 @@ export function ChatWidget() {
                   {m.content}
                 </div>
               ) : (
-                <div key={m.id} className={cn("flex max-w-[88%] flex-col gap-1.5 self-start", m.id !== settled && "animate-rise")}>
-                  <div className="rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap" style={bot}>
-                    <AnswerText text={m.content} />
+                <Fragment key={m.id}>
+                  <div
+                    className={cn("max-w-[88%] self-start rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap", m.id !== settled && "animate-rise")}
+                    style={bot}
+                  >
+                    {withoutCitations(m.content)}
                   </div>
-                  <Sources message={m} />
-                </div>
+                  {m.id === missedId && conversation && <LeadForm widgetKey={key} conversationId={conversation} host={pageHost()} color={config.color} />}
+                </Fragment>
               ),
             )}
             {streaming !== null && (
               <div className="max-w-[88%] animate-rise self-start rounded-[20px_20px_20px_6px] px-3.5 py-2.5 text-sm leading-normal whitespace-pre-wrap" style={bot}>
                 {streaming ? (
                   <>
-                    <AnswerText text={streaming} />
+                    {withoutCitations(streaming)}
                     <Caret />
                   </>
                 ) : (
                   <span className="animate-pulse opacity-70">Thinking…</span>
                 )}
               </div>
-            )}
-            {missed && streaming === null && conversation && (
-              <LeadForm widgetKey={key} conversationId={conversation} host={pageHost()} color={config.color} />
             )}
             {error && <p className="self-center px-2 text-center text-xs font-semibold text-(--w-muted)">{error}</p>}
             <div ref={bottom} />
@@ -220,23 +211,6 @@ export function ChatWidget() {
           {config.showBadge && <PoweredBy href={window.location.origin} />}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Sources({ message }: { message: Message }) {
-  const titles = [...new Set(message.citations.map((c) => c.sourceTitle))];
-  if (titles.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {titles.map((t) => (
-        <span key={t} className="flex h-7 max-w-full items-center gap-1.5 rounded-full border border-(--w-border) pr-2.5 pl-1.5 text-xs font-bold">
-          <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-(--w-soft)">
-            <FileText className="size-2.75" strokeWidth={2.4} aria-hidden="true" />
-          </span>
-          <span className="truncate">{t}</span>
-        </span>
-      ))}
     </div>
   );
 }

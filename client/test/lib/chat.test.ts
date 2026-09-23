@@ -1,7 +1,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { mockFetch, sse } from "@/test/http";
 import { ApiError } from "@/lib/api";
-import { streamChat } from "@/lib/chat";
+import { streamChat, withoutCitations } from "@/lib/chat";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -38,4 +38,10 @@ test("a stream that ends without done rejects", async () => {
   const err = await streamChat("/bots/b1/chat", { message: "hi" }, {}).catch((e) => e);
   expect(err).toBeInstanceOf(ApiError);
   expect(err.message).toMatch(/cut off/);
+});
+
+test("withoutCitations drops [n] markers, also one still arriving", () => {
+  expect(withoutCitations("We ship to Canada [1]. Orders arrive in 5 days [1, 2].")).toBe("We ship to Canada. Orders arrive in 5 days.");
+  expect(withoutCitations("Yes, we do [1")).toBe("Yes, we do");
+  expect(withoutCitations("Prices in [brackets] stay")).toBe("Prices in [brackets] stay");
 });

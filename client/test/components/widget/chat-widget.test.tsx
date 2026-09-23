@@ -54,7 +54,7 @@ test("a site that isn't allowed hides the widget", async () => {
   expect(container.innerHTML).toBe("");
 });
 
-test("opens, answers a suggested question with its sources, and closes", async () => {
+test("opens, answers a suggested question without the owner's sources, and closes", async () => {
   const fetch = mockFetch(json(200, config), answer("We ship to Canada [1].", true));
   const user = userEvent.setup();
   render(<ChatWidget />);
@@ -64,7 +64,9 @@ test("opens, answers a suggested question with its sources, and closes", async (
   expect(screen.getByText("Ask me about orders.")).toBeTruthy();
 
   await user.click(screen.getByRole("button", { name: /Do you ship to Canada\?/ }));
-  expect(await screen.findByText("Shipping.md")).toBeTruthy();
+  // Visitors can't open the owner's files, so neither the source nor its [1] marker shows.
+  expect(await screen.findByText("We ship to Canada.")).toBeTruthy();
+  expect(screen.queryByText("Shipping.md")).toBeNull();
   const body = JSON.parse(fetch.mock.calls[1][1]?.body as string);
   expect(body.message).toBe("Do you ship to Canada?");
   expect(body.visitorId).toBeTruthy();
@@ -129,4 +131,30 @@ test("an answer still being written ends in a blinking caret", async () => {
 
   expect(await screen.findByText("Yes, we")).toBeTruthy();
   expect(container.querySelector(".animate-caret")).not.toBeNull();
+});
+
+test("the email offer stays under the answer the bot didn't know, not at the end", async () => {
+  remember("hovr:conv:pub_k", "c1");
+  const msg = (id: number, role: string, content: string, answered: boolean | null) => ({ id, role, content, citations: [], answered, createdAt: "" });
+  mockFetch(
+    json(200, config),
+    json(200, {
+      messages: [
+        msg(1, "user", "Do you ship to Canada?", null),
+        msg(2, "assistant", "I don't know that one.", false),
+        msg(3, "user", "Do you ship to Canada?", null),
+        msg(4, "assistant", "Yes, we ship to Canada.", true),
+      ],
+    }),
+  );
+  const user = userEvent.setup();
+  render(<ChatWidget />);
+  await user.click(await screen.findByRole("button", { name: "Open chat with Northwind Coffee" }));
+
+  const form = await screen.findByLabelText(/Leave your email/);
+  const missed = screen.getByText("I don't know that one.");
+  const later = screen.getByText("Yes, we ship to Canada.");
+  // DOCUMENT_POSITION_FOLLOWING: the form comes after the missed answer and before the later one.
+  expect(missed.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(form.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });

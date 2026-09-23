@@ -46,3 +46,9 @@ export function getConversation(botId: string, id: string, signal?: AbortSignal)
 export function deleteConversation(botId: string, id: string): Promise<void> {
   return api(`/bots/${botId}/conversations/${id}`, { method: "DELETE" });
 }
+
+// Answers mark what they used with [n] markers. Visitors can't open the owner's sources, so the
+// widget drops them, including one still arriving at the end of a streamed answer ("[1", "[1,").
+export function withoutCitations(text: string): string {
+  return text.replace(/ ?\[\d+(?:\s*,\s*\d+)*\]/g, "").replace(/ ?\[[\d,\s]*$/, "");
+}

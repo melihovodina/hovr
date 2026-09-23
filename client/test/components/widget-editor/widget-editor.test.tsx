@@ -8,7 +8,7 @@ import { json, mockFetch } from "@/test/http";
 import { nav } from "@/test/navigation";
 import { InstallTab } from "@/components/widget-editor/install-tab";
 import { MessagesTab } from "@/components/widget-editor/messages-tab";
-import { changes, type Draft } from "@/components/widget-editor/widget-screen";
+import { changes, dropsLogo, type Draft } from "@/components/widget-editor/widget-screen";
 import { chatColors } from "@/lib/chat-colors";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationMock);
@@ -27,11 +27,19 @@ const draftOf = (over: Partial<Draft> = {}): Draft => {
     showBadge: b.showBadge,
     ...chatColors(b),
     visitorMessageColor: b.visitorMessageColor,
+    useLogo: b.avatarUrl !== null,
     ...over,
   };
 };
 
 describe("changes", () => {
+  test("picking the letter drops the logo only when saved, and only if there is one", () => {
+    const withLogo = bot({ avatarUrl: "https://files.example/logo.png" });
+    expect(dropsLogo(withLogo, draftOf({ useLogo: true }))).toBe(false);
+    expect(dropsLogo(withLogo, draftOf({ useLogo: false }))).toBe(true);
+    expect(dropsLogo(bot(), draftOf({ useLogo: false }))).toBe(false);
+  });
+
   test("a bot that never picked chat colours isn't changed by their defaults", () => {
     expect(changes(bot({ chatBackground: null, botMessageColor: null }), draftOf())).toEqual({});
   });
